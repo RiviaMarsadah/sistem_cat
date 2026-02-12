@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  admin
+  guru
+  siswa
+}
+
+enum UserStatus {
+  aktif
+  nonaktif
+}
+
+enum KelasTingkat {
+  X
+  XI
+  XII
+}
+
+enum JenisKelamin {
+  L
+  P
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  username     String     @unique @db.VarChar(50)
+  email        String     @unique @db.VarChar(100)
+  password     String?    @db.VarChar(255)
+  role         UserRole
+  namaLengkap  String     @map("nama_lengkap") @db.VarChar(100)
+  status       UserStatus @default(aktif)
+  googleId     String?    @unique @map("google_id") @db.VarChar(255)
+  googlePicture String?   @map("google_picture") @db.VarChar(500)
+  googleLinked Boolean    @default(false) @map("google_linked")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  guru   Guru?
+  siswa  Siswa?
+
+  @@map("users")
+}
+
+model Guru {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  nip       String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("guru")
+}
+
+model Siswa {
+  id          Int          @id @default(autoincrement())
+  userId      Int          @unique @map("user_id")
+  nis         String?      @unique @db.VarChar(20)
+  nisn        String?      @unique @db.VarChar(20)
+  kelasId     Int?         @map("kelas_id")
+  noTelp      String?      @map("no_telp") @db.VarChar(20)
+  jenisKelamin JenisKelamin? @map("jenis_kelamin")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kelas Kelas? @relation(fields: [kelasId], references: [id])
+
+  @@map("siswa")
+}
+
+model MataPelajaran {
+  id        Int      @id @default(autoincrement())
+  namaMapel String   @map("nama_mapel") @db.VarChar(100)
+  kodeMapel String?  @unique @map("kode_mapel") @db.VarChar(20)
+  deskripsi String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("mata_pelajaran")
+}
+
+model Kelas {
+  id        Int          @id @default(autoincrement())
+  namaKelas String       @map("nama_kelas") @db.VarChar(50)
+  tingkat   KelasTingkat?
+  jurusan   String?      @db.VarChar(100)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  siswa Siswa[]
+
+  @@map("kelas")
+}
