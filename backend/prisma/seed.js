@@ -10,23 +10,29 @@ async function main() {
   const existingUsers = await prisma.user.findMany({
     where: {
       email: {
-        in: ['riviadimong321@gmail.com']
+        in: ['riviadimong321@gmail.com', 'riviamarsadah@gmail.com']
       }
     }
   });
 
   if (existingUsers.length > 0) {
-    console.log('⚠️  Users already exist. Skipping seed.');
-    return;
+    console.log('⚠️  Some users already exist. Skipping existing users...');
   }
 
   // Create users
   const users = [
     {
-      username: 'rivia_marsadah',
       email: 'riviadimong321@gmail.com',
       password: null, // No password for SSO users
       role: 'guru',
+      namaLengkap: 'Rivia Marsadah',
+      status: 'aktif',
+      googleLinked: false
+    },
+    {
+      email: 'riviamarsadah@gmail.com',
+      password: null, // No password for SSO users
+      role: 'admin',
       namaLengkap: 'Rivia Marsadah',
       status: 'aktif',
       googleLinked: false
@@ -34,20 +40,32 @@ async function main() {
   ];
 
   for (const userData of users) {
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: userData.email }
+    });
+
+    if (existingUser) {
+      console.log(`⏭️  User already exists: ${userData.namaLengkap} (${userData.email})`);
+      continue;
+    }
+
     // Create user
     const user = await prisma.user.create({
       data: userData
     });
 
-    // Create guru record
-    await prisma.guru.create({
-      data: {
-        userId: user.id,
-        nip: null // NIP bisa diisi nanti
-      }
-    });
+    // Create guru record only for guru role
+    if (userData.role === 'guru') {
+      await prisma.guru.create({
+        data: {
+          userId: user.id,
+          nip: null // NIP bisa diisi nanti
+        }
+      });
+    }
 
-    console.log(`✅ Created user: ${userData.namaLengkap} (${userData.email})`);
+    console.log(`✅ Created user: ${userData.namaLengkap} (${userData.email}) - Role: ${userData.role}`);
   }
 
   console.log('✅ Seed completed successfully!');

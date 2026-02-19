@@ -111,7 +111,6 @@ exports.getProfile = async (req, res) => {
     // Format response
     const userData = {
       id: user.id,
-      username: user.username,
       email: user.email,
       role: user.role,
       namaLengkap: user.namaLengkap,

@@ -13,7 +13,7 @@ const Login = () => {
   // hooks untuk navigasi dan ambil parameter dari URL
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login: setAuthUser } = useAuth();
+  const { setAuthUser } = useAuth();
 
   // disable scroll body pas halaman login muncul
   useEffect(() => {

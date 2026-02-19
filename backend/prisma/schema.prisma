@@ -34,7 +34,6 @@ enum JenisKelamin {
 
 model User {
   id           Int        @id @default(autoincrement())
-  username     String     @unique @db.VarChar(50)
   email        String     @unique @db.VarChar(100)
   password     String?    @db.VarChar(255)
   role         UserRole
@@ -97,12 +96,29 @@ model MataPelajaran {
 model Kelas {
   id        Int          @id @default(autoincrement())
   namaKelas String       @map("nama_kelas") @db.VarChar(50)
-  tingkat   KelasTingkat?
-  jurusan   String?      @db.VarChar(100)
+  tingkat   KelasTingkat
+  jurusanId Int          @map("jurusan_id")
+  inisial   String       @db.VarChar(10)
   createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
 
   // Relations
   siswa Siswa[]
+  jurusan Jurusan @relation(fields: [jurusanId], references: [id])
 
+  @@unique([tingkat, jurusanId, inisial])
   @@map("kelas")
+}
+
+model Jurusan {
+  id        Int      @id @default(autoincrement())
+  idJurusan String   @unique @map("id_jurusan") @db.VarChar(20)
+  nama      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  kelas Kelas[]
+
+  @@map("jurusan")
 }

@@ -19,7 +19,6 @@ const seedUsers = async () => {
     // Insert users
     const users = [
       {
-        username: 'ilham_pangestu',
         email: 'gadinglalala121212@gmail.com',
         password: null, // No password for SSO users
         role: 'guru',
@@ -27,7 +26,6 @@ const seedUsers = async () => {
         status: 'aktif'
       },
       {
-        username: 'rivia_marsadah',
         email: 'riviadimong321@gmail.com',
         password: null, // No password for SSO users
         role: 'guru',
@@ -38,10 +36,9 @@ const seedUsers = async () => {
 
     for (const userData of users) {
       const [result] = await pool.query(
-        `INSERT INTO users (username, email, password, role, nama_lengkap, status, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        `INSERT INTO users (email, password, role, nama_lengkap, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
         [
-          userData.username,
           userData.email,
           userData.password,
           userData.role,
