@@ -6,6 +6,7 @@ const requireRole = require('../middleware/requireRole');
 const jurusanController = require('../controllers/jurusanController');
 const kelasController = require('../controllers/kelasController');
 const userController = require('../controllers/userController');
+const mataPelajaranController = require('../controllers/mataPelajaranController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -17,6 +18,13 @@ router.post('/jurusan', jurusanController.create);
 router.get('/jurusan/:id', jurusanController.getById);
 router.put('/jurusan/:id', jurusanController.update);
 router.delete('/jurusan/:id', jurusanController.remove);
+
+// Mata Pelajaran CRUD
+router.get('/mata-pelajaran', mataPelajaranController.list);
+router.post('/mata-pelajaran', mataPelajaranController.create);
+router.get('/mata-pelajaran/:id', mataPelajaranController.getById);
+router.put('/mata-pelajaran/:id', mataPelajaranController.update);
+router.delete('/mata-pelajaran/:id', mataPelajaranController.remove);
 
 // Kelas CRUD
 router.get('/kelas', kelasController.list);

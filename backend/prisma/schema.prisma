@@ -60,7 +60,8 @@ model Guru {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankSoal BankSoal[]
 
   @@map("guru")
 }
@@ -83,12 +84,28 @@ model Siswa {
   @@map("siswa")
 }
 
+enum KategoriSoal {
+  single_choice
+  multi_choice
+  benar_salah
+}
+
+enum KategoriMapel {
+  prodi
+  muatan_lokal
+}
+
 model MataPelajaran {
-  id        Int      @id @default(autoincrement())
-  namaMapel String   @map("nama_mapel") @db.VarChar(100)
-  kodeMapel String?  @unique @map("kode_mapel") @db.VarChar(20)
-  deskripsi String?  @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
+  id         Int            @id @default(autoincrement())
+  namaMapel  String         @map("nama_mapel") @db.VarChar(100)
+  kodeMapel  String?        @unique @map("kode_mapel") @db.VarChar(20)
+  deskripsi  String?        @db.Text
+  kategori   KategoriMapel  @default(prodi)
+  jurusanId  Int?           @map("jurusan_id")
+  createdAt  DateTime       @default(now()) @map("created_at")
+
+  jurusan  Jurusan?  @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  bankSoal BankSoal[]
 
   @@map("mata_pelajaran")
 }
@@ -103,8 +120,8 @@ model Kelas {
   updatedAt DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  siswa Siswa[]
-  jurusan Jurusan @relation(fields: [jurusanId], references: [id])
+  siswa   Siswa[]
+  jurusan Jurusan  @relation(fields: [jurusanId], references: [id])
 
   @@unique([tingkat, jurusanId, inisial])
   @@map("kelas")
@@ -118,7 +135,35 @@ model Jurusan {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  kelas Kelas[]
+  kelas          Kelas[]
+  mataPelajaran MataPelajaran[]
+  bankSoal       BankSoal[]
 
   @@map("jurusan")
+}
+
+model BankSoal {
+  id                Int          @id @default(autoincrement())
+  mataPelajaranId   Int          @map("mata_pelajaran_id")
+  tingkat           KelasTingkat
+  jurusanId         Int?         @map("jurusan_id")
+  guruId            Int          @map("guru_id")
+  kategoriSoal      KategoriSoal @map("kategori_soal")
+  soal              String?      @db.Text
+  kolomA            String?      @map("kolom_a") @db.VarChar(500)
+  kolomB            String?      @map("kolom_b") @db.VarChar(500)
+  kolomC            String?      @map("kolom_c") @db.VarChar(500)
+  kolomD            String?      @map("kolom_d") @db.VarChar(500)
+  kolomE            String?      @map("kolom_e") @db.VarChar(500)
+  kolomF            String?      @map("kolom_f") @db.VarChar(500)
+  jawaban           String       @db.VarChar(100)
+  gambar            String?      @db.VarChar(500)
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  mataPelajaran MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  jurusan       Jurusan?      @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  guru          Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+
+  @@map("bank_soal")
 }

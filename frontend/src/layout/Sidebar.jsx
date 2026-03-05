@@ -31,7 +31,7 @@ const Sidebar = ({ role, user }) => {
   const adminMenu = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
     { path: '/admin/jurusan', label: 'Jurusan', icon: FiLayers, disabled: false },
-    { path: '/admin/mata-pelajaran', label: 'Mata Pelajaran', icon: FiBookOpen, disabled: true },
+    { path: '/admin/mata-pelajaran', label: 'Mata Pelajaran', icon: FiBookOpen, disabled: false },
     { path: '/admin/kelas', label: 'Kelas', icon: FiUsers, disabled: false },
     { path: '/admin/user', label: 'Management User', icon: FiSettings, disabled: false },
     { path: '/admin/siswa', label: 'Siswa', icon: FiUser, disabled: true },
@@ -42,7 +42,7 @@ const Sidebar = ({ role, user }) => {
   // Menu items untuk Guru
   const guruMenu = [
     { path: '/guru/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
-    { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: true },
+    { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: false },
     { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: true },
     { path: '/guru/detail-ujian', label: 'Detail Ujian', icon: FiEye, disabled: true },
     { path: '/guru/monitoring', label: 'Monitoring', icon: FiActivity, disabled: true },

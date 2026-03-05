@@ -1,0 +1,489 @@
+/* Admin Mata Pelajaran */
+
+.mapel-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  animation: fadeIn 0.6s ease-out;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.mapel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.mapel-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mapel-title .title-text {
+  color: #0f172a;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mapel-title .title-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.mapel-subtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.mapel-meta {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.mapel-meta .meta-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  min-width: 92px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.mapel-meta .meta-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.mapel-meta .meta-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mapel-alert {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #991b1b;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+.mapel-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-top: 1rem;
+}
+
+.mapel-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.mapel-card-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.btn-add-mapel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-add-mapel:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
+}
+
+.btn-add-mapel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-add-mapel .btn-icon {
+  font-size: 1.125rem;
+}
+
+.mapel-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #64748b;
+}
+
+.mapel-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mapel-row {
+  display: grid;
+  grid-template-columns: 1fr 100px 140px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.85rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.mapel-row-head {
+  border: none;
+  background: transparent;
+  padding: 0 0.75rem;
+}
+
+.mapel-row-head .col-nama,
+.mapel-row-head .col-kode,
+.mapel-row-head .col-kategori,
+.mapel-row-head .col-prodi,
+.mapel-row-head .col-actions {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.mapel-row .col-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mapel-row .input.small {
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  width: 100%;
+}
+
+.nama-text,
+.kode-text,
+.prodi-text {
+  font-size: 0.9375rem;
+  color: #0f172a;
+}
+
+.kode-text {
+  color: #64748b;
+}
+
+.muted {
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-prodi {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-muatan_lokal {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.mapel-row .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mapel-row .btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.mapel-row .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.mapel-row .btn-save {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: #fff;
+}
+
+.mapel-row .btn-ghost {
+  background: #f8fafc;
+}
+
+.mapel-row .btn-edit {
+  color: #1e40af;
+}
+
+.mapel-row .btn-danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #b91c1c;
+}
+
+.mapel-row .btn-danger:hover:not(:disabled) {
+  background: #fef2f2;
+}
+
+/* Form in modal */
+.mapel-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.mapel-form .form-group:last-child {
+  margin-bottom: 0;
+}
+
+.mapel-form .label {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.4rem;
+}
+
+.mapel-form .label-required {
+  color: #ef4444;
+}
+
+.mapel-form .input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+}
+
+.mapel-form .input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.mapel-form .textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.mapel-form .field-hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+  margin: 0.35rem 0 0;
+  font-weight: 400;
+}
+
+.kategori-options {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.radio-label input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #3b82f6;
+}
+
+/* Modal (shared pattern) */
+.mapel-page .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+.mapel-page .modal-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: 520px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.mapel-page .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mapel-page .modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.mapel-page .modal-close {
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 1.25rem;
+}
+
+.mapel-page .modal-close:hover:not(:disabled) {
+  color: #0f172a;
+}
+
+.mapel-page .modal-body {
+  padding: 1.5rem;
+}
+
+.mapel-page .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.mapel-page .modal-btn {
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mapel-page .modal-btn-cancel:hover {
+  background: #f1f5f9;
+}
+
+.mapel-page .modal-btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: #fff;
+  border: none;
+}
+
+.mapel-page .modal-btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.mapel-page .modal-btn-danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.mapel-page .modal-btn-danger:hover:not(:disabled) {
+  background: #fee2e2;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  .mapel-row {
+    grid-template-columns: 1fr 1fr auto;
+  }
+
+  .mapel-row .col-kode {
+    grid-column: 1;
+  }
+
+  .mapel-row .col-kategori {
+    grid-column: 2;
+  }
+
+  .mapel-row .col-prodi {
+    grid-column: 1 / -1;
+  }
+
+  .mapel-row .col-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}

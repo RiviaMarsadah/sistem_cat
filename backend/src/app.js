@@ -28,7 +28,7 @@ app.get('/api/health', (req, res) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
-// app.use('/api/guru', require('./routes/guru'));
+app.use('/api/guru', require('./routes/guru'));
 // app.use('/api/siswa', require('./routes/siswa'));
 
 // Error handler middleware (harus di akhir)
