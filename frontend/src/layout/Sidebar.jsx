@@ -43,7 +43,7 @@ const Sidebar = ({ role, user }) => {
   const guruMenu = [
     { path: '/guru/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
     { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: false },
-    { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: true },
+    { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: false },
     { path: '/guru/detail-ujian', label: 'Detail Ujian', icon: FiEye, disabled: true },
     { path: '/guru/monitoring', label: 'Monitoring', icon: FiActivity, disabled: true },
     { path: '/guru/evaluasi', label: 'Evaluasi Soal', icon: FiBarChart2, disabled: true },

@@ -3,7 +3,7 @@ const prisma = require('../config/prisma');
 const { getSchema, normalizePayload } = require('./bankSoalController');
 
 const KATEGORI = ['single_choice', 'multi_choice', 'benar_salah'];
-const TINGKAT = ['X', 'XI', 'XII'];
+const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
 // Map header cell (flexible) to our field name
 const HEADER_MAP = {
@@ -70,8 +70,9 @@ exports.importExcel = async (req, res) => {
   if (tingkat === '10') tingkat = 'X';
   if (tingkat === '11') tingkat = 'XI';
   if (tingkat === '12') tingkat = 'XII';
+  if (tingkat === '0') tingkat = 'SEMUA';
   if (!TINGKAT.includes(tingkat)) {
-    return res.status(400).json({ success: false, message: 'Tingkat harus 10, 11, atau 12' });
+    return res.status(400).json({ success: false, message: 'Tingkat harus 10, 11, 12, atau 0 (semua tingkat)' });
   }
 
   const jurusanId =

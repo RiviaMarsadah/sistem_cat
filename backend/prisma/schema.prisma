@@ -27,6 +27,22 @@ enum KelasTingkat {
   XII
 }
 
+/// Untuk bank_soal: X, XI, XII, atau SEMUA (soal dipakai semua tingkat).
+/// Di DB nilai "SEMUA" disimpan; frontend bisa kirim "0" yang dipetakan ke SEMUA.
+enum TingkatSoal {
+  X
+  XI
+  XII
+  SEMUA
+}
+
+enum TipeUjian {
+  UH
+  UTS
+  UAS
+  Lainnya
+}
+
 enum JenisKelamin {
   L
   P
@@ -60,8 +76,9 @@ model Guru {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bankSoal BankSoal[]
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankSoal     BankSoal[]
+  paketUjian   PaketUjian[]
 
   @@map("guru")
 }
@@ -104,8 +121,9 @@ model MataPelajaran {
   jurusanId  Int?           @map("jurusan_id")
   createdAt  DateTime       @default(now()) @map("created_at")
 
-  jurusan  Jurusan?  @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
-  bankSoal BankSoal[]
+  jurusan     Jurusan?     @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  bankSoal    BankSoal[]
+  paketUjian  PaketUjian[]
 
   @@map("mata_pelajaran")
 }
@@ -145,7 +163,7 @@ model Jurusan {
 model BankSoal {
   id                Int          @id @default(autoincrement())
   mataPelajaranId   Int          @map("mata_pelajaran_id")
-  tingkat           KelasTingkat
+  tingkat           TingkatSoal
   jurusanId         Int?         @map("jurusan_id")
   guruId            Int          @map("guru_id")
   kategoriSoal      KategoriSoal @map("kategori_soal")
@@ -161,9 +179,42 @@ model BankSoal {
   createdAt         DateTime     @default(now()) @map("created_at")
   updatedAt         DateTime     @updatedAt @map("updated_at")
 
-  mataPelajaran MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
-  jurusan       Jurusan?      @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
-  guru          Guru          @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mataPelajaran MataPelajaran   @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  jurusan       Jurusan?       @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  guru          Guru            @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  soalPaketUjian SoalPaketUjian[]
 
   @@map("bank_soal")
+}
+
+model PaketUjian {
+  id                Int       @id @default(autoincrement())
+  nama              String    @map("nama") @db.VarChar(200)
+  mataPelajaranId   Int       @map("mata_pelajaran_id")
+  tingkat           TingkatSoal
+  tipeUjian         TipeUjian @map("tipe_ujian")
+  tokenCheckIn      String    @map("token_checkin") @db.VarChar(6)
+  tokenCheckOut     String    @map("token_checkout") @db.VarChar(6)
+  guruId            Int       @map("guru_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  mataPelajaran MataPelajaran   @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  guru          Guru            @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  soalPaket     SoalPaketUjian[]
+
+  @@map("paket_ujian")
+}
+
+model SoalPaketUjian {
+  id             Int       @id @default(autoincrement())
+  paketUjianId   Int       @map("paket_ujian_id")
+  bankSoalId     Int       @map("bank_soal_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  paketUjian PaketUjian @relation(fields: [paketUjianId], references: [id], onDelete: Cascade)
+  bankSoal   BankSoal  @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
+
+  @@unique([paketUjianId, bankSoalId])
+  @@map("soal_paket_ujian")
 }

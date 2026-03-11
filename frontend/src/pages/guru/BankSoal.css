@@ -75,25 +75,28 @@
   background: #eff6ff;
 }
 
-/* Import section */
+/* Import section - sama seperti form section Paket Ujian */
 .bank-soal-import-section {
   margin-bottom: 1.5rem;
   padding: 1.25rem;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
 }
 
 .import-section-title {
-  margin: 0 0 0.35rem 0;
+  margin: 0 0 0.75rem 0;
   font-size: 1.1rem;
-  color: #0c4a6e;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .import-section-desc {
   margin: 0 0 1rem 0;
   font-size: 0.9rem;
-  color: #0369a1;
+  color: #64748b;
 }
 
 .import-actions-row {
@@ -112,14 +115,16 @@
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  border: 1px solid #0ea5e9;
+  border: 2px solid #cbd5e1;
   background: #fff;
-  color: #0369a1;
+  color: #475569;
 }
 
 .btn-download-template:hover,
 .btn-guide:hover {
-  background: #e0f2fe;
+  background: #f1f5f9;
+  border-color: #3b82f6;
+  color: #1e40af;
 }
 
 .import-form {
@@ -150,8 +155,8 @@
 }
 
 .btn-submit-import {
-  padding: 0.6rem 1.25rem;
-  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  padding: 0.7rem 1.25rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -229,16 +234,26 @@
   font-size: 0.85em;
 }
 
-/* Filters */
+/* Filters - kartu sama seperti Paket Ujian */
 .bank-soal-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #fff;
+  padding: 1.25rem;
+  background: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+}
+
+.bank-soal-filters-title {
+  width: 100%;
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .filter-group {
@@ -248,17 +263,29 @@
 
 .filter-group label {
   display: block;
-  font-size: 0.8rem;
-  color: #64748b;
-  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.45rem;
+  padding-left: 0.4rem;
+  border-left: 3px solid #64748b;
+  letter-spacing: 0.02em;
 }
 
 .filter-group select {
   width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
+  background: #fff;
+  color: #0f172a;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .bank-soal-error {
@@ -275,12 +302,13 @@
   color: #64748b;
 }
 
-/* Table */
+/* Table - kartu sama seperti Paket Ujian */
 .bank-soal-table-wrap {
   overflow-x: auto;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .bank-soal-table {
@@ -312,6 +340,86 @@
   text-align: center;
   color: #64748b;
   padding: 2rem;
+}
+
+/* Pagination - kartu sama seperti filter/table */
+.bank-soal-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #475569;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pagination-ellipsis {
+  padding: 0 0.35rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.pagination-page {
+  min-width: 2.25rem;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #475569;
+}
+
+.pagination-page:hover {
+  background: #f1f5f9;
+}
+
+.pagination-page.active {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  border-color: #1e40af;
+  color: #fff;
 }
 
 .badge {
@@ -406,29 +514,47 @@
 .form-row.two-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
+/* Label: tegas, warna gelap, strip kiri biru */
 .form-group label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  border-left: 3px solid #3b82f6;
+  line-height: 1.4;
 }
 
+/* Input: kotak jelas dengan border tebal */
 .form-group input[type="text"],
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.7rem 0.9rem;
+  border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
+  background: #fff;
+  color: #0f172a;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .form-group textarea {
@@ -452,9 +578,16 @@
 
 .kolom-row input {
   flex: 1;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.6rem 0.85rem;
+  border: 2px solid #cbd5e1;
   border-radius: 8px;
+  background: #fff;
+}
+
+.kolom-row input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 .btn-check {
@@ -565,12 +698,57 @@
   text-decoration: underline;
 }
 
+/* Form fullscreen - sama seperti Paket Ujian */
 .bank-soal-form-full {
-  max-width: 720px;
+  width: 100%;
+  max-width: 100%;
   padding: 1.5rem;
   background: #fff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
+  box-sizing: border-box;
+}
+
+/* Section form - sama seperti Paket Ujian */
+.bank-soal-form-page .form-section {
+  margin-bottom: 2rem;
+  padding: 1.25rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.bank-soal-form-page .form-section-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.bank-soal-form-page .form-section-desc {
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.bank-soal-form-page .form-section .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.bank-soal-form-page .form-section .form-row.two-cols {
+  margin-bottom: 1.25rem;
+}
+
+.bank-soal-form-page .form-section .form-row.two-cols:last-child {
+  margin-bottom: 0;
+}
+
+.bank-soal-form-page .form-section .field-hint {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.8125rem;
+  color: #64748b;
 }
 
 .form-actions-full {

@@ -13,9 +13,10 @@ const KATEGORI_OPTIONS = [
 const KOLOM_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const TINGKAT_OPTIONS = [
-  { value: '10', api: 'X' },
-  { value: '11', api: 'XI' },
-  { value: '12', api: 'XII' },
+  { value: '10', api: 'X', label: '10' },
+  { value: '11', api: 'XI', label: '11' },
+  { value: '12', api: 'XII', label: '12' },
+  { value: '0', api: 'SEMUA', label: 'Semua Tingkat' },
 ];
 
 const emptyKolom = () => ({ A: '', B: '', C: '', D: '', E: '', F: '' });
@@ -24,12 +25,14 @@ function displayToTingkatApi(v) {
   if (v === '10') return 'X';
   if (v === '11') return 'XI';
   if (v === '12') return 'XII';
+  if (v === '0') return 'SEMUA';
   return v;
 }
 function apiToTingkatDisplay(t) {
   if (t === 'X') return '10';
   if (t === 'XI') return '11';
   if (t === 'XII') return '12';
+  if (t === 'SEMUA') return '0';
   return t;
 }
 
@@ -81,7 +84,7 @@ export default function BankSoalForm() {
           return;
         }
         setMataPelajaranId(row.mataPelajaranId ?? '');
-        setTingkat(apiToTingkatDisplay(row.tingkat) || '10');
+        setTingkat(apiToTingkatDisplay(row.tingkat) ?? '10');
         setJurusanId(row.jurusanId != null ? String(row.jurusanId) : '');
         setKategoriSoal(row.kategoriSoal || 'single_choice');
         setSoal(row.soal || '');
@@ -221,131 +224,138 @@ export default function BankSoalForm() {
       <form onSubmit={handleSubmit} className="bank-soal-form bank-soal-form-full">
         {formError && <div className="form-error">{formError}</div>}
 
-        <div className="form-row two-cols">
+        <div className="form-section">
+          <h3 className="form-section-title">Data Soal</h3>
+          <p className="form-section-desc">
+            {isEdit ? 'Ubah data soal. Mata pelajaran, tingkat, prodi, dan jawaban.' : 'Isi mapel, tingkat, prodi, kategori, pertanyaan, dan jawaban.'}
+          </p>
+
+          <div className="form-row two-cols">
+            <div className="form-group">
+              <label>Mata Pelajaran *</label>
+              <select value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
+                <option value="">Pilih Mapel</option>
+                {mapelList.map((m) => (
+                  <option key={m.id} value={m.id}>{m.namaMapel}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Tingkat (Kelas) *</label>
+              <select value={tingkat} onChange={(e) => setTingkat(e.target.value)} required>
+                {TINGKAT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           <div className="form-group">
-            <label>Mata Pelajaran *</label>
-            <select value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
-              <option value="">Pilih Mapel</option>
-              {mapelList.map((m) => (
-                <option key={m.id} value={m.id}>{m.namaMapel}</option>
+            <label>Prodi</label>
+            <select value={jurusanId} onChange={(e) => setJurusanId(e.target.value)}>
+              <option value="">Semua Prodi</option>
+              {jurusanList.map((j) => (
+                <option key={j.id} value={j.id}>{j.nama} ({j.idJurusan})</option>
+              ))}
+            </select>
+            <p className="field-hint">Kosongkan = untuk semua prodi; pilih satu = hanya prodi tersebut.</p>
+          </div>
+
+          <div className="form-group">
+            <label>Kategori Soal *</label>
+            <select value={kategoriSoal} onChange={(e) => setKategoriSoal(e.target.value)}>
+              {KATEGORI_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
           </div>
+
+          {(kategoriSoal === 'single_choice' || kategoriSoal === 'multi_choice') && (
+            <>
+              <div className="form-group">
+                <label>Pertanyaan *</label>
+                <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan..." required />
+              </div>
+              <div className="form-group">
+                <label>URL Gambar (opsional)</label>
+                <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
+              </div>
+            </>
+          )}
+
+          {kategoriSoal === 'benar_salah' && (
+            <>
+              <div className="form-group">
+                <label>Pertanyaan (opsional)</label>
+                <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan atau konteks untuk pernyataan di bawah (opsional)..." />
+              </div>
+              <div className="form-group">
+                <label>URL Gambar (opsional)</label>
+                <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
+              </div>
+            </>
+          )}
+
           <div className="form-group">
-            <label>Tingkat (Kelas) *</label>
-            <select value={tingkat} onChange={(e) => setTingkat(e.target.value)} required>
-              {TINGKAT_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.value}</option>
-              ))}
-            </select>
+            <label>{kategoriSoal === 'benar_salah' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
+            {KOLOM_LABELS.map((letter) => (
+              <div key={letter} className="kolom-row">
+                <span className="kolom-letter">{letter}.</span>
+                <input
+                  type="text"
+                  value={kolom[letter]}
+                  onChange={(e) => setKolom((k) => ({ ...k, [letter]: e.target.value }))}
+                  placeholder={kategoriSoal === 'benar_salah' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
+                />
+                {kategoriSoal === 'single_choice' && (
+                  <button
+                    type="button"
+                    className={`btn-check ${jawaban.single === letter ? 'active' : ''}`}
+                    onClick={() => setJawaban((j) => ({ ...j, single: letter }))}
+                    title="Jawaban benar"
+                  >
+                    <FiCheck />
+                  </button>
+                )}
+                {kategoriSoal === 'multi_choice' && (
+                  <button
+                    type="button"
+                    className={`btn-check ${jawaban.multi.includes(letter) ? 'active' : ''}`}
+                    onClick={() => toggleMulti(letter)}
+                    title="Centang jika benar"
+                  >
+                    <FiCheck />
+                  </button>
+                )}
+                {kategoriSoal === 'benar_salah' && (
+                  <div className="benar-salah-btns">
+                    <button
+                      type="button"
+                      className={jawaban.benarSalah[letter] === 'B' ? 'active' : ''}
+                      onClick={() => setBenarSalah(letter, 'B')}
+                    >
+                      Benar
+                    </button>
+                    <button
+                      type="button"
+                      className={jawaban.benarSalah[letter] === 'S' ? 'active' : ''}
+                      onClick={() => setBenarSalah(letter, 'S')}
+                    >
+                      Salah
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
-        <div className="form-group">
-          <label>Prodi</label>
-          <select value={jurusanId} onChange={(e) => setJurusanId(e.target.value)}>
-            <option value="">Semua Prodi</option>
-            {jurusanList.map((j) => (
-              <option key={j.id} value={j.id}>{j.nama} ({j.idJurusan})</option>
-            ))}
-          </select>
-          <p className="field-hint">Kosongkan = untuk semua prodi; pilih satu = hanya prodi tersebut.</p>
-        </div>
 
-        <div className="form-group">
-          <label>Kategori Soal *</label>
-          <select value={kategoriSoal} onChange={(e) => setKategoriSoal(e.target.value)}>
-            {KATEGORI_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {(kategoriSoal === 'single_choice' || kategoriSoal === 'multi_choice') && (
-          <>
-            <div className="form-group">
-              <label>Pertanyaan *</label>
-              <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan..." required />
-            </div>
-            <div className="form-group">
-              <label>URL Gambar (opsional)</label>
-              <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
-            </div>
-          </>
-        )}
-
-        {kategoriSoal === 'benar_salah' && (
-          <>
-            <div className="form-group">
-              <label>Pertanyaan (opsional)</label>
-              <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan atau konteks untuk pernyataan di bawah (opsional)..." />
-            </div>
-            <div className="form-group">
-              <label>URL Gambar (opsional)</label>
-              <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
-            </div>
-          </>
-        )}
-
-        <div className="form-group">
-          <label>{kategoriSoal === 'benar_salah' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
-          {KOLOM_LABELS.map((letter) => (
-            <div key={letter} className="kolom-row">
-              <span className="kolom-letter">{letter}.</span>
-              <input
-                type="text"
-                value={kolom[letter]}
-                onChange={(e) => setKolom((k) => ({ ...k, [letter]: e.target.value }))}
-                placeholder={kategoriSoal === 'benar_salah' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
-              />
-              {kategoriSoal === 'single_choice' && (
-                <button
-                  type="button"
-                  className={`btn-check ${jawaban.single === letter ? 'active' : ''}`}
-                  onClick={() => setJawaban((j) => ({ ...j, single: letter }))}
-                  title="Jawaban benar"
-                >
-                  <FiCheck />
-                </button>
-              )}
-              {kategoriSoal === 'multi_choice' && (
-                <button
-                  type="button"
-                  className={`btn-check ${jawaban.multi.includes(letter) ? 'active' : ''}`}
-                  onClick={() => toggleMulti(letter)}
-                  title="Centang jika benar"
-                >
-                  <FiCheck />
-                </button>
-              )}
-              {kategoriSoal === 'benar_salah' && (
-                <div className="benar-salah-btns">
-                  <button
-                    type="button"
-                    className={jawaban.benarSalah[letter] === 'B' ? 'active' : ''}
-                    onClick={() => setBenarSalah(letter, 'B')}
-                  >
-                    Benar
-                  </button>
-                  <button
-                    type="button"
-                    className={jawaban.benarSalah[letter] === 'S' ? 'active' : ''}
-                    onClick={() => setBenarSalah(letter, 'S')}
-                  >
-                    Salah
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="form-actions-full">
-          <button type="button" className="btn-secondary" onClick={() => navigate('/guru/bank-soal')}>
-            Batal
-          </button>
-          <button type="submit" className="btn-primary" disabled={saving}>
-            {saving ? 'Menyimpan...' : (isEdit ? 'Simpan Perubahan' : 'Simpan Soal')}
-          </button>
+          <div className="form-actions-full">
+            <button type="button" className="btn-secondary" onClick={() => navigate('/guru/bank-soal')}>
+              Batal
+            </button>
+            <button type="submit" className="btn-primary" disabled={saving}>
+              {saving ? 'Menyimpan...' : (isEdit ? 'Simpan Perubahan' : 'Simpan Soal')}
+            </button>
+          </div>
         </div>
       </form>
     </div>

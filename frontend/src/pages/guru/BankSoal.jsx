@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle } from 'react-icons/fi';
 import api from '../../services/api';
@@ -11,15 +11,36 @@ const KATEGORI_OPTIONS = [
 ];
 
 const TINGKAT_OPTIONS = [
-  { value: '10', api: 'X' },
-  { value: '11', api: 'XI' },
-  { value: '12', api: 'XII' },
+  { value: '10', api: 'X', label: '10' },
+  { value: '11', api: 'XI', label: '11' },
+  { value: '12', api: 'XII', label: '12' },
+  { value: '0', api: 'SEMUA', label: 'Semua Tingkat' },
 ];
+
+const ITEMS_PER_PAGE = 10;
+
+/** Mengembalikan array berisi nomor halaman dan '...' untuk paginasi ringkas (1, 2, ..., 46, 47). */
+function getPaginationPages(totalPages, currentPage) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => ({ type: 'page', value: i + 1 }));
+  }
+  const delta = 2;
+  const rangeStart = Math.max(2, currentPage - delta);
+  const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
+  const result = [];
+  result.push({ type: 'page', value: 1 });
+  if (rangeStart > 2) result.push({ type: 'ellipsis', key: 'left' });
+  for (let i = rangeStart; i <= rangeEnd; i++) result.push({ type: 'page', value: i });
+  if (rangeEnd < totalPages - 1) result.push({ type: 'ellipsis', key: 'right' });
+  if (totalPages > 1) result.push({ type: 'page', value: totalPages });
+  return result;
+}
 
 function tingkatToDisplay(t) {
   if (t === 'X') return '10';
   if (t === 'XI') return '11';
   if (t === 'XII') return '12';
+  if (t === 'SEMUA') return 'Semua';
   return t;
 }
 
@@ -43,6 +64,8 @@ export default function BankSoal() {
   const [importResult, setImportResult] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [showImportSection, setShowImportSection] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const fileInputRef = useRef(null);
 
   const loadOptions = async () => {
     try {
@@ -63,7 +86,7 @@ export default function BankSoal() {
     try {
       const params = new URLSearchParams();
       if (filterMapel) params.set('mataPelajaranId', filterMapel);
-      if (filterTingkat) params.set('tingkat', filterTingkat === '10' ? 'X' : filterTingkat === '11' ? 'XI' : filterTingkat === '12' ? 'XII' : '');
+      if (filterTingkat) params.set('tingkat', filterTingkat === '10' ? 'X' : filterTingkat === '11' ? 'XI' : filterTingkat === '12' ? 'XII' : filterTingkat === '0' ? 'SEMUA' : '');
       if (filterJurusan !== '') params.set('jurusanId', filterJurusan);
       if (filterKategori) params.set('kategoriSoal', filterKategori);
       const res = await api.get(`/guru/bank-soal?${params.toString()}`);
@@ -80,6 +103,7 @@ export default function BankSoal() {
   }, []);
 
   useEffect(() => {
+    setCurrentPage(1);
     loadSoal();
   }, [filterMapel, filterTingkat, filterJurusan, filterKategori]);
 
@@ -92,6 +116,16 @@ export default function BankSoal() {
       setError(e?.response?.data?.message || 'Gagal menghapus');
     }
   };
+
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -132,7 +166,11 @@ export default function BankSoal() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImportResult(res.data?.data || res.data);
+      setImportMapel('');
+      setImportTingkat('');
+      setImportJurusan('');
       setImportFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       if (res.data?.data?.created > 0) loadSoal();
     } catch (e) {
       setError(e?.response?.data?.message || 'Gagal mengimpor');
@@ -195,7 +233,7 @@ export default function BankSoal() {
                 <select value={importTingkat} onChange={(e) => setImportTingkat(e.target.value)} required>
                   <option value="">— Pilih Tingkat —</option>
                   {TINGKAT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.value}</option>
+                    <option key={o.value} value={o.value}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -213,6 +251,7 @@ export default function BankSoal() {
               <div className="filter-group">
                 <label>File Excel (.xlsx)</label>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
@@ -272,6 +311,7 @@ export default function BankSoal() {
       )}
 
       <div className="bank-soal-filters">
+        <h3 className="bank-soal-filters-title">Filter Daftar Soal</h3>
         <div className="filter-group">
           <label>Mata Pelajaran</label>
           <select value={filterMapel} onChange={(e) => setFilterMapel(e.target.value)}>
@@ -286,7 +326,7 @@ export default function BankSoal() {
           <select value={filterTingkat} onChange={(e) => setFilterTingkat(e.target.value)}>
             <option value="">Semua</option>
             {TINGKAT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.value}</option>
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </div>
@@ -333,9 +373,9 @@ export default function BankSoal() {
               {items.length === 0 ? (
                 <tr><td colSpan={8} className="empty-row">Belum ada soal. Klik &quot;Tambah Soal&quot;.</td></tr>
               ) : (
-                items.map((row, idx) => (
+                paginatedItems.map((row, idx) => (
                   <tr key={row.id}>
-                    <td>{idx + 1}</td>
+                    <td>{startIndex + idx + 1}</td>
                     <td>{row.mataPelajaran?.namaMapel}</td>
                     <td>{tingkatToDisplay(row.tingkat)}</td>
                     <td>{row.jurusan ? row.jurusan.nama : 'Semua Prodi'}</td>
@@ -355,6 +395,54 @@ export default function BankSoal() {
               )}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {!loading && totalItems > 0 && (
+        <div className="bank-soal-pagination">
+          <span className="pagination-info">
+            Menampilkan {startIndex + 1}-{startIndex + paginatedItems.length} dari {totalItems} soal
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={displayPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              aria-label="Halaman sebelumnya"
+            >
+              Sebelumnya
+            </button>
+            <div className="pagination-pages">
+              {getPaginationPages(totalPages, displayPage).map((item, idx) =>
+                item.type === 'ellipsis' ? (
+                  <span key={`ellipsis-${item.key}`} className="pagination-ellipsis" aria-hidden="true">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`pagination-page ${item.value === displayPage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(item.value)}
+                    aria-label={`Halaman ${item.value}`}
+                    aria-current={item.value === displayPage ? 'page' : undefined}
+                  >
+                    {item.value}
+                  </button>
+                )
+              )}
+            </div>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={displayPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Halaman berikutnya"
+            >
+              Berikutnya
+            </button>
+          </div>
         </div>
       )}
     </div>

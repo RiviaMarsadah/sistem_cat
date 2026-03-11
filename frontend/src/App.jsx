@@ -10,6 +10,8 @@ import AdminMataPelajaran from './pages/admin/MataPelajaran';
 import GuruDashboard from './pages/guru/Dashboard';
 import GuruBankSoal from './pages/guru/BankSoal';
 import GuruBankSoalForm from './pages/guru/BankSoalForm';
+import GuruPaketUjian from './pages/guru/PaketUjian';
+import GuruPaketUjianForm from './pages/guru/PaketUjianForm';
 
 function App() {
   return (
@@ -36,6 +38,9 @@ function App() {
             <Route path="bank-soal" element={<GuruBankSoal />} />
             <Route path="bank-soal/tambah" element={<GuruBankSoalForm />} />
             <Route path="bank-soal/edit/:id" element={<GuruBankSoalForm />} />
+            <Route path="paket-ujian" element={<GuruPaketUjian />} />
+            <Route path="paket-ujian/tambah" element={<GuruPaketUjianForm />} />
+            <Route path="paket-ujian/edit/:id" element={<GuruPaketUjianForm />} />
             <Route path="*" element={<Navigate to="/guru/dashboard" replace />} />
           </Route>
         </Routes>

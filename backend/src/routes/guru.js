@@ -7,6 +7,7 @@ const resolveGuru = require('../middleware/resolveGuru');
 const prisma = require('../config/prisma');
 const bankSoalController = require('../controllers/bankSoalController');
 const bankSoalImportController = require('../controllers/bankSoalImportController');
+const paketUjianController = require('../controllers/paketUjianController');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -55,6 +56,13 @@ router.get('/jurusan', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal memuat jurusan' });
   }
 });
+
+// Paket Ujian CRUD
+router.get('/paket-ujian', paketUjianController.list);
+router.get('/paket-ujian/:id', paketUjianController.getById);
+router.post('/paket-ujian', paketUjianController.create);
+router.put('/paket-ujian/:id', paketUjianController.update);
+router.delete('/paket-ujian/:id', paketUjianController.remove);
 
 // Bank Soal CRUD & Import
 router.get('/bank-soal/template', bankSoalImportController.downloadTemplate);

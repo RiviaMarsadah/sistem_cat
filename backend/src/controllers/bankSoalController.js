@@ -2,12 +2,12 @@ const Joi = require('joi');
 const prisma = require('../config/prisma');
 
 const KATEGORI = ['single_choice', 'multi_choice', 'benar_salah'];
-const TINGKAT = ['X', 'XI', 'XII'];
+const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
 const baseSchema = {
   mataPelajaranId: Joi.number().integer().positive().required(),
   tingkat: Joi.string().valid(...TINGKAT).required().messages({
-    'any.only': 'Tingkat harus X, XI, atau XII (10, 11, 12)',
+    'any.only': 'Tingkat harus X, XI, XII, atau SEMUA (0 = semua tingkat)',
   }),
   jurusanId: Joi.number().integer().positive().allow(null).optional(),
   kategoriSoal: Joi.string().valid(...KATEGORI).required(),
