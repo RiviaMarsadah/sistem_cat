@@ -122,7 +122,8 @@ exports.mobileGoogleLogin = async (req, res) => {
     });
   }
 
-  // Cari user berdasarkan email dan muat relasi siswa->kelas
+  // Cari user berdasarkan email.
+  // Relasi siswa->kelas dimuat jika ada, tapi untuk sementara tidak wajib.
   const user = await prisma.user.findUnique({
     where: { email },
     include: {
@@ -142,7 +143,9 @@ exports.mobileGoogleLogin = async (req, res) => {
     });
   }
 
-  if (user.role !== 'siswa' || !user.siswa) {
+  // Validasi akses mobile sementara: cukup berdasarkan `users.role`
+  // (tidak memaksa adanya baris relasi di tabel `siswa`).
+  if (user.role !== 'siswa') {
     return res.status(403).json({
       success: false,
       message: 'Akses ditolak. Hanya akun siswa yang dapat menggunakan aplikasi ini.'
