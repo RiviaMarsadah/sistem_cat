@@ -5,9 +5,9 @@ import api from '../../services/api';
 import './BankSoal.css';
 
 const KATEGORI_OPTIONS = [
-  { value: 'single_choice', label: 'Single Choice (Pilihan Ganda)' },
-  { value: 'multi_choice', label: 'Multi Choice (Banyak Jawaban Benar)' },
-  { value: 'benar_salah', label: 'Pernyataan Benar/Salah' },
+  { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
+  { value: 'pilgan_kompleks', label: 'Pilihan Ganda Kompleks' },
+  { value: 'pilgan_kategori', label: 'Pilihan Ganda Kategori' },
 ];
 
 const KOLOM_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -50,7 +50,7 @@ export default function BankSoalForm() {
   const [mataPelajaranId, setMataPelajaranId] = useState('');
   const [tingkat, setTingkat] = useState('10');
   const [jurusanId, setJurusanId] = useState('');
-  const [kategoriSoal, setKategoriSoal] = useState('single_choice');
+  const [kategoriSoal, setKategoriSoal] = useState('pilgan');
   const [soal, setSoal] = useState('');
   const [kolom, setKolom] = useState(emptyKolom());
   const [jawaban, setJawaban] = useState({ single: '', multi: [], benarSalah: emptyKolom() });
@@ -86,7 +86,7 @@ export default function BankSoalForm() {
         setMataPelajaranId(row.mataPelajaranId ?? '');
         setTingkat(apiToTingkatDisplay(row.tingkat) ?? '10');
         setJurusanId(row.jurusanId != null ? String(row.jurusanId) : '');
-        setKategoriSoal(row.kategoriSoal || 'single_choice');
+        setKategoriSoal(row.kategoriSoal || 'pilgan');
         setSoal(row.soal || '');
         setKolom({
           A: row.kolomA || '',
@@ -97,9 +97,9 @@ export default function BankSoalForm() {
           F: row.kolomF || '',
         });
         setGambar(row.gambar || '');
-        if (row.kategoriSoal === 'single_choice') {
+        if (row.kategoriSoal === 'pilgan') {
           setJawaban((j) => ({ ...j, single: row.jawaban || '' }));
-        } else if (row.kategoriSoal === 'multi_choice') {
+        } else if (row.kategoriSoal === 'pilgan_kompleks') {
           setJawaban((j) => ({ ...j, multi: (row.jawaban || '').split(',').map((s) => s.trim()).filter(Boolean) }));
         } else {
           const parts = (row.jawaban || '').split(',').map((s) => s.trim().toUpperCase());
@@ -119,9 +119,9 @@ export default function BankSoalForm() {
   }, [id, isEdit, navigate]);
 
   const buildJawabanValue = () => {
-    if (kategoriSoal === 'single_choice') return jawaban.single;
-    if (kategoriSoal === 'multi_choice') return jawaban.multi.sort().join(',');
-    if (kategoriSoal === 'benar_salah') {
+    if (kategoriSoal === 'pilgan') return jawaban.single;
+    if (kategoriSoal === 'pilgan_kompleks') return jawaban.multi.sort().join(',');
+    if (kategoriSoal === 'pilgan_kategori') {
       const filled = KOLOM_LABELS.filter((l) => kolom[l]?.trim());
       return filled.map((l) => (jawaban.benarSalah[l] === 'S' ? 'S' : 'B')).join(',');
     }
@@ -132,19 +132,19 @@ export default function BankSoalForm() {
     e.preventDefault();
     setFormError('');
     const filledKolom = KOLOM_LABELS.filter((l) => kolom[l]?.trim()).length;
-    if (kategoriSoal !== 'benar_salah' && filledKolom < 3) {
+    if (kategoriSoal !== 'pilgan_kategori' && filledKolom < 3) {
       setFormError('Minimal 3 kolom jawaban harus diisi.');
       return;
     }
-    if (kategoriSoal === 'single_choice' && !jawaban.single) {
+    if (kategoriSoal === 'pilgan' && !jawaban.single) {
       setFormError('Pilih satu jawaban yang benar.');
       return;
     }
-    if (kategoriSoal === 'multi_choice' && jawaban.multi.length === 0) {
+    if (kategoriSoal === 'pilgan_kompleks' && jawaban.multi.length === 0) {
       setFormError('Pilih minimal satu jawaban benar.');
       return;
     }
-    if ((kategoriSoal === 'single_choice' || kategoriSoal === 'multi_choice') && !soal.trim()) {
+    if ((kategoriSoal === 'pilgan' || kategoriSoal === 'pilgan_kompleks') && !soal.trim()) {
       setFormError('Pertanyaan wajib diisi.');
       return;
     }
@@ -269,7 +269,7 @@ export default function BankSoalForm() {
             </select>
           </div>
 
-          {(kategoriSoal === 'single_choice' || kategoriSoal === 'multi_choice') && (
+        {(kategoriSoal === 'pilgan' || kategoriSoal === 'pilgan_kompleks') && (
             <>
               <div className="form-group">
                 <label>Pertanyaan *</label>
@@ -282,7 +282,7 @@ export default function BankSoalForm() {
             </>
           )}
 
-          {kategoriSoal === 'benar_salah' && (
+        {kategoriSoal === 'pilgan_kategori' && (
             <>
               <div className="form-group">
                 <label>Pertanyaan (opsional)</label>
@@ -296,7 +296,7 @@ export default function BankSoalForm() {
           )}
 
           <div className="form-group">
-            <label>{kategoriSoal === 'benar_salah' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
+          <label>{kategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
             {KOLOM_LABELS.map((letter) => (
               <div key={letter} className="kolom-row">
                 <span className="kolom-letter">{letter}.</span>
@@ -304,9 +304,9 @@ export default function BankSoalForm() {
                   type="text"
                   value={kolom[letter]}
                   onChange={(e) => setKolom((k) => ({ ...k, [letter]: e.target.value }))}
-                  placeholder={kategoriSoal === 'benar_salah' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
+                placeholder={kategoriSoal === 'pilgan_kategori' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
                 />
-                {kategoriSoal === 'single_choice' && (
+              {kategoriSoal === 'pilgan' && (
                   <button
                     type="button"
                     className={`btn-check ${jawaban.single === letter ? 'active' : ''}`}
@@ -316,7 +316,7 @@ export default function BankSoalForm() {
                     <FiCheck />
                   </button>
                 )}
-                {kategoriSoal === 'multi_choice' && (
+              {kategoriSoal === 'pilgan_kompleks' && (
                   <button
                     type="button"
                     className={`btn-check ${jawaban.multi.includes(letter) ? 'active' : ''}`}
@@ -326,7 +326,7 @@ export default function BankSoalForm() {
                     <FiCheck />
                   </button>
                 )}
-                {kategoriSoal === 'benar_salah' && (
+              {kategoriSoal === 'pilgan_kategori' && (
                   <div className="benar-salah-btns">
                     <button
                       type="button"

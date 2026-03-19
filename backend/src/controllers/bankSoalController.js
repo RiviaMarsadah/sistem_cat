@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const prisma = require('../config/prisma');
 
-const KATEGORI = ['single_choice', 'multi_choice', 'benar_salah'];
+const KATEGORI = ['pilgan', 'pilgan_kompleks', 'pilgan_kategori'];
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
 const baseSchema = {
@@ -72,9 +72,9 @@ const benarSalahSchema = Joi.object({
 });
 
 function getSchema(kategori) {
-  if (kategori === 'single_choice') return singleChoiceSchema;
-  if (kategori === 'multi_choice') return multiChoiceSchema;
-  if (kategori === 'benar_salah') return benarSalahSchema;
+  if (kategori === 'pilgan') return singleChoiceSchema;
+  if (kategori === 'pilgan_kompleks') return multiChoiceSchema;
+  if (kategori === 'pilgan_kategori') return benarSalahSchema;
   return null;
 }
 

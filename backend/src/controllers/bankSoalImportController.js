@@ -2,7 +2,7 @@ const XLSX = require('xlsx');
 const prisma = require('../config/prisma');
 const { getSchema, normalizePayload } = require('./bankSoalController');
 
-const KATEGORI = ['single_choice', 'multi_choice', 'benar_salah'];
+const KATEGORI = ['pilgan', 'pilgan_kompleks', 'pilgan_kategori'];
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
 // Map header cell (flexible) to our field name
@@ -120,11 +120,11 @@ exports.importExcel = async (req, res) => {
     const kategori = payload.kategoriSoal && String(payload.kategoriSoal).trim().toLowerCase().replace(/\s+/g, '_');
     if (!kategori || !KATEGORI.includes(kategori)) {
       results.failed++;
-      results.errors.push({ row: rowNum, message: 'Kategori harus: single_choice, multi_choice, atau benar_salah' });
+      results.errors.push({ row: rowNum, message: 'Kategori harus: pilgan, pilgan_kompleks, atau pilgan_kategori' });
       continue;
     }
     payload.kategoriSoal = kategori;
-    if (kategori === 'benar_salah' && payload.jawaban) {
+    if (kategori === 'pilgan_kategori' && payload.jawaban) {
       payload.jawaban = normalizeJawabanBenarSalah(payload.jawaban);
     }
 
@@ -175,7 +175,7 @@ exports.downloadTemplate = (req, res) => {
     'Gambar',
   ];
   const exampleSingle = [
-    'single_choice',
+    'pilgan',
     'Siapa presiden pertama Indonesia?',
     'Soekarno',
     'Soeharto',
@@ -187,7 +187,7 @@ exports.downloadTemplate = (req, res) => {
     '',
   ];
   const exampleMulti = [
-    'multi_choice',
+    'pilgan_kompleks',
     'Yang termasuk bilangan prima adalah...',
     '2',
     '3',
@@ -199,7 +199,7 @@ exports.downloadTemplate = (req, res) => {
     '',
   ];
   const exampleBenarSalah = [
-    'benar_salah',
+    'pilgan_kategori',
     'Tentukan benar/salah pernyataan berikut.',
     'Bumi berbentuk bulat',
     'Matahari mengelilingi Bumi',
@@ -220,14 +220,14 @@ exports.downloadTemplate = (req, res) => {
     ['PANDUAN FORMAT IMPORT BANK SOAL'],
     [],
     ['Kolom di sheet "Soal" (baris pertama = header):'],
-    ['Kategori', 'single_choice | multi_choice | benar_salah'],
-    ['Soal', 'Teks pertanyaan (opsional untuk benar_salah)'],
-    ['Opsi A s/d F', 'Isi opsi atau pernyataan. Minimal 3 untuk single/multi, minimal 1 untuk benar_salah'],
+    ['Kategori', 'pilgan | pilgan_kompleks | pilgan_kategori'],
+    ['Soal', 'Teks pertanyaan (opsional untuk pilgan_kategori)'],
+    ['Opsi A s/d F', 'Isi opsi atau pernyataan. Minimal 3 untuk pilgan/pilgan_kompleks, minimal 1 untuk pilgan_kategori'],
     ['Jawaban', 'Single: satu huruf A-F. Multi: dipisah koma contoh A,B,D. Benar/Salah: B atau S per pernyataan, contoh B,B,S'],
     ['Gambar', 'URL gambar (opsional)'],
     [],
-    ['Contoh nilai Kategori: single_choice, multi_choice, benar_salah'],
-    ['Untuk benar_salah, isi Jawaban dengan B (Benar) dan S (Salah) sesuai urutan Opsi A, B, C, ...'],
+    ['Contoh nilai Kategori: pilgan, pilgan_kompleks, pilgan_kategori'],
+    ['Untuk pilgan_kategori, isi Jawaban dengan B (Benar) dan S (Salah) sesuai urutan Opsi A, B, C, ...'],
   ];
   const wsPanduan = XLSX.utils.aoa_to_sheet(panduanRows);
   wsPanduan['!cols'] = [{ wch: 50 }, { wch: 60 }];

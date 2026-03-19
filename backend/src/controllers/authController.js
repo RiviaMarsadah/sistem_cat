@@ -84,6 +84,134 @@ exports.googleCallback = async (req, res) => {
   }
 };
 
+// Google Sign-In untuk mobile (idToken langsung dari client)
+exports.mobileGoogleLogin = async (req, res) => {
+  const { idToken } = req.body || {};
+
+  if (!idToken) {
+    return res.status(400).json({
+      success: false,
+      message: 'idToken is required'
+    });
+  }
+
+  let payload;
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+
+    payload = ticket.getPayload();
+  } catch (error) {
+    // idToken invalid/expired/audience mismatch
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid idToken'
+    });
+  }
+
+  const email = (payload?.email || '').trim().toLowerCase();
+  const picture = payload?.picture || null;
+  const googleId = payload?.sub || null;
+
+  if (!email || !googleId) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid idToken'
+    });
+  }
+
+  // Cari user berdasarkan email dan muat relasi siswa->kelas
+  const user = await prisma.user.findUnique({
+    where: { email },
+    include: {
+      guru: true,
+      siswa: {
+        include: {
+          kelas: true
+        }
+      }
+    }
+  });
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found'
+    });
+  }
+
+  if (user.role !== 'siswa' || !user.siswa) {
+    return res.status(403).json({
+      success: false,
+      message: 'Akses ditolak. Hanya akun siswa yang dapat menggunakan aplikasi ini.'
+    });
+  }
+
+  // Update Google linkage (idempotent)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      googleId: googleId,
+      googlePicture: picture,
+      googleLinked: true
+    }
+  });
+
+  // Reload untuk memastikan relasi yang terbaru
+  const updatedUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: {
+      guru: true,
+      siswa: {
+        include: {
+          kelas: true
+        }
+      }
+    }
+  });
+
+  const token = jwt.sign(
+    {
+      userId: updatedUser.id,
+      role: updatedUser.role,
+      email: updatedUser.email
+    },
+    env.jwt.secret,
+    { expiresIn: env.jwt.expiresIn }
+  );
+
+  // Kirim hanya siswa.kelas (sesuai kebutuhan mobile)
+  const userData = {
+    id: updatedUser.id,
+    email: updatedUser.email,
+    role: updatedUser.role,
+    namaLengkap: updatedUser.namaLengkap,
+    status: updatedUser.status,
+    googleLinked: updatedUser.googleLinked,
+    googlePicture: updatedUser.googlePicture,
+    siswa: updatedUser.siswa
+      ? {
+          id: updatedUser.siswa.id,
+          kelas: updatedUser.siswa.kelas
+            ? {
+                id: updatedUser.siswa.kelas.id,
+                namaKelas: updatedUser.siswa.kelas.namaKelas,
+                tingkat: updatedUser.siswa.kelas.tingkat
+              }
+            : null
+        }
+      : null
+  };
+
+  return res.status(200).json({
+    success: true,
+    token,
+    user: userData
+  });
+};
+
 // Get current user profile
 exports.getProfile = async (req, res) => {
   try {

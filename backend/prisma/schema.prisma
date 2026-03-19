@@ -102,9 +102,9 @@ model Siswa {
 }
 
 enum KategoriSoal {
-  single_choice
-  multi_choice
-  benar_salah
+  pilgan
+  pilgan_kompleks
+  pilgan_kategori
 }
 
 enum KategoriMapel {

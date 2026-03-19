@@ -5,9 +5,9 @@ import api from '../../services/api';
 import './BankSoal.css';
 
 const KATEGORI_OPTIONS = [
-  { value: 'single_choice', label: 'Single Choice (Pilihan Ganda)' },
-  { value: 'multi_choice', label: 'Multi Choice (Banyak Jawaban Benar)' },
-  { value: 'benar_salah', label: 'Pernyataan Benar/Salah' },
+  { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
+  { value: 'pilgan_kompleks', label: 'Pilihan Ganda Kompleks' },
+  { value: 'pilgan_kategori', label: 'Pilihan Ganda Kategori' },
 ];
 
 const TINGKAT_OPTIONS = [
@@ -295,15 +295,15 @@ export default function BankSoal() {
                   <tr><th>Kolom</th><th>Keterangan</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td><code>Kategori</code></td><td><code>single_choice</code> | <code>multi_choice</code> | <code>benar_salah</code></td></tr>
-                  <tr><td><code>Soal</code></td><td>Teks pertanyaan (opsional untuk benar_salah)</td></tr>
-                  <tr><td><code>Opsi A</code> s/d <code>Opsi F</code></td><td>Isi opsi atau pernyataan. Minimal 3 untuk single/multi choice, minimal 1 untuk benar_salah</td></tr>
+                  <tr><td><code>Kategori</code></td><td><code>pilgan</code> | <code>pilgan_kompleks</code> | <code>pilgan_kategori</code></td></tr>
+                  <tr><td><code>Soal</code></td><td>Teks pertanyaan (opsional untuk <code>pilgan_kategori</code>)</td></tr>
+                  <tr><td><code>Opsi A</code> s/d <code>Opsi F</code></td><td>Isi opsi atau pernyataan. Minimal 3 untuk <code>pilgan</code>/<code>pilgan_kompleks</code>, minimal 1 untuk <code>pilgan_kategori</code></td></tr>
                   <tr><td><code>Jawaban</code></td><td>Single: satu huruf A–F. Multi: dipisah koma, contoh <code>A,B,D</code>. Benar/Salah: B atau S per pernyataan, contoh <code>B,B,S</code></td></tr>
                   <tr><td><code>Gambar</code></td><td>URL gambar (opsional)</td></tr>
                 </tbody>
               </table>
-              <p><strong>Contoh nilai Kategori:</strong> <code>single_choice</code>, <code>multi_choice</code>, <code>benar_salah</code></p>
-              <p>Untuk <strong>benar_salah</strong>, isi Jawaban dengan <strong>B</strong> (Benar) dan <strong>S</strong> (Salah) sesuai urutan Opsi A, B, C, …</p>
+              <p><strong>Contoh nilai Kategori:</strong> <code>pilgan</code>, <code>pilgan_kompleks</code>, <code>pilgan_kategori</code></p>
+              <p>Untuk <strong>pilgan_kategori</strong>, isi Jawaban dengan <strong>B</strong> (Benar) dan <strong>S</strong> (Salah) sesuai urutan Opsi A, B, C, …</p>
               <p>Gunakan file template yang didownload agar format kolom sesuai.</p>
             </div>
           </div>

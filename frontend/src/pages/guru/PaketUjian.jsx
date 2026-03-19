@@ -12,9 +12,9 @@ const TIPE_OPTIONS = [
 ];
 
 const KATEGORI_OPTIONS = [
-  { value: 'single_choice', label: 'Single Choice' },
-  { value: 'multi_choice', label: 'Multi Choice' },
-  { value: 'benar_salah', label: 'Benar/Salah' },
+  { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
+  { value: 'pilgan_kompleks', label: 'Pilihan Ganda Kompleks' },
+  { value: 'pilgan_kategori', label: 'Pilihan Ganda Kategori' },
 ];
 
 function tingkatToDisplay(t) {

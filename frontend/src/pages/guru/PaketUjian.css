@@ -427,9 +427,9 @@
   font-weight: 600;
 }
 
-.badge-single_choice { background: #dbeafe; color: #1e40af; }
-.badge-multi_choice  { background: #d1fae5; color: #065f46; }
-.badge-benar_salah   { background: #fef3c7; color: #92400e; }
+.badge-pilgan { background: #dbeafe; color: #1e40af; }
+.badge-pilgan_kompleks  { background: #d1fae5; color: #065f46; }
+.badge-pilgan_kategori  { background: #fef3c7; color: #92400e; }
 
 .sr-only {
   position: absolute;
