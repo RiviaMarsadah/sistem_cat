@@ -10,7 +10,7 @@ async function main() {
   const existingUsers = await prisma.user.findMany({
     where: {
       email: {
-        in: ['riviadimong321@gmail.com', 'riviamarsadah@gmail.com']
+        in: ['riviadimong321@gmail.com', 'riviamarsadah@gmail.com', 'uiiconnect.dev@gmail.com']
       }
     }
   });
@@ -34,6 +34,14 @@ async function main() {
       password: null, // No password for SSO users
       role: 'admin',
       namaLengkap: 'Rivia Marsadah',
+      status: 'aktif',
+      googleLinked: false
+    },
+    {
+      email: 'uiiconnect.dev@gmail.com',
+      password: null, // No password for SSO users
+      role: 'siswa',
+      namaLengkap: 'Rivia Teladan',
       status: 'aktif',
       googleLinked: false
     }
@@ -61,6 +69,20 @@ async function main() {
         data: {
           userId: user.id,
           nip: null // NIP bisa diisi nanti
+        }
+      });
+    }
+
+    // Create siswa record only for siswa role
+    if (userData.role === 'siswa') {
+      await prisma.siswa.create({
+        data: {
+          userId: user.id,
+          nis: null,
+          nisn: null,
+          kelasId: null,
+          noTelp: null,
+          jenisKelamin: null,
         }
       });
     }
