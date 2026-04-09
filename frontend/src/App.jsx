@@ -6,12 +6,16 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminJurusan from './pages/admin/Jurusan';
 import AdminKelas from './pages/admin/Kelas';
 import AdminUser from './pages/admin/User';
+import AdminSiswa from './pages/admin/Siswa';
+import AdminGuru from './pages/admin/Guru';
 import AdminMataPelajaran from './pages/admin/MataPelajaran';
 import GuruDashboard from './pages/guru/Dashboard';
 import GuruBankSoal from './pages/guru/BankSoal';
 import GuruBankSoalForm from './pages/guru/BankSoalForm';
 import GuruPaketUjian from './pages/guru/PaketUjian';
 import GuruPaketUjianForm from './pages/guru/PaketUjianForm';
+import AdminJadwalUjian from './pages/admin/JadwalUjian';
+import GuruJadwalUjian from './pages/guru/JadwalUjian';
 
 function App() {
   return (
@@ -29,6 +33,9 @@ function App() {
             <Route path="mata-pelajaran" element={<AdminMataPelajaran />} />
             <Route path="kelas" element={<AdminKelas />} />
             <Route path="user" element={<AdminUser />} />
+            <Route path="siswa" element={<AdminSiswa />} />
+            <Route path="guru" element={<AdminGuru />} />
+            <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -41,6 +48,7 @@ function App() {
             <Route path="paket-ujian" element={<GuruPaketUjian />} />
             <Route path="paket-ujian/tambah" element={<GuruPaketUjianForm />} />
             <Route path="paket-ujian/edit/:id" element={<GuruPaketUjianForm />} />
+            <Route path="jadwal-ujian" element={<GuruJadwalUjian />} />
             <Route path="*" element={<Navigate to="/guru/dashboard" replace />} />
           </Route>
         </Routes>

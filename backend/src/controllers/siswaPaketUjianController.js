@@ -64,25 +64,29 @@ exports.getPaketUjianByTokenCheckIn = async (req, res) => {
   }
 
   try {
-    const paketUjian = await prisma.paketUjian.findFirst({
-      where: { tokenCheckIn },
+    const jadwal = await prisma.jadwalUjian.findFirst({
+      where: { token: tokenCheckIn },
       include: {
-        mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
-        soalPaket: {
+        paketUjian: {
           include: {
-            bankSoal: {
-              select: {
-                id: true,
-                soal: true,
-                kategoriSoal: true,
-                jawaban: true,
-                gambar: true,
-                kolomA: true,
-                kolomB: true,
-                kolomC: true,
-                kolomD: true,
-                kolomE: true,
-                kolomF: true,
+            mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
+            soalPaket: {
+              include: {
+                bankSoal: {
+                  select: {
+                    id: true,
+                    soal: true,
+                    kategoriSoal: true,
+                    jawaban: true,
+                    gambar: true,
+                    kolomA: true,
+                    kolomB: true,
+                    kolomC: true,
+                    kolomD: true,
+                    kolomE: true,
+                    kolomF: true,
+                  },
+                },
               },
             },
           },
@@ -90,9 +94,11 @@ exports.getPaketUjianByTokenCheckIn = async (req, res) => {
       },
     });
 
-    if (!paketUjian) {
-      return res.status(404).json({ success: false, message: 'Paket ujian tidak ditemukan untuk token tersebut' });
+    if (!jadwal || !jadwal.paketUjian) {
+      return res.status(404).json({ success: false, message: 'Token tidak valid atau jadwal tidak ditemukan' });
     }
+
+    const paketUjian = jadwal.paketUjian;
 
     // Preserve stable order by soalPaket id ascending.
     const soal = (paketUjian.soalPaket || [])
@@ -111,6 +117,7 @@ exports.getPaketUjianByTokenCheckIn = async (req, res) => {
           mataPelajaran: paketUjian.mataPelajaran,
           tingkat: paketUjian.tingkat,
           tipeUjian: paketUjian.tipeUjian,
+          jadwalId: jadwal.id, // Optional: useful for the mobile app
         },
         soal,
         totalQuestions: soal.length,

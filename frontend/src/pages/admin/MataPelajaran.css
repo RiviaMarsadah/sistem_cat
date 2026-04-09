@@ -165,10 +165,12 @@
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: #ffffff;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mapel-row-head {
-  border: none;
+  border: 1px solid transparent; /* Match border width for alignment */
   background: transparent;
   padding: 0 0.75rem;
 }
@@ -486,4 +488,45 @@
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
+}
+
+/* Theme alignment with Guru pages */
+.mapel-header {
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.mapel-title {
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.mapel-title .title-badge {
+  box-shadow: none;
+}
+
+.mapel-meta .meta-card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.mapel-card {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.mapel-row {
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.btn-add-mapel {
+  border-radius: 10px;
+}
+
+.btn-add-mapel .btn-icon {
+  width: 26px; /* Increased from 22px */
+  height: 26px; /* Increased from 22px */
+  font-size: 1.4rem; /* Increased from 1.2rem */
 }

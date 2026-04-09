@@ -46,6 +46,9 @@ function isPrismaUniqueError(err) {
 exports.list = async (req, res) => {
   try {
     const items = await prisma.user.findMany({
+      where: {
+        role: 'admin'
+      },
       select: {
         id: true,
         email: true,

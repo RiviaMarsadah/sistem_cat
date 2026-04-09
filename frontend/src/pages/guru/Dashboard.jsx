@@ -1,33 +1,66 @@
-import { FiFileText, FiPackage, FiActivity, FiTrendingUp, FiClock } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiFileText, FiPackage, FiCalendar, FiLayers } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import api from '../../services/api';
 import './Dashboard.css';
 
 const GuruDashboard = () => {
-  // Statistik (sementara hardcoded, nanti akan dari API)
-  const aktifPaket = 0;
-  const totalPaket = 0;
-  const selesaiPaket = 0;
-  const totalSoal = 0;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [ringkasan, setRingkasan] = useState({
+    totalNamaBankSoal: 0,
+    totalSoalDiBankSoal: 0,
+    totalPaketUjian: 0,
+    totalJadwalUjian: 0,
+  });
+
+  useEffect(() => {
+    const loadRingkasan = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [koleksiRes, bankSoalRes, paketRes, jadwalCustomRes] = await Promise.all([
+          api.get('/guru/bank-soal-koleksi'),
+          api.get('/guru/bank-soal'),
+          api.get('/guru/paket-ujian'),
+          api.get('/guru/jadwal-ujian/custom'),
+        ]);
+
+        setRingkasan({
+          totalNamaBankSoal: koleksiRes.data?.data?.length || 0,
+          totalSoalDiBankSoal: bankSoalRes.data?.data?.length || 0,
+          totalPaketUjian: paketRes.data?.data?.length || 0,
+          totalJadwalUjian: jadwalCustomRes.data?.data?.length || 0,
+        });
+      } catch (e) {
+        setError(e?.response?.data?.message || 'Gagal memuat ringkasan dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRingkasan();
+  }, []);
 
   const stats = [
     {
-      title: 'Ujian Aktif',
-      value: aktifPaket,
-      icon: FiActivity,
+      title: 'Total Bank Soal',
+      value: ringkasan.totalNamaBankSoal,
+      icon: FiLayers,
     },
     {
       title: 'Total Paket Ujian',
-      value: totalPaket,
+      value: ringkasan.totalPaketUjian,
       icon: FiPackage,
     },
     {
-      title: 'Ujian Selesai',
-      value: selesaiPaket,
-      icon: FiClock,
+      title: 'Total Jadwal Ujian',
+      value: ringkasan.totalJadwalUjian,
+      icon: FiCalendar,
     },
     {
-      title: 'Total Soal',
-      value: totalSoal,
+      title: 'Total Soal (Bank Soal)',
+      value: ringkasan.totalSoalDiBankSoal,
       icon: FiFileText,
     },
   ];
@@ -40,67 +73,52 @@ const GuruDashboard = () => {
             <span className="title-text">Dashboard</span>
             <span className="title-badge guru-badge">Guru</span>
           </h1>
-          <p className="page-subtitle">Ringkasan aktivitas dan ujian Anda</p>
+          <p className="page-subtitle">Ringkasan data ujian dan akses cepat menu utama</p>
         </div>
       </div>
 
-      {/* Statistik Cards */}
+      {error && <div className="dashboard-error">{error}</div>}
+
       <div className="stats-grid">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.title} className="stat-card guru-stat-card" style={{ animationDelay: `${index * 0.1}s` }}>
+            <div key={stat.title} className="stat-card guru-stat-card" style={{ animationDelay: `${index * 0.06}s` }}>
               <div className="stat-icon-wrapper">
                 <Icon className="stat-icon" />
               </div>
               <div className="stat-content">
-                <h3 className="stat-value">{stat.value}</h3>
+                <h3 className="stat-value">{loading ? '...' : stat.value}</h3>
                 <p className="stat-title">{stat.title}</p>
-              </div>
-              <div className="stat-arrow">
-                <FiTrendingUp />
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Ujian Aktif */}
-      <div className="ujian-section">
-        <div className="section-header">
-          <h2 className="section-title">Ujian Aktif</h2>
-          <p className="section-subtitle">Daftar ujian yang sedang berlangsung</p>
-        </div>
-        <div className="empty-state">
-          <FiActivity className="empty-icon" />
-          <p>Tidak ada ujian aktif saat ini</p>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
       <div className="quick-actions">
         <div className="section-header">
           <h2 className="section-title">Quick Actions</h2>
-          <p className="section-subtitle">Akses cepat ke fitur utama</p>
+          <p className="section-subtitle">Akses cepat ke menu yang paling sering dipakai</p>
         </div>
         <div className="actions-grid">
           <Link to="/guru/bank-soal" className="action-card guru-action-card">
             <div className="action-icon-wrapper">
               <FiFileText className="action-icon" />
             </div>
-            <span className="action-label">Tambah Soal</span>
+            <span className="action-label">Bank Soal</span>
           </Link>
           <Link to="/guru/paket-ujian" className="action-card guru-action-card">
             <div className="action-icon-wrapper">
               <FiPackage className="action-icon" />
             </div>
-            <span className="action-label">Buat Paket Ujian</span>
+            <span className="action-label">Paket Ujian</span>
           </Link>
-          <Link to="/guru/monitoring" className="action-card guru-action-card">
+          <Link to="/guru/jadwal-ujian" className="action-card guru-action-card">
             <div className="action-icon-wrapper">
-              <FiActivity className="action-icon" />
+              <FiCalendar className="action-icon" />
             </div>
-            <span className="action-label">Monitoring Ujian</span>
+            <span className="action-label">Jadwal Ujian</span>
           </Link>
         </div>
       </div>

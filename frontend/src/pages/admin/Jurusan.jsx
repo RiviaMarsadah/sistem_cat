@@ -265,7 +265,7 @@ const AdminJurusan = () => {
 
       {/* Add Jurusan Modal */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={handleCloseAddModal}>
+        <div className="modal-overlay">
           <div className="modal-container modal-form" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">Tambah Jurusan Baru</h3>
@@ -356,7 +356,7 @@ const AdminJurusan = () => {
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="modal-overlay" onClick={handleCancelConfirm}>
+        <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className={`modal-icon-wrapper ${

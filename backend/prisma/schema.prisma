@@ -49,21 +49,21 @@ enum JenisKelamin {
 }
 
 model User {
-  id           Int        @id @default(autoincrement())
-  email        String     @unique @db.VarChar(100)
-  password     String?    @db.VarChar(255)
-  role         UserRole
-  namaLengkap  String     @map("nama_lengkap") @db.VarChar(100)
-  status       UserStatus @default(aktif)
-  googleId     String?    @unique @map("google_id") @db.VarChar(255)
-  googlePicture String?   @map("google_picture") @db.VarChar(500)
-  googleLinked Boolean    @default(false) @map("google_linked")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
+  id            Int        @id @default(autoincrement())
+  email         String     @unique @db.VarChar(100)
+  password      String?    @db.VarChar(255)
+  role          UserRole
+  namaLengkap   String     @map("nama_lengkap") @db.VarChar(100)
+  status        UserStatus @default(aktif)
+  googleId      String?    @unique @map("google_id") @db.VarChar(255)
+  googlePicture String?    @map("google_picture") @db.VarChar(500)
+  googleLinked  Boolean    @default(false) @map("google_linked")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  guru   Guru?
-  siswa  Siswa?
+  guru  Guru?
+  siswa Siswa?
 
   @@map("users")
 }
@@ -76,27 +76,44 @@ model Guru {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  bankSoal     BankSoal[]
-  paketUjian   PaketUjian[]
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankSoal        BankSoal[]
+  bankSoalKoleksi BankSoalKoleksi[]
+  paketUjian      PaketUjian[]
+  jadwalUjians    JadwalUjian[]
 
   @@map("guru")
 }
 
+model BankSoalKoleksi {
+  id        Int      @id @default(autoincrement())
+  guruId    Int      @map("guru_id")
+  nama      String   @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  guru     Guru       @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  bankSoal BankSoal[]
+
+  @@unique([guruId, nama])
+  @@map("bank_soal_koleksi")
+}
+
 model Siswa {
-  id          Int          @id @default(autoincrement())
-  userId      Int          @unique @map("user_id")
-  nis         String?      @unique @db.VarChar(20)
-  nisn        String?      @unique @db.VarChar(20)
-  kelasId     Int?         @map("kelas_id")
-  noTelp      String?      @map("no_telp") @db.VarChar(20)
+  id           Int           @id @default(autoincrement())
+  userId       Int           @unique @map("user_id")
+  nis          String?       @unique @db.VarChar(20)
+  nisn         String?       @unique @db.VarChar(20)
+  kelasId      Int?          @map("kelas_id")
+  noTelp       String?       @map("no_telp") @db.VarChar(20)
   jenisKelamin JenisKelamin? @map("jenis_kelamin")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
   // Relations
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  kelas Kelas? @relation(fields: [kelasId], references: [id])
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kelas      Kelas?       @relation(fields: [kelasId], references: [id])
+  ujianSiswa UjianSiswa[]
 
   @@map("siswa")
 }
@@ -107,23 +124,35 @@ enum KategoriSoal {
   pilgan_kategori
 }
 
+enum StatusUjianSiswa {
+  berlangsung
+  selesai
+}
+
+enum StatusJawabanSiswa {
+  dijawab
+  kosong
+  ragu_ragu
+}
+
 enum KategoriMapel {
   prodi
   muatan_lokal
 }
 
 model MataPelajaran {
-  id         Int            @id @default(autoincrement())
-  namaMapel  String         @map("nama_mapel") @db.VarChar(100)
-  kodeMapel  String?        @unique @map("kode_mapel") @db.VarChar(20)
-  deskripsi  String?        @db.Text
-  kategori   KategoriMapel  @default(prodi)
-  jurusanId  Int?           @map("jurusan_id")
-  createdAt  DateTime       @default(now()) @map("created_at")
+  id        Int           @id @default(autoincrement())
+  namaMapel String        @map("nama_mapel") @db.VarChar(100)
+  kodeMapel String?       @unique @map("kode_mapel") @db.VarChar(20)
+  deskripsi String?       @db.Text
+  kategori  KategoriMapel @default(prodi)
+  jurusanId Int?          @map("jurusan_id")
+  createdAt DateTime      @default(now()) @map("created_at")
 
-  jurusan     Jurusan?     @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
-  bankSoal    BankSoal[]
-  paketUjian  PaketUjian[]
+  jurusan      Jurusan?      @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  bankSoal     BankSoal[]
+  paketUjian   PaketUjian[]
+  jadwalUjians JadwalUjian[]
 
   @@map("mata_pelajaran")
 }
@@ -138,8 +167,9 @@ model Kelas {
   updatedAt DateTime     @updatedAt @map("updated_at")
 
   // Relations
-  siswa   Siswa[]
-  jurusan Jurusan  @relation(fields: [jurusanId], references: [id])
+  siswa        Siswa[]
+  jurusan      Jurusan       @relation(fields: [jurusanId], references: [id])
+  kelasJadwals KelasJadwal[]
 
   @@unique([tingkat, jurusanId, inisial])
   @@map("kelas")
@@ -153,15 +183,16 @@ model Jurusan {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  kelas          Kelas[]
+  kelas         Kelas[]
   mataPelajaran MataPelajaran[]
-  bankSoal       BankSoal[]
+  bankSoal      BankSoal[]
 
   @@map("jurusan")
 }
 
 model BankSoal {
   id                Int          @id @default(autoincrement())
+  bankSoalKoleksiId Int?         @map("bank_soal_koleksi_id")
   mataPelajaranId   Int          @map("mata_pelajaran_id")
   tingkat           TingkatSoal
   jurusanId         Int?         @map("jurusan_id")
@@ -179,42 +210,126 @@ model BankSoal {
   createdAt         DateTime     @default(now()) @map("created_at")
   updatedAt         DateTime     @updatedAt @map("updated_at")
 
-  mataPelajaran MataPelajaran   @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
-  jurusan       Jurusan?       @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
-  guru          Guru            @relation(fields: [guruId], references: [id], onDelete: Cascade)
-  soalPaketUjian SoalPaketUjian[]
+  bankSoalKoleksi BankSoalKoleksi? @relation(fields: [bankSoalKoleksiId], references: [id], onDelete: SetNull)
+  mataPelajaran   MataPelajaran    @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  jurusan         Jurusan?         @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  guru            Guru             @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  soalPaketUjian  SoalPaketUjian[]
+  jawabanSiswa    JawabanSiswa[]
 
   @@map("bank_soal")
 }
 
 model PaketUjian {
-  id                Int       @id @default(autoincrement())
-  nama              String    @map("nama") @db.VarChar(200)
-  mataPelajaranId   Int       @map("mata_pelajaran_id")
-  tingkat           TingkatSoal
-  tipeUjian         TipeUjian @map("tipe_ujian")
-  tokenCheckIn      String    @map("token_checkin") @db.VarChar(6)
-  tokenCheckOut     String    @map("token_checkout") @db.VarChar(6)
-  guruId            Int       @map("guru_id")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  id              Int         @id @default(autoincrement())
+  nama            String      @map("nama") @db.VarChar(200)
+  mataPelajaranId Int         @map("mata_pelajaran_id")
+  tingkat         TingkatSoal
+  tipeUjian       TipeUjian   @map("tipe_ujian")
+  guruId          Int         @map("guru_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
 
-  mataPelajaran MataPelajaran   @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
-  guru          Guru            @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mataPelajaran MataPelajaran    @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  guru          Guru             @relation(fields: [guruId], references: [id], onDelete: Cascade)
   soalPaket     SoalPaketUjian[]
+  jadwalUjian   JadwalUjian[]
 
   @@map("paket_ujian")
 }
 
 model SoalPaketUjian {
-  id             Int       @id @default(autoincrement())
-  paketUjianId   Int       @map("paket_ujian_id")
-  bankSoalId     Int       @map("bank_soal_id")
-  createdAt      DateTime  @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  paketUjianId Int      @map("paket_ujian_id")
+  bankSoalId   Int      @map("bank_soal_id")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   paketUjian PaketUjian @relation(fields: [paketUjianId], references: [id], onDelete: Cascade)
-  bankSoal   BankSoal  @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
+  bankSoal   BankSoal   @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
 
   @@unique([paketUjianId, bankSoalId])
   @@map("soal_paket_ujian")
+}
+
+model JadwalUjian {
+  id              Int      @id @default(autoincrement())
+  nama            String   @db.VarChar(100)
+  mataPelajaranId Int      @map("mata_pelajaran_id")
+  mulai           DateTime @map("mulai_pada")
+  selesai         DateTime @map("selesai_pada")
+  durasi          Int      @default(60)
+  token           String?  @db.VarChar(6)
+  tokenCheckOut   String?  @map("token_checkout") @db.VarChar(6)
+
+  guruId       Int?    @map("guru_id")
+  opsiKeamanan Boolean @default(false) @map("opsi_keamanan")
+
+  paketUjianId Int? @map("paket_ujian_id")
+
+  mataPelajaran MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  paketUjian    PaketUjian?   @relation(fields: [paketUjianId], references: [id], onDelete: SetNull)
+  guru          Guru?         @relation(fields: [guruId], references: [id], onDelete: Cascade)
+
+  kelasJadwal KelasJadwal[]
+  ujianSiswa  UjianSiswa[]
+
+  @@map("jadwal_ujian")
+}
+
+model KelasJadwal {
+  id            Int @id @default(autoincrement())
+  jadwalUjianId Int @map("jadwal_ujian_id")
+  kelasId       Int @map("kelas_id")
+
+  jadwal JadwalUjian @relation(fields: [jadwalUjianId], references: [id], onDelete: Cascade)
+  kelas  Kelas       @relation(fields: [kelasId], references: [id], onDelete: Cascade)
+
+  @@unique([jadwalUjianId, kelasId])
+  @@map("kelas_jadwal")
+}
+
+model UjianSiswa {
+  id            Int              @id @default(autoincrement())
+  siswaId       Int              @map("siswa_id")
+  jadwalUjianId Int              @map("jadwal_ujian_id")
+  status        StatusUjianSiswa @default(berlangsung)
+  randomSeed    Int              @map("random_seed")
+  totalSoal     Int              @default(0) @map("total_soal")
+  benar         Int              @default(0)
+  salah         Int              @default(0)
+  kosong        Int              @default(0)
+  raguRagu      Int              @default(0) @map("ragu_ragu")
+  nilaiAkhir    Decimal          @default(0) @map("nilai_akhir") @db.Decimal(5, 2)
+  mulaiPada     DateTime         @default(now()) @map("mulai_pada")
+  selesaiPada   DateTime?        @map("selesai_pada")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  siswa        Siswa          @relation(fields: [siswaId], references: [id], onDelete: Cascade)
+  jadwalUjian  JadwalUjian    @relation(fields: [jadwalUjianId], references: [id], onDelete: Cascade)
+  jawabanSiswa JawabanSiswa[]
+
+  @@unique([siswaId, jadwalUjianId])
+  @@map("ujian_siswa")
+}
+
+model JawabanSiswa {
+  id            Int                @id @default(autoincrement())
+  ujianSiswaId  Int                @map("ujian_siswa_id")
+  bankSoalId    Int                @map("bank_soal_id")
+  nomorSoal     Int                @map("nomor_soal")
+  tipeSoal      KategoriSoal       @map("tipe_soal")
+  jawabanSiswa  String?            @map("jawaban_siswa") @db.VarChar(255)
+  statusJawaban StatusJawabanSiswa @default(kosong) @map("status_jawaban")
+  isBenar       Boolean?           @map("is_benar")
+  skorItem      Decimal            @default(0) @map("skor_item") @db.Decimal(5, 2)
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+
+  ujian    UjianSiswa @relation(fields: [ujianSiswaId], references: [id], onDelete: Cascade)
+  bankSoal BankSoal   @relation(fields: [bankSoalId], references: [id], onDelete: Cascade)
+
+  @@unique([ujianSiswaId, bankSoalId])
+  @@index([ujianSiswaId, nomorSoal])
+  @@map("jawaban_siswa")
 }

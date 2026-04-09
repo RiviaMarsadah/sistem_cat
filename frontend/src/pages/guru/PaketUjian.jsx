@@ -88,7 +88,7 @@ export default function PaketUjian() {
             <span className="title-text">Paket Ujian</span>
             <span className="title-badge guru-badge">Guru</span>
           </h1>
-          <p className="page-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) beserta token check-in/checkout</p>
+          <p className="page-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
         </div>
         <Link to="/guru/paket-ujian/tambah" className="btn-tambah">
           <FiPlus /> Buat Paket Ujian
@@ -110,8 +110,6 @@ export default function PaketUjian() {
                 <th>Tingkat</th>
                 <th>Tipe</th>
                 <th>Jumlah Soal</th>
-                <th>Token Check-in</th>
-                <th>Token Checkout</th>
                 <th>Aksi</th>
               </tr>
             </thead>
@@ -131,8 +129,6 @@ export default function PaketUjian() {
                     <td>{tingkatToDisplay(row.tingkat)}</td>
                     <td>{TIPE_OPTIONS.find((o) => o.value === row.tipeUjian)?.label || row.tipeUjian}</td>
                     <td>{row._count?.soalPaket ?? 0}</td>
-                    <td><code className="token-code">{row.tokenCheckIn}</code></td>
-                    <td><code className="token-code">{row.tokenCheckOut}</code></td>
                     <td>
                       <button
                         type="button"

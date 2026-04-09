@@ -334,7 +334,7 @@ export default function MataPelajaran() {
 
       {/* Modal Tambah */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={closeAddModal}>
+        <div className="modal-overlay">
           <div className="modal-container modal-form" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">Tambah Mata Pelajaran</h3>
@@ -443,7 +443,7 @@ export default function MataPelajaran() {
 
       {/* Modal Konfirmasi Hapus */}
       {showConfirmModal && confirmData && (
-        <div className="modal-overlay" onClick={closeConfirmModal}>
+        <div className="modal-overlay">
           <div className="modal-container modal-confirm" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">Konfirmasi Hapus</h3>

@@ -199,6 +199,30 @@
   line-height: 1.5;
 }
 
+.user-alert, .user-success {
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.user-alert {
+  background: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #b91c1c;
+}
+
+.user-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
 .user-form {
   width: 100%;
 }
@@ -211,7 +235,7 @@
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 
@@ -488,17 +512,19 @@ select.input:focus {
 
 .user-row {
   display: grid;
-  grid-template-columns: 2fr 2fr 120px 120px auto;
+  grid-template-columns: 2.5fr 2.5fr 120px auto;
   gap: 1rem;
   align-items: center;
   padding: 0.85rem 0.75rem;
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .user-row-head {
-  border: none;
+  border: 1px solid transparent; /* Match border width for alignment */
   background: transparent;
   padding: 0 0.75rem;
 }
@@ -521,7 +547,7 @@ select.input:focus {
   flex-wrap: wrap;
   justify-content: flex-end;
   align-items: center;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .edit-actions-wrapper {
@@ -529,7 +555,7 @@ select.input:focus {
   flex-direction: column;
   gap: 0.75rem;
   width: 100%;
-  min-width: 250px;
+  min-width: 0;
 }
 
 .action-buttons {
@@ -655,7 +681,7 @@ select.input:focus {
 }
 
 .modal-container.modal-form {
-  max-width: 520px;
+  max-width: 680px;
 }
 
 @keyframes slideUpModal {
@@ -1054,4 +1080,290 @@ select.input:focus {
     min-width: auto;
   }
 }
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e2e8f0;
+  transition: .4s;
+  border-radius: 34px;
+  border: 1px solid #cbd5e1;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+input:checked + .toggle-slider {
+  background-color: #22c55e;
+  border-color: #16a34a;
+}
+
+input:focus + .toggle-slider {
+  box-shadow: 0 0 1px #22c55e;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.toggle-label-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+/* Modal Behavior Refinement */
+.modal-overlay {
+  /* Prevent interaction with background when modal is open */
+  cursor: default; 
+}
+
+/* Import Excel Modal Styles */
+.import-instruction {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.import-instruction h4 {
+  margin: 0 0 0.5rem 0;
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.import-instruction ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.btn-download-template {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  transition: color 0.2s;
+}
+
+.btn-download-template:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}
+
+.file-upload-area {
+  border: 2px dashed #e2e8f0;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #ffffff;
+}
+
+.file-upload-area:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.02);
+}
+
+.file-upload-area.dragging {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.file-upload-icon {
+  font-size: 2.5rem;
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.file-upload-text {
+  display: block;
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.file-upload-subtext {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.selected-file-info {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.file-info-icon {
+  font-size: 1.5rem;
+  color: #16a34a;
+  flex-shrink: 0;
+}
+
+.file-details {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #15803d;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-remove-file {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-remove-file:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.import-results {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+}
+
+.result-item:not(:last-child) {
+  border-bottom: 1px dashed #e2e8f0;
+}
+
+.result-label {
+  color: #64748b;
+}
+
+.result-val {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+/* Theme alignment with Guru pages */
+.user-header {
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.user-title {
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.user-title .title-badge {
+  box-shadow: none;
+}
+
+.meta-card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.user-card {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.user-row {
+  background: #ffffff;
+  border-radius: 10px;
+}
+
+.user-row:hover {
+  background: #f8fafc;
+}
+
+.btn-add-user {
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-add-user .btn-icon {
+  width: 26px; /* Increased from 22px */
+  height: 26px; /* Increased from 22px */
+  font-size: 1.4rem; /* Increased from 1.2rem */
+}
+
+.user-row > div {
+  text-align: left;
+}
+
+.user-row-head > div {
+  text-align: left;
+}
+
 

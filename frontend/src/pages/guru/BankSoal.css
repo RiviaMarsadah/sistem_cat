@@ -10,17 +10,21 @@
 
 .bank-soal-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
 }
 
 .bank-soal-header .page-title {
-  font-size: 2rem;
+  font-size: 1.65rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .bank-soal-header .page-subtitle {
@@ -75,15 +79,6 @@
   background: #eff6ff;
 }
 
-/* Import section - sama seperti form section Paket Ujian */
-.bank-soal-import-section {
-  margin-bottom: 1.5rem;
-  padding: 1.25rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-}
-
 .import-section-title {
   margin: 0 0 0.75rem 0;
   font-size: 1.1rem;
@@ -127,9 +122,7 @@
   color: #1e40af;
 }
 
-.import-form {
-  margin-top: 0.5rem;
-}
+.import-form { margin-top: 0.5rem; }
 
 .import-form-row {
   display: flex;
@@ -188,6 +181,26 @@
   border-color: #fde047;
 }
 
+.bank-soal-notice {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.bank-soal-notice.success {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.bank-soal-notice.error {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
 .import-errors-list {
   margin: 0.5rem 0 0 0;
   padding-left: 1.25rem;
@@ -239,7 +252,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   padding: 1.25rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -272,7 +285,8 @@
   letter-spacing: 0.02em;
 }
 
-.filter-group select {
+.filter-group select,
+.filter-group input[type="text"] {
   width: 100%;
   padding: 0.65rem 0.85rem;
   border: 2px solid #cbd5e1;
@@ -282,7 +296,8 @@
   color: #0f172a;
 }
 
-.filter-group select:focus {
+.filter-group select:focus,
+.filter-group input[type="text"]:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -307,7 +322,7 @@
   overflow-x: auto;
   background: #fff;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -349,7 +364,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 1rem;
+  margin-top: 0.85rem;
   padding: 1rem 1.25rem;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -473,6 +488,14 @@
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
 }
 
+.import-modal {
+  max-width: 860px;
+}
+
+.import-modal-body {
+  padding: 1.2rem 1.5rem 1.4rem;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -488,14 +511,21 @@
 
 .modal-close {
   background: none;
-  border: none;
-  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   cursor: pointer;
   color: #64748b;
 }
 
 .modal-close:hover {
   color: #0f172a;
+  background: #f8fafc;
 }
 
 .bank-soal-form {

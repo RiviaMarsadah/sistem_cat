@@ -80,6 +80,9 @@ exports.importExcel = async (req, res) => {
       ? Number(jurusanIdRaw)
       : null;
 
+  const bankSoalKoleksiIdRaw = req.body.bankSoalKoleksiId;
+  const namaBankSoal = req.body.namaBankSoal ? String(req.body.namaBankSoal).trim() : null;
+
   try {
     await prisma.mataPelajaran.findUniqueOrThrow({ where: { id: mataPelajaranId } });
     if (jurusanId != null) {
@@ -92,11 +95,44 @@ exports.importExcel = async (req, res) => {
     throw e;
   }
 
+  let bankSoalKoleksiId =
+    bankSoalKoleksiIdRaw != null && bankSoalKoleksiIdRaw !== '' && String(bankSoalKoleksiIdRaw).toLowerCase() !== 'null'
+      ? Number(bankSoalKoleksiIdRaw)
+      : null;
+
+  if (bankSoalKoleksiId) {
+    try {
+      const existing = await prisma.bankSoalKoleksi.findFirst({
+        where: { id: bankSoalKoleksiId, guruId },
+      });
+      if (!existing) {
+        return res.status(400).json({ success: false, message: 'Bank soal tidak ditemukan atau bukan milik Anda' });
+      }
+    } catch (e) {
+      return res.status(500).json({ success: false, message: 'Gagal memverifikasi Bank Soal' });
+    }
+  } else if (namaBankSoal) {
+    try {
+      let koleksi = await prisma.bankSoalKoleksi.findFirst({
+        where: { guruId, nama: namaBankSoal },
+      });
+      if (!koleksi) {
+        koleksi = await prisma.bankSoalKoleksi.create({
+          data: { guruId, nama: namaBankSoal },
+        });
+      }
+      bankSoalKoleksiId = koleksi.id;
+    } catch (e) {
+      return res.status(500).json({ success: false, message: 'Gagal memproses Nama Bank Soal' });
+    }
+  }
+
   const defaults = {
     mataPelajaranId,
     tingkat,
     jurusanId,
     guruId,
+    bankSoalKoleksiId,
   };
 
   let workbook;
@@ -218,6 +254,8 @@ exports.downloadTemplate = (req, res) => {
 
   const panduanRows = [
     ['PANDUAN FORMAT IMPORT BANK SOAL'],
+    [],
+    ['PENTING:', 'Ketik "Nama Bank Soal" langsung pada form di Web Aplikasi sebelum upload, fitur import akan otomatis menautkannya.'],
     [],
     ['Kolom di sheet "Soal" (baris pertama = header):'],
     ['Kategori', 'pilgan | pilgan_kompleks | pilgan_kategori'],

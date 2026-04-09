@@ -4,11 +4,6 @@ const prisma = require('../config/prisma');
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 const TIPE_UJIAN = ['UH', 'UTS', 'UAS', 'Lainnya'];
 
-function generateToken() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * 26)]).join('');
-}
-
 const createSchema = Joi.object({
   nama: Joi.string().trim().min(1).max(200).required(),
   mataPelajaranId: Joi.number().integer().positive().required(),
@@ -103,10 +98,6 @@ exports.create = async (req, res) => {
     throw e;
   }
 
-  let tokenCheckIn = generateToken();
-  let tokenCheckOut = generateToken();
-  while (tokenCheckIn === tokenCheckOut) tokenCheckOut = generateToken();
-
   try {
     const bankSoalIds = value.bankSoalIds || [];
     const created = await prisma.paketUjian.create({
@@ -115,8 +106,6 @@ exports.create = async (req, res) => {
         mataPelajaranId: value.mataPelajaranId,
         tingkat: value.tingkat,
         tipeUjian: value.tipeUjian,
-        tokenCheckIn,
-        tokenCheckOut,
         guruId,
       },
       include: {

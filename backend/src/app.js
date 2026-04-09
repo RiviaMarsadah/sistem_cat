@@ -15,8 +15,9 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files (untuk uploads)
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Static files (untuk uploads & templates)
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use('/public', express.static(path.join(process.cwd(), 'public')));
 
 // Health check route
 app.get('/api/health', (req, res) => {

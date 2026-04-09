@@ -470,10 +470,12 @@ select.input.small {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .kelas-row-head {
-  border: none;
+  border: 1px solid transparent; /* Match border width for alignment */
   background: transparent;
   padding: 0 0.75rem;
 }
@@ -961,5 +963,47 @@ select.input.small {
     width: 100%;
     min-width: auto;
   }
+}
+
+/* Theme alignment with Guru pages */
+.kelas-header {
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.kelas-title {
+  font-size: 2rem;
+  letter-spacing: 0;
+}
+
+.kelas-title .title-badge {
+  box-shadow: none;
+}
+
+.meta-card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.kelas-card {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.kelas-row {
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.btn-add-kelas {
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.btn-add-kelas .btn-icon {
+  width: 26px; /* Increased from 22px */
+  height: 26px; /* Increased from 22px */
+  font-size: 1.4rem; /* Increased from 1.2rem */
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle, FiX } from 'react-icons/fi';
 import api from '../../services/api';
 import './BankSoal.css';
 
@@ -55,26 +55,34 @@ export default function BankSoal() {
   const [filterTingkat, setFilterTingkat] = useState('');
   const [filterJurusan, setFilterJurusan] = useState('');
   const [filterKategori, setFilterKategori] = useState('');
+  const [filterKoleksi, setFilterKoleksi] = useState('');
+  const [koleksiList, setKoleksiList] = useState([]);
 
   const [importMapel, setImportMapel] = useState('');
   const [importTingkat, setImportTingkat] = useState('');
   const [importJurusan, setImportJurusan] = useState('');
+  const [importNamaBankSoal, setImportNamaBankSoal] = useState('');
+  const [importKoleksiId, setImportKoleksiId] = useState('');
   const [importFile, setImportFile] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
-  const [showImportSection, setShowImportSection] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importNotice, setImportNotice] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
 
   const loadOptions = async () => {
     try {
-      const [mapelRes, jurusanRes] = await Promise.all([
+      const [mapelRes, jurusanRes, koleksiRes] = await Promise.all([
         api.get('/guru/mata-pelajaran'),
         api.get('/guru/jurusan'),
+        api.get('/guru/bank-soal-koleksi'),
       ]);
       setMapelList(mapelRes.data?.data || []);
       setJurusanList(jurusanRes.data?.data || []);
+      setKoleksiList(koleksiRes.data?.data || []);
     } catch (e) {
       console.error('Load options error:', e);
     }
@@ -89,6 +97,7 @@ export default function BankSoal() {
       if (filterTingkat) params.set('tingkat', filterTingkat === '10' ? 'X' : filterTingkat === '11' ? 'XI' : filterTingkat === '12' ? 'XII' : filterTingkat === '0' ? 'SEMUA' : '');
       if (filterJurusan !== '') params.set('jurusanId', filterJurusan);
       if (filterKategori) params.set('kategoriSoal', filterKategori);
+      if (filterKoleksi) params.set('bankSoalKoleksiId', filterKoleksi);
       const res = await api.get(`/guru/bank-soal?${params.toString()}`);
       setItems(res.data?.data || []);
     } catch (e) {
@@ -105,7 +114,7 @@ export default function BankSoal() {
   useEffect(() => {
     setCurrentPage(1);
     loadSoal();
-  }, [filterMapel, filterTingkat, filterJurusan, filterKategori]);
+  }, [filterMapel, filterTingkat, filterJurusan, filterKategori, filterKoleksi]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Yakin hapus soal ini?')) return;
@@ -145,16 +154,17 @@ export default function BankSoal() {
 
   const handleImport = async (e) => {
     e.preventDefault();
+    setImportError('');
+    setImportNotice(null);
     if (!importMapel || !importTingkat) {
-      setError('Pilih Mata Pelajaran dan Tingkat terlebih dahulu.');
+      setImportError('Pilih Mata Pelajaran dan Tingkat terlebih dahulu.');
       return;
     }
     if (!importFile) {
-      setError('Pilih file Excel yang akan diunggah.');
+      setImportError('Pilih file Excel yang akan diunggah.');
       return;
     }
     setImportLoading(true);
-    setError('');
     setImportResult(null);
     try {
       const formData = new FormData();
@@ -162,18 +172,31 @@ export default function BankSoal() {
       formData.append('mataPelajaranId', importMapel);
       formData.append('tingkat', importTingkat);
       if (importJurusan) formData.append('jurusanId', importJurusan);
+      if (importKoleksiId && importKoleksiId !== 'new') {
+        formData.append('bankSoalKoleksiId', importKoleksiId);
+      } else if (importNamaBankSoal) {
+        formData.append('namaBankSoal', importNamaBankSoal);
+      }
       const res = await api.post('/guru/bank-soal/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setImportResult(res.data?.data || res.data);
+      const resultData = res.data?.data || res.data;
+      setImportResult(resultData);
+      setImportNotice({
+        type: 'success',
+        text: `${resultData?.created || 0} soal berhasil diimpor.`,
+      });
       setImportMapel('');
       setImportTingkat('');
       setImportJurusan('');
+      setImportNamaBankSoal('');
+      setImportKoleksiId('');
       setImportFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
       if (res.data?.data?.created > 0) loadSoal();
+      setShowImportModal(false);
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal mengimpor');
+      setImportError(e?.response?.data?.message || 'Gagal mengimpor. Periksa format file lalu coba lagi.');
       setImportResult(null);
     } finally {
       setImportLoading(false);
@@ -194,8 +217,8 @@ export default function BankSoal() {
           <button
             type="button"
             className="btn-import-excel"
-            onClick={() => setShowImportSection((v) => !v)}
-            aria-expanded={showImportSection}
+            onClick={() => setShowImportModal(true)}
+            aria-expanded={showImportModal}
           >
             <FiUpload /> Import Excel
           </button>
@@ -205,79 +228,124 @@ export default function BankSoal() {
         </div>
       </div>
 
-      {showImportSection && (
-        <div className="bank-soal-import-section">
-          <h3 className="import-section-title">Import Bank Soal dari Excel</h3>
-          <p className="import-section-desc">Pilih mapel, tingkat, dan prodi. Soal dan kategori diambil dari file Excel.</p>
-          <div className="import-actions-row">
-            <button type="button" className="btn-download-template" onClick={handleDownloadTemplate}>
-              <FiDownload /> Download Template
-            </button>
-            <button type="button" className="btn-guide" onClick={() => setShowGuideModal(true)}>
-              <FiHelpCircle /> Panduan Format Excel
-            </button>
-          </div>
-          <form onSubmit={handleImport} className="import-form">
-            <div className="import-form-row">
-              <div className="filter-group">
-                <label>Mata Pelajaran</label>
-                <select value={importMapel} onChange={(e) => setImportMapel(e.target.value)} required>
-                  <option value="">— Pilih Mapel —</option>
-                  {mapelList.map((m) => (
-                    <option key={m.id} value={m.id}>{m.namaMapel}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-group">
-                <label>Tingkat</label>
-                <select value={importTingkat} onChange={(e) => setImportTingkat(e.target.value)} required>
-                  <option value="">— Pilih Tingkat —</option>
-                  {TINGKAT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-group">
-                <label>Prodi</label>
-                <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
-                  <option value="">Semua Prodi</option>
-                  {jurusanList.map((j) => (
-                    <option key={j.id} value={j.id}>{j.nama}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="import-form-row import-file-row">
-              <div className="filter-group">
-                <label>File Excel (.xlsx)</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                />
-                {importFile && <span className="file-name">{importFile.name}</span>}
-              </div>
-              <button type="submit" className="btn-submit-import" disabled={importLoading}>
-                {importLoading ? 'Mengimpor...' : 'Import'}
+      {importNotice && (
+        <div className={`bank-soal-notice ${importNotice.type}`}>
+          {importNotice.text}
+        </div>
+      )}
+
+      {showImportModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="bank-soal-modal import-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Import Bank Soal dari Excel</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setShowImportModal(false)}
+                aria-label="Tutup"
+              >
+                <FiX />
               </button>
             </div>
-          </form>
-          {importResult && (
-            <div className={`import-result ${importResult.failed > 0 ? 'has-errors' : ''}`}>
-              <p><strong>{importResult.created}</strong> soal berhasil diimpor, <strong>{importResult.failed}</strong> gagal.</p>
-              {importResult.errors?.length > 0 && (
-                <ul className="import-errors-list">
-                  {importResult.errors.slice(0, 15).map((err, i) => (
-                    <li key={i}>Baris {err.row}: {err.message}</li>
-                  ))}
-                  {importResult.errors.length > 15 && (
-                    <li>… dan {importResult.errors.length - 15} error lainnya.</li>
+            <div className="import-modal-body">
+              <p className="import-section-desc">
+                Pilih bank soal dan parameter kelas, lalu upload file Excel.
+              </p>
+              <div className="import-actions-row">
+                <button type="button" className="btn-download-template" onClick={handleDownloadTemplate}>
+                  <FiDownload /> Download Template
+                </button>
+                <button type="button" className="btn-guide" onClick={() => setShowGuideModal(true)}>
+                  <FiHelpCircle /> Panduan Format Excel
+                </button>
+              </div>
+              <form onSubmit={handleImport} className="import-form">
+                {importError && <div className="form-error">{importError}</div>}
+                <div className="import-form-row">
+                  <div className="filter-group">
+                    <label>Pilih Bank Soal</label>
+                    <select value={importKoleksiId} onChange={(e) => setImportKoleksiId(e.target.value)}>
+                      <option value="">— Gunakan Bank Soal (Opsional) —</option>
+                      {koleksiList.map((k) => (
+                        <option key={k.id} value={k.id}>{k.nama}</option>
+                      ))}
+                      <option value="new">+ Tambah Nama Baru</option>
+                    </select>
+                  </div>
+                  {importKoleksiId === 'new' && (
+                    <div className="filter-group">
+                      <label>Nama Bank Soal Baru</label>
+                      <input
+                        type="text"
+                        placeholder="Misal: UTS Ganjil 2024"
+                        value={importNamaBankSoal}
+                        onChange={(e) => setImportNamaBankSoal(e.target.value)}
+                        required
+                      />
+                    </div>
                   )}
-                </ul>
+                  <div className="filter-group">
+                    <label>Mata Pelajaran</label>
+                    <select value={importMapel} onChange={(e) => setImportMapel(e.target.value)} required>
+                      <option value="">— Pilih Mapel —</option>
+                      {mapelList.map((m) => (
+                        <option key={m.id} value={m.id}>{m.namaMapel}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="filter-group">
+                    <label>Tingkat</label>
+                    <select value={importTingkat} onChange={(e) => setImportTingkat(e.target.value)} required>
+                      <option value="">— Pilih Tingkat —</option>
+                      {TINGKAT_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="filter-group">
+                    <label>Prodi</label>
+                    <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
+                      <option value="">Semua Prodi</option>
+                      {jurusanList.map((j) => (
+                        <option key={j.id} value={j.id}>{j.nama}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="import-form-row import-file-row">
+                  <div className="filter-group">
+                    <label>File Excel (.xlsx)</label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    />
+                    {importFile && <span className="file-name">{importFile.name}</span>}
+                  </div>
+                  <button type="submit" className="btn-submit-import" disabled={importLoading}>
+                    {importLoading ? 'Mengimpor...' : 'Import'}
+                  </button>
+                </div>
+              </form>
+              {importResult && (
+                <div className={`import-result ${importResult.failed > 0 ? 'has-errors' : ''}`}>
+                  <p><strong>{importResult.created}</strong> soal berhasil diimpor, <strong>{importResult.failed}</strong> gagal.</p>
+                  {importResult.errors?.length > 0 && (
+                    <ul className="import-errors-list">
+                      {importResult.errors.slice(0, 15).map((err, i) => (
+                        <li key={i}>Baris {err.row}: {err.message}</li>
+                      ))}
+                      {importResult.errors.length > 15 && (
+                        <li>… dan {importResult.errors.length - 15} error lainnya.</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       )}
 
@@ -289,6 +357,10 @@ export default function BankSoal() {
               <button type="button" className="modal-close" onClick={() => setShowGuideModal(false)} aria-label="Tutup">×</button>
             </div>
             <div className="guide-content">
+              <p className="guide-note mb-3" style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '1rem' }}>
+                <strong>Catatan Penting:</strong> 
+                Semua soal di dalam file Excel akan dimasukkan ke dalam <strong>Nama Bank Soal</strong> yang Anda ketikkan di form aplikasi sebelum melakukan klik Import. 
+              </p>
               <p><strong>Kolom di sheet &quot;Soal&quot; (baris pertama = header):</strong></p>
               <table className="guide-table">
                 <thead>
@@ -312,6 +384,15 @@ export default function BankSoal() {
 
       <div className="bank-soal-filters">
         <h3 className="bank-soal-filters-title">Filter Daftar Soal</h3>
+        <div className="filter-group">
+          <label>Nama Bank Soal</label>
+          <select value={filterKoleksi} onChange={(e) => setFilterKoleksi(e.target.value)}>
+            <option value="">Semua Bank Soal</option>
+            {koleksiList.map((k) => (
+              <option key={k.id} value={k.id}>{k.nama}</option>
+            ))}
+          </select>
+        </div>
         <div className="filter-group">
           <label>Mata Pelajaran</label>
           <select value={filterMapel} onChange={(e) => setFilterMapel(e.target.value)}>
@@ -360,6 +441,7 @@ export default function BankSoal() {
             <thead>
               <tr>
                 <th>No</th>
+                <th>Bank Soal</th>
                 <th>Mapel</th>
                 <th>Tingkat</th>
                 <th>Prodi</th>
@@ -371,11 +453,12 @@ export default function BankSoal() {
             </thead>
             <tbody>
               {items.length === 0 ? (
-                <tr><td colSpan={8} className="empty-row">Belum ada soal. Klik &quot;Tambah Soal&quot;.</td></tr>
+                <tr><td colSpan={9} className="empty-row">Belum ada soal. Klik &quot;Tambah Soal&quot;.</td></tr>
               ) : (
                 paginatedItems.map((row, idx) => (
                   <tr key={row.id}>
                     <td>{startIndex + idx + 1}</td>
+                    <td>{row.bankSoalKoleksi?.nama || '-'}</td>
                     <td>{row.mataPelajaran?.namaMapel}</td>
                     <td>{tingkatToDisplay(row.tingkat)}</td>
                     <td>{row.jurusan ? row.jurusan.nama : 'Semua Prodi'}</td>

@@ -43,10 +43,14 @@ export default function BankSoalForm() {
 
   const [mapelList, setMapelList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
+  const [koleksiList, setKoleksiList] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
+  const [modeKoleksi, setModeKoleksi] = useState('pilih');
+  const [bankSoalKoleksiId, setBankSoalKoleksiId] = useState('');
+  const [namaKoleksiBaru, setNamaKoleksiBaru] = useState('');
   const [mataPelajaranId, setMataPelajaranId] = useState('');
   const [tingkat, setTingkat] = useState('10');
   const [jurusanId, setJurusanId] = useState('');
@@ -59,12 +63,14 @@ export default function BankSoalForm() {
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [mapelRes, jurusanRes] = await Promise.all([
+        const [mapelRes, jurusanRes, koleksiRes] = await Promise.all([
           api.get('/guru/mata-pelajaran'),
           api.get('/guru/jurusan'),
+          api.get('/guru/bank-soal-koleksi'),
         ]);
         setMapelList(mapelRes.data?.data || []);
         setJurusanList(jurusanRes.data?.data || []);
+        setKoleksiList(koleksiRes.data?.data || []);
       } catch (e) {
         console.error('Load options error:', e);
       }
@@ -83,6 +89,8 @@ export default function BankSoalForm() {
           navigate('/guru/bank-soal', { replace: true });
           return;
         }
+        setBankSoalKoleksiId(row.bankSoalKoleksiId != null ? String(row.bankSoalKoleksiId) : '');
+        setModeKoleksi(row.bankSoalKoleksiId != null ? 'pilih' : 'buat');
         setMataPelajaranId(row.mataPelajaranId ?? '');
         setTingkat(apiToTingkatDisplay(row.tingkat) ?? '10');
         setJurusanId(row.jurusanId != null ? String(row.jurusanId) : '');
@@ -131,6 +139,19 @@ export default function BankSoalForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+
+    let selectedKoleksiId = bankSoalKoleksiId ? Number(bankSoalKoleksiId) : null;
+    const trimmedNamaKoleksi = namaKoleksiBaru.trim();
+
+    if (modeKoleksi === 'pilih' && !selectedKoleksiId) {
+      setFormError('Pilih Bank Soal terlebih dahulu.');
+      return;
+    }
+    if (modeKoleksi === 'buat' && !trimmedNamaKoleksi) {
+      setFormError('Nama Bank Soal baru wajib diisi.');
+      return;
+    }
+
     const filledKolom = KOLOM_LABELS.filter((l) => kolom[l]?.trim()).length;
     if (kategoriSoal !== 'pilgan_kategori' && filledKolom < 3) {
       setFormError('Minimal 3 kolom jawaban harus diisi.');
@@ -153,7 +174,22 @@ export default function BankSoalForm() {
       return;
     }
 
+    setSaving(true);
+
+    try {
+      if (modeKoleksi === 'buat') {
+        const createKoleksiRes = await api.post('/guru/bank-soal-koleksi', { nama: trimmedNamaKoleksi });
+        const idKoleksiBaru = createKoleksiRes.data?.data?.id;
+        if (!idKoleksiBaru) {
+          setFormError('Gagal membuat Bank Soal baru.');
+          setSaving(false);
+          return;
+        }
+        selectedKoleksiId = Number(idKoleksiBaru);
+      }
+
     const payload = {
+      bankSoalKoleksiId: selectedKoleksiId,
       mataPelajaranId: Number(mataPelajaranId),
       tingkat: displayToTingkatApi(tingkat),
       jurusanId: jurusanId === '' ? null : Number(jurusanId),
@@ -168,9 +204,6 @@ export default function BankSoalForm() {
       jawaban: buildJawabanValue(),
       gambar: gambar.trim() || null,
     };
-
-    setSaving(true);
-    try {
       if (isEdit) {
         await api.put(`/guru/bank-soal/${id}`, payload);
       } else {
@@ -229,6 +262,44 @@ export default function BankSoalForm() {
           <p className="form-section-desc">
             {isEdit ? 'Ubah data soal. Mata pelajaran, tingkat, prodi, dan jawaban.' : 'Isi mapel, tingkat, prodi, kategori, pertanyaan, dan jawaban.'}
           </p>
+
+          <div className="form-row two-cols">
+            <div className="form-group">
+              <label>Pilih Bank Soal *</label>
+              <select value={modeKoleksi} onChange={(e) => setModeKoleksi(e.target.value)}>
+                <option value="pilih">Pilih dari yang sudah ada</option>
+                <option value="buat">Buat Bank Soal baru</option>
+              </select>
+            </div>
+            <div className="form-group">
+              {modeKoleksi === 'pilih' ? (
+                <>
+                  <label>Bank Soal *</label>
+                  <select
+                    value={bankSoalKoleksiId}
+                    onChange={(e) => setBankSoalKoleksiId(e.target.value)}
+                    required
+                  >
+                    <option value="">Pilih Bank Soal</option>
+                    {koleksiList.map((k) => (
+                      <option key={k.id} value={k.id}>{k.nama}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <label>Nama Bank Soal Baru *</label>
+                  <input
+                    type="text"
+                    value={namaKoleksiBaru}
+                    onChange={(e) => setNamaKoleksiBaru(e.target.value)}
+                    placeholder="Contoh: Bank Soal Matematika Kelas 10"
+                    required
+                  />
+                </>
+              )}
+            </div>
+          </div>
 
           <div className="form-row two-cols">
             <div className="form-group">

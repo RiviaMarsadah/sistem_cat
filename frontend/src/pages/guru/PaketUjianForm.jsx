@@ -47,26 +47,27 @@ export default function PaketUjianForm() {
   const [mataPelajaranId, setMataPelajaranId] = useState('');
   const [tingkat, setTingkat] = useState('X');
   const [tipeUjian, setTipeUjian] = useState('UH');
-  const [tokenCheckIn, setTokenCheckIn] = useState('');
-  const [tokenCheckOut, setTokenCheckOut] = useState('');
   const [bankSoalIds, setBankSoalIds] = useState([]);
 
   const [soalList, setSoalList] = useState([]);
   const [soalLoading, setSoalLoading] = useState(false);
-  const [filterMapel, setFilterMapel] = useState('');
   const [filterTingkat, setFilterTingkat] = useState('');
   const [filterJurusan, setFilterJurusan] = useState('');
   const [filterKategori, setFilterKategori] = useState('');
+  const [filterKoleksi, setFilterKoleksi] = useState('');
+  const [koleksiList, setKoleksiList] = useState([]);
 
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [mapelRes, jurusanRes] = await Promise.all([
+        const [mapelRes, jurusanRes, koleksiRes] = await Promise.all([
           api.get('/guru/mata-pelajaran'),
           api.get('/guru/jurusan'),
+          api.get('/guru/bank-soal-koleksi'),
         ]);
         setMapelList(mapelRes.data?.data || []);
         setJurusanList(jurusanRes.data?.data || []);
+        setKoleksiList(koleksiRes.data?.data || []);
       } catch (e) {
         console.error('Load options error:', e);
       }
@@ -89,8 +90,6 @@ export default function PaketUjianForm() {
         setMataPelajaranId(row.mataPelajaranId ?? '');
         setTingkat(row.tingkat || 'X');
         setTipeUjian(row.tipeUjian || 'UH');
-        setTokenCheckIn(row.tokenCheckIn || '');
-        setTokenCheckOut(row.tokenCheckOut || '');
         const ids = (row.soalPaket || []).map((sp) => sp.bankSoalId);
         setBankSoalIds(ids);
       } catch (e) {
@@ -103,13 +102,18 @@ export default function PaketUjianForm() {
   }, [id, isEdit, navigate]);
 
   const loadSoal = async () => {
+    if (!mataPelajaranId) {
+      setSoalList([]);
+      return;
+    }
     setSoalLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filterMapel) params.set('mataPelajaranId', filterMapel);
+      params.set('mataPelajaranId', mataPelajaranId);
       if (filterTingkat) params.set('tingkat', filterTingkat);
       if (filterJurusan !== '') params.set('jurusanId', filterJurusan);
       if (filterKategori) params.set('kategoriSoal', filterKategori);
+      if (filterKoleksi) params.set('bankSoalKoleksiId', filterKoleksi);
       const res = await api.get(`/guru/bank-soal?${params.toString()}`);
       setSoalList(res.data?.data || []);
     } catch (e) {
@@ -121,7 +125,7 @@ export default function PaketUjianForm() {
 
   useEffect(() => {
     loadSoal();
-  }, [filterMapel, filterTingkat, filterJurusan, filterKategori]);
+  }, [mataPelajaranId, filterTingkat, filterJurusan, filterKategori, filterKoleksi]);
 
   const toggleSoal = (soalId) => {
     setBankSoalIds((prev) =>
@@ -167,9 +171,7 @@ export default function PaketUjianForm() {
       if (isEdit) {
         await api.put(`/guru/paket-ujian/${id}`, payload);
       } else {
-        const res = await api.post('/guru/paket-ujian', payload);
-        setTokenCheckIn(res.data?.data?.tokenCheckIn || '');
-        setTokenCheckOut(res.data?.data?.tokenCheckOut || '');
+        await api.post('/guru/paket-ujian', payload);
       }
       navigate('/guru/paket-ujian');
     } catch (err) {
@@ -246,18 +248,6 @@ export default function PaketUjianForm() {
               </select>
             </div>
           </div>
-          {(tokenCheckIn || tokenCheckOut) && (
-            <div className="form-row two-cols token-row">
-              <div className="form-group">
-                <label>Token Check-in (6 digit)</label>
-                <input type="text" value={tokenCheckIn} readOnly className="token-input" />
-              </div>
-              <div className="form-group">
-                <label>Token Checkout (6 digit)</label>
-                <input type="text" value={tokenCheckOut} readOnly className="token-input" />
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="form-section form-section-full">
@@ -265,11 +255,11 @@ export default function PaketUjianForm() {
           <p className="form-section-desc">Filter soal lalu centang soal yang akan dimasukkan ke paket.</p>
           <div className="soal-picker-filters">
             <div className="filter-group">
-              <label>Mapel</label>
-              <select value={filterMapel} onChange={(e) => setFilterMapel(e.target.value)}>
-                <option value="">Semua Mapel</option>
-                {mapelList.map((m) => (
-                  <option key={m.id} value={m.id}>{m.namaMapel}</option>
+              <label>Nama Bank Soal</label>
+              <select value={filterKoleksi} onChange={(e) => setFilterKoleksi(e.target.value)}>
+                <option value="">Semua Bank Soal</option>
+                {koleksiList.map((k) => (
+                  <option key={k.id} value={k.id}>{k.nama}</option>
                 ))}
               </select>
             </div>
@@ -312,7 +302,11 @@ export default function PaketUjianForm() {
             {soalLoading ? (
               <div className="soal-picker-loading">Memuat soal...</div>
             ) : soalList.length === 0 ? (
-              <div className="soal-picker-empty">Tidak ada soal. Sesuaikan filter atau tambah soal di Bank Soal.</div>
+              <div className="soal-picker-empty">
+                {!mataPelajaranId
+                  ? 'Pilih Mata Pelajaran pada bagian "Data Paket" di atas terlebih dahulu untuk memuat daftar soal.'
+                  : 'Tidak ada soal. Sesuaikan filter atau tambah soal di Bank Soal.'}
+              </div>
             ) : (
               <table className="soal-picker-table">
                 <thead>

@@ -10,7 +10,6 @@ const AdminUser = () => {
 
   // Form state (untuk modal tambah)
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState('');
   const [namaLengkap, setNamaLengkap] = useState('');
   const [saving, setSaving] = useState(false);
   
@@ -20,12 +19,8 @@ const AdminUser = () => {
   // Edit state
   const [editingId, setEditingId] = useState(null);
   const [editingEmail, setEditingEmail] = useState('');
-  const [editingPassword, setEditingPassword] = useState('');
-  const [editingRole, setEditingRole] = useState('');
   const [editingNamaLengkap, setEditingNamaLengkap] = useState('');
   const [editingStatus, setEditingStatus] = useState('aktif');
-  const [editingShowPassword, setEditingShowPassword] = useState(false);
-  const [editingGoogleLinked, setEditingGoogleLinked] = useState(false);
 
   // Modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -52,8 +47,8 @@ const AdminUser = () => {
   }, []);
 
   const handleOpenAddModal = () => {
+    setEditingId(null); // Ensure creation mode
     setEmail('');
-    setRole('');
     setNamaLengkap('');
     setError('');
     setShowAddModal(true);
@@ -61,46 +56,36 @@ const AdminUser = () => {
 
   const handleCloseAddModal = () => {
     setShowAddModal(false);
+    setEditingId(null);
     setEmail('');
-    setRole('');
     setNamaLengkap('');
     setError('');
   };
 
   const onCreate = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !role || !namaLengkap.trim()) return;
+    if (!email.trim() || !namaLengkap.trim()) return;
 
-    // Show confirmation modal
-    setConfirmAction('create');
-    setConfirmData({ 
-      email: email.trim(),
-      password: null, // Tidak perlu password untuk master data
-      role,
-      namaLengkap: namaLengkap.trim(),
-      status: 'aktif' // Default aktif
-    });
-    setShowConfirmModal(true);
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/admin/user', {
+        email: email.trim().toLowerCase(),
+        namaLengkap: namaLengkap.trim(),
+        role: 'admin',
+        status: 'aktif'
+      });
+      handleCloseAddModal();
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Gagal menambah user');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleConfirm = async () => {
-    if (confirmAction === 'create') {
-      setSaving(true);
-      setError('');
-      try {
-        await api.post('/admin/user', confirmData);
-        handleCloseAddModal();
-        await load();
-        setShowConfirmModal(false);
-        setConfirmAction(null);
-        setConfirmData(null);
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Gagal menambah user');
-        setShowConfirmModal(false);
-      } finally {
-        setSaving(false);
-      }
-    } else if (confirmAction === 'delete') {
+    if (confirmAction === 'delete') {
       setSaving(true);
       setError('');
       try {
@@ -118,52 +103,32 @@ const AdminUser = () => {
     }
   };
 
-  const handleCancelConfirm = () => {
-    setShowConfirmModal(false);
-    setConfirmAction(null);
-    setConfirmData(null);
-  };
-
   const startEdit = (item) => {
     setEditingId(item.id);
     setEditingEmail(item.email);
-    setEditingPassword('');
-    setEditingRole(item.role);
     setEditingNamaLengkap(item.namaLengkap);
     setEditingStatus(item.status);
-    setEditingGoogleLinked(item.googleLinked || false);
-    setEditingShowPassword(false);
+    setShowAddModal(true); 
     setError('');
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditingEmail('');
-    setEditingPassword('');
-    setEditingRole('');
-    setEditingNamaLengkap('');
-    setEditingStatus('aktif');
-    setEditingGoogleLinked(false);
+    setShowAddModal(false);
   };
 
-  const saveEdit = async () => {
-    if (!editingEmail.trim() || !editingRole || !editingNamaLengkap.trim()) return;
+  const onSave = async (e) => {
+    e.preventDefault();
+    if (!editingEmail.trim() || !editingNamaLengkap.trim()) return;
+    
     setSaving(true);
     setError('');
     try {
-      const updateData = {
-        email: editingEmail.trim(),
-        role: editingRole,
+      await api.put(`/admin/user/${editingId}`, {
+        email: editingEmail.trim().toLowerCase(),
         namaLengkap: editingNamaLengkap.trim(),
         status: editingStatus
-      };
-      
-      // Only include password if provided
-      if (editingPassword.trim()) {
-        updateData.password = editingPassword.trim();
-      }
-
-      await api.put(`/admin/user/${editingId}`, updateData);
+      });
       cancelEdit();
       await load();
     } catch (err) {
@@ -174,7 +139,6 @@ const AdminUser = () => {
   };
 
   const remove = async (item) => {
-    // Show confirmation modal
     setConfirmAction('delete');
     setConfirmData({ 
       id: item.id,
@@ -182,11 +146,6 @@ const AdminUser = () => {
       namaLengkap: item.namaLengkap
     });
     setShowConfirmModal(true);
-  };
-
-  const getRoleLabel = (role) => {
-    const map = { admin: 'Admin', guru: 'Guru', siswa: 'Siswa' };
-    return map[role] || role;
   };
 
   const getStatusBadge = (status) => {
@@ -198,10 +157,10 @@ const AdminUser = () => {
       <div className="user-header">
         <div>
           <h1 className="user-title">
-            <span className="title-text">Management User</span>
+            <span className="title-text">Manajemen Admin</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Kelola data user master (email, role, status)</p>
+          <p className="user-subtitle">Kelola data akun administrator sistem</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">
@@ -235,191 +194,63 @@ const AdminUser = () => {
             <div className="user-row user-row-head">
               <div className="col-email">Email</div>
               <div className="col-nama">Nama Lengkap</div>
-              <div className="col-role">Role</div>
               <div className="col-status">Status</div>
               <div className="col-actions">Aksi</div>
             </div>
 
-            {items.map((item) => {
-              const isEditing = editingId === item.id;
-              return (
-                <div key={item.id} className="user-row">
-                  <div className="col-email">
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        className="input small"
-                        placeholder="Email"
-                        value={editingEmail}
-                        onChange={(e) => setEditingEmail(e.target.value.toLowerCase())}
-                        disabled={saving}
-                        maxLength={100}
-                        required
-                      />
-                    ) : (
-                      <div className="email-text">{item.email}</div>
-                    )}
-                  </div>
-                  <div className="col-nama">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        placeholder="Nama Lengkap"
-                        value={editingNamaLengkap}
-                        onChange={(e) => setEditingNamaLengkap(e.target.value)}
-                        disabled={saving}
-                        maxLength={100}
-                        required
-                      />
-                    ) : (
-                      <div className="nama-text">{item.namaLengkap}</div>
-                    )}
-                  </div>
-                  <div className="col-role">
-                    {isEditing ? (
-                      <select
-                        className="input small"
-                        value={editingRole}
-                        onChange={(e) => setEditingRole(e.target.value)}
-                        disabled={saving}
-                        required
-                      >
-                        <option value="">Pilih</option>
-                        <option value="admin">Admin</option>
-                        <option value="guru">Guru</option>
-                        <option value="siswa">Siswa</option>
-                      </select>
-                    ) : (
-                      <div className="role-badge">{getRoleLabel(item.role)}</div>
-                    )}
-                  </div>
-                  <div className="col-status">
-                    {isEditing ? (
-                      <select
-                        className="input small"
-                        value={editingStatus}
-                        onChange={(e) => setEditingStatus(e.target.value)}
-                        disabled={saving}
-                      >
-                        <option value="aktif">Aktif</option>
-                        <option value="nonaktif">Nonaktif</option>
-                      </select>
-                    ) : (
-                      <span className={`status-badge ${getStatusBadge(item.status)}`}>
-                        {item.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="col-actions">
-                    {isEditing ? (
-                      <div className="edit-actions-wrapper">
-                        {editingGoogleLinked && (
-                          <div className="google-linked-hint">
-                            <span>Google Linked - Password tidak dapat diubah</span>
-                          </div>
-                        )}
-                        {!editingGoogleLinked && (
-                          <div className="password-edit-wrapper">
-                            <div className="input-wrapper password-wrapper">
-                              <input
-                                type={editingShowPassword ? 'text' : 'password'}
-                                className="input small"
-                                placeholder="Password baru (kosongkan jika tidak diubah)"
-                                value={editingPassword}
-                                onChange={(e) => setEditingPassword(e.target.value)}
-                                disabled={saving}
-                                maxLength={255}
-                              />
-                              <button
-                                type="button"
-                                className="password-toggle"
-                                onClick={() => setEditingShowPassword(!editingShowPassword)}
-                                disabled={saving}
-                              >
-                                {editingShowPassword ? <FiEyeOff /> : <FiEye />}
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        <div className="action-buttons">
-                          <button className="btn" type="button" onClick={saveEdit} disabled={saving || !editingEmail.trim() || !editingRole || !editingNamaLengkap.trim()}>
-                            <FiSave />
-                            <span>Simpan</span>
-                          </button>
-                          <button className="btn ghost" type="button" onClick={cancelEdit} disabled={saving}>
-                            <FiX />
-                            <span>Batal</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <button className="btn" type="button" onClick={() => startEdit(item)} disabled={saving}>
-                          <FiEdit2 />
-                          <span>Edit</span>
-                        </button>
-                        <button className="btn danger" type="button" onClick={() => remove(item)} disabled={saving || item.googleLinked}>
-                          <FiTrash2 />
-                          <span>Hapus</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
+            {items.map((item) => (
+              <div key={item.id} className="user-row">
+                <div className="col-email">
+                  <div className="email-text">{item.email}</div>
                 </div>
-              );
-            })}
+                <div className="col-nama">
+                  <div className="nama-text">{item.namaLengkap}</div>
+                </div>
+                <div className="col-status">
+                  <span className={`status-badge ${getStatusBadge(item.status)}`}>
+                    {item.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
+                <div className="col-actions">
+                  <button className="btn" type="button" onClick={() => startEdit(item)} disabled={saving}>
+                    <FiEdit2 />
+                    <span>Edit</span>
+                  </button>
+                  <button className="btn danger" type="button" onClick={() => remove(item)} disabled={saving || item.googleLinked}>
+                    <FiTrash2 />
+                    <span>Hapus</span>
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Add User Modal */}
+      {/* Unified User Modal (Add & Edit) */}
       {showAddModal && (
-        <div className="modal-overlay" onClick={handleCloseAddModal}>
+        <div className="modal-overlay">
           <div className="modal-container modal-form" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Tambah User Baru</h3>
-              <button className="modal-close" onClick={handleCloseAddModal} disabled={saving}>
+              <h3 className="modal-title">{editingId ? 'Edit User Admin' : 'Tambah User Admin'}</h3>
+              <button className="modal-close" onClick={editingId ? cancelEdit : handleCloseAddModal} disabled={saving}>
                 <FiX />
               </button>
             </div>
-            <form className="user-form" onSubmit={onCreate}>
+            <form className="user-form" onSubmit={editingId ? onSave : onCreate}>
               <div className="modal-body">
                 <div className="form-group">
                   <div className="field-wrapper">
-                    <label className="label" htmlFor="modal-email">
-                      <span className="label-text">Email</span>
-                      <span className="label-required">*</span>
-                    </label>
-                    <div className="input-wrapper">
-                      <input
-                        id="modal-email"
-                        type="email"
-                        className="input"
-                        placeholder="Contoh: user@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                        disabled={saving}
-                        maxLength={100}
-                        required
-                        autoComplete="off"
-                      />
-                      <div className="input-underline"></div>
-                    </div>
-                  </div>
-
-                  <div className="field-wrapper">
-                    <label className="label" htmlFor="modal-namaLengkap">
+                    <label className="label">
                       <span className="label-text">Nama Lengkap</span>
                       <span className="label-required">*</span>
                     </label>
                     <div className="input-wrapper">
                       <input
-                        id="modal-namaLengkap"
                         className="input"
                         placeholder="Contoh: John Doe"
-                        value={namaLengkap}
-                        onChange={(e) => setNamaLengkap(e.target.value)}
+                        value={editingId ? editingNamaLengkap : namaLengkap}
+                        onChange={(e) => editingId ? setEditingNamaLengkap(e.target.value) : setNamaLengkap(e.target.value)}
                         disabled={saving}
                         maxLength={100}
                         required
@@ -427,42 +258,60 @@ const AdminUser = () => {
                       />
                       <div className="input-underline"></div>
                     </div>
-                    <p className="field-hint">Maksimal 100 karakter</p>
                   </div>
 
                   <div className="field-wrapper">
-                    <label className="label" htmlFor="modal-role">
-                      <span className="label-text">Role</span>
+                    <label className="label">
+                      <span className="label-text">Email</span>
                       <span className="label-required">*</span>
                     </label>
                     <div className="input-wrapper">
-                      <select
-                        id="modal-role"
+                      <input
+                        type="email"
                         className="input"
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
+                        placeholder="user@example.com"
+                        value={editingId ? editingEmail : email}
+                        onChange={(e) => editingId ? setEditingEmail(e.target.value.toLowerCase()) : setEmail(e.target.value.toLowerCase())}
                         disabled={saving}
+                        maxLength={100}
                         required
-                      >
-                        <option value="">Pilih Role</option>
-                        <option value="admin">Admin</option>
-                        <option value="guru">Guru</option>
-                        <option value="siswa">Siswa</option>
-                      </select>
+                        autoComplete="off"
+                      />
                       <div className="input-underline"></div>
                     </div>
                   </div>
 
-                  <div className="field-info">
-                    <p className="info-text">Status akan otomatis diatur menjadi <strong>Aktif</strong></p>
-                  </div>
+                  {editingId && (
+                    <div className="field-wrapper">
+                      <label className="label">Status Akun</label>
+                      <div className="toggle-wrapper">
+                        <label className="toggle-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={editingStatus === 'aktif'} 
+                            onChange={(e) => setEditingStatus(e.target.checked ? 'aktif' : 'nonaktif')}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                        <span className="toggle-label-text">
+                          {editingStatus === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {!editingId && (
+                    <div className="field-info">
+                      <p className="info-text">Akun baru otomatis diatur sebagai <strong>Aktif</strong>. Admin dapat login via Google SSO.</p>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
                 <button
                   className="modal-btn modal-btn-cancel"
                   type="button"
-                  onClick={handleCloseAddModal}
+                  onClick={editingId ? cancelEdit : handleCloseAddModal}
                   disabled={saving}
                 >
                   <FiX className="modal-btn-icon" />
@@ -471,7 +320,7 @@ const AdminUser = () => {
                 <button
                   className="modal-btn modal-btn-confirm modal-btn-primary"
                   type="submit"
-                  disabled={saving || !email.trim() || !role || !namaLengkap.trim()}
+                  disabled={saving}
                 >
                   {saving ? (
                     <>
@@ -481,7 +330,7 @@ const AdminUser = () => {
                   ) : (
                     <>
                       <FiCheckCircle className="modal-btn-icon" />
-                      <span>Tambah User</span>
+                      <span>{editingId ? 'Simpan Perubahan' : 'Tambah User'}</span>
                     </>
                   )}
                 </button>
@@ -491,78 +340,34 @@ const AdminUser = () => {
         </div>
       )}
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal (Hapus) */}
       {showConfirmModal && (
-        <div className="modal-overlay" onClick={handleCancelConfirm}>
+        <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <div className={`modal-icon-wrapper ${
-                confirmAction === 'create' ? 'modal-icon-success' : 'modal-icon-danger'
-              }`}>
-                {confirmAction === 'create' ? (
-                  <FiCheckCircle className="modal-icon" />
-                ) : (
-                  <FiAlertCircle className="modal-icon" />
-                )}
+              <div className="modal-icon-wrapper modal-icon-danger">
+                <FiAlertCircle className="modal-icon" />
               </div>
-              <h3 className="modal-title">
-                {confirmAction === 'create' ? 'Tambah User?' : 'Hapus User?'}
-              </h3>
+              <h3 className="modal-title">Hapus User Admin?</h3>
             </div>
             <div className="modal-body">
               <p className="modal-message">
-                {confirmAction === 'create' ? (
-                  <>
-                    Apakah Anda yakin ingin menambah user{' '}
-                    <strong>"{confirmData?.email}"</strong> ({confirmData?.namaLengkap}) dengan role{' '}
-                    <strong>"{getRoleLabel(confirmData?.role)}"</strong>?
-                  </>
-                ) : (
-                  <>
-                    Apakah Anda yakin ingin menghapus user{' '}
-                    <strong>"{confirmData?.email}"</strong> ({confirmData?.namaLengkap})?
-                    <br />
-                    <span className="modal-warning">Tindakan ini tidak dapat dibatalkan.</span>
-                  </>
-                )}
+                Apakah Anda yakin ingin menghapus user <strong>"{confirmData?.email}"</strong> ({confirmData?.namaLengkap})?
+                <br />
+                <span className="modal-warning">Tindakan ini tidak dapat dibatalkan. Akun ini tidak akan bisa login lagi.</span>
               </p>
             </div>
             <div className="modal-footer">
-              <button
-                className="modal-btn modal-btn-cancel"
-                onClick={handleCancelConfirm}
-                disabled={saving}
-              >
+              <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)} disabled={saving}>
                 <FiX className="modal-btn-icon" />
                 <span>Batal</span>
               </button>
               <button
-                className={`modal-btn modal-btn-confirm ${
-                  confirmAction === 'create' ? 'modal-btn-primary' : 'modal-btn-danger'
-                }`}
+                className="modal-btn modal-btn-confirm modal-btn-danger"
                 onClick={handleConfirm}
                 disabled={saving}
               >
-                {saving ? (
-                  <>
-                    <span className="spinner-small"></span>
-                    <span>Memproses...</span>
-                  </>
-                ) : (
-                  <>
-                    {confirmAction === 'create' ? (
-                      <>
-                        <FiCheckCircle className="modal-btn-icon" />
-                        <span>Ya, Tambahkan</span>
-                      </>
-                    ) : (
-                      <>
-                        <FiTrash2 className="modal-btn-icon" />
-                        <span>Ya, Hapus</span>
-                      </>
-                    )}
-                  </>
-                )}
+                {saving ? 'Memproses...' : 'Ya, Hapus'}
               </button>
             </div>
           </div>
@@ -573,4 +378,3 @@ const AdminUser = () => {
 };
 
 export default AdminUser;
-

@@ -1,0 +1,52 @@
+/* Admin Guru Page Style */
+@import './User.css';
+
+.guru-table-grid .user-row {
+  grid-template-columns: 2fr 1.5fr 100px auto;
+}
+
+.nip-text {
+  font-family: monospace;
+  font-size: 0.9375rem;
+  color: #475569;
+}
+
+.edit-cell-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.modal-btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  color: white;
+  border: none;
+}
+
+.modal-btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.modal-btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.text-center {
+  text-align: center;
+}
+
+@media (max-width: 1024px) {
+  .guru-table-grid .user-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .col-actions {
+    grid-column: span 2;
+    justify-content: flex-start;
+  }
+}

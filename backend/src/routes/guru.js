@@ -7,7 +7,9 @@ const resolveGuru = require('../middleware/resolveGuru');
 const prisma = require('../config/prisma');
 const bankSoalController = require('../controllers/bankSoalController');
 const bankSoalImportController = require('../controllers/bankSoalImportController');
+const bankSoalKoleksiController = require('../controllers/bankSoalKoleksiController');
 const paketUjianController = require('../controllers/paketUjianController');
+const guruJadwalController = require('../controllers/guruJadwalController');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -65,6 +67,8 @@ router.put('/paket-ujian/:id', paketUjianController.update);
 router.delete('/paket-ujian/:id', paketUjianController.remove);
 
 // Bank Soal CRUD & Import
+router.get('/bank-soal-koleksi', bankSoalKoleksiController.list);
+router.post('/bank-soal-koleksi', bankSoalKoleksiController.create);
 router.get('/bank-soal/template', bankSoalImportController.downloadTemplate);
 router.post('/bank-soal/import', upload.single('file'), bankSoalImportController.importExcel);
 router.get('/bank-soal', bankSoalController.list);
@@ -72,5 +76,15 @@ router.get('/bank-soal/:id', bankSoalController.getById);
 router.post('/bank-soal', bankSoalController.create);
 router.put('/bank-soal/:id', bankSoalController.update);
 router.delete('/bank-soal/:id', bankSoalController.remove);
+
+// Jadwal Ujian
+router.get('/jadwal-ujian/official', guruJadwalController.listOfficial);
+router.put('/jadwal-ujian/official/:id/paket', guruJadwalController.setPaket);
+router.delete('/jadwal-ujian/official/:id/paket', guruJadwalController.removePaket);
+
+router.get('/jadwal-ujian/custom', guruJadwalController.listCustom);
+router.post('/jadwal-ujian/custom', guruJadwalController.createCustom);
+router.put('/jadwal-ujian/custom/:id', guruJadwalController.updateCustom);
+router.delete('/jadwal-ujian/custom/:id', guruJadwalController.removeCustom);
 
 module.exports = router;

@@ -5,6 +5,7 @@ const KATEGORI = ['pilgan', 'pilgan_kompleks', 'pilgan_kategori'];
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
 const baseSchema = {
+  bankSoalKoleksiId: Joi.number().integer().positive().allow(null).optional(),
   mataPelajaranId: Joi.number().integer().positive().required(),
   tingkat: Joi.string().valid(...TINGKAT).required().messages({
     'any.only': 'Tingkat harus X, XI, XII, atau SEMUA (0 = semua tingkat)',
@@ -82,6 +83,10 @@ exports.getSchema = getSchema;
 
 function normalizePayload(body) {
   const out = {
+    bankSoalKoleksiId:
+      body.bankSoalKoleksiId != null && body.bankSoalKoleksiId !== ''
+        ? Number(body.bankSoalKoleksiId)
+        : null,
     mataPelajaranId: body.mataPelajaranId,
     tingkat: body.tingkat,
     jurusanId: body.jurusanId != null && body.jurusanId !== '' ? Number(body.jurusanId) : null,
@@ -104,7 +109,7 @@ exports.normalizePayload = normalizePayload;
 
 exports.list = async (req, res) => {
   try {
-    const { mataPelajaranId, tingkat, jurusanId, kategoriSoal } = req.query;
+    const { mataPelajaranId, tingkat, jurusanId, kategoriSoal, bankSoalKoleksiId } = req.query;
     const guruId = req.guruId;
     if (!guruId) {
       return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
@@ -117,11 +122,13 @@ exports.list = async (req, res) => {
       where.jurusanId = jurusanId === 'null' || jurusanId === '' ? null : Number(jurusanId);
     }
     if (kategoriSoal) where.kategoriSoal = kategoriSoal;
+    if (bankSoalKoleksiId) where.bankSoalKoleksiId = Number(bankSoalKoleksiId);
 
     const items = await prisma.bankSoal.findMany({
       where,
       orderBy: [{ tingkat: 'asc' }, { createdAt: 'desc' }],
       include: {
+        bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
         jurusan: { select: { id: true, nama: true, idJurusan: true } },
       },
@@ -146,6 +153,7 @@ exports.getById = async (req, res) => {
     const item = await prisma.bankSoal.findFirst({
       where: { id, guruId },
       include: {
+        bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
         jurusan: { select: { id: true, nama: true, idJurusan: true } },
       },
@@ -173,6 +181,11 @@ exports.create = async (req, res) => {
   }
 
   try {
+    if (value.bankSoalKoleksiId != null) {
+      await prisma.bankSoalKoleksi.findFirstOrThrow({
+        where: { id: value.bankSoalKoleksiId, guruId },
+      });
+    }
     await prisma.mataPelajaran.findUniqueOrThrow({ where: { id: value.mataPelajaranId } });
     if (value.jurusanId != null) {
       await prisma.jurusan.findUniqueOrThrow({ where: { id: value.jurusanId } });
@@ -188,6 +201,7 @@ exports.create = async (req, res) => {
     const created = await prisma.bankSoal.create({
       data: normalizePayload({ ...value, guruId }),
       include: {
+        bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
         jurusan: { select: { id: true, nama: true, idJurusan: true } },
       },
@@ -216,6 +230,11 @@ exports.update = async (req, res) => {
   }
 
   try {
+    if (value.bankSoalKoleksiId != null) {
+      await prisma.bankSoalKoleksi.findFirstOrThrow({
+        where: { id: value.bankSoalKoleksiId, guruId },
+      });
+    }
     await prisma.mataPelajaran.findUniqueOrThrow({ where: { id: value.mataPelajaranId } });
     if (value.jurusanId != null) {
       await prisma.jurusan.findUniqueOrThrow({ where: { id: value.jurusanId } });
@@ -238,6 +257,7 @@ exports.update = async (req, res) => {
     const item = await prisma.bankSoal.findUnique({
       where: { id },
       include: {
+        bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
         jurusan: { select: { id: true, nama: true, idJurusan: true } },
       },

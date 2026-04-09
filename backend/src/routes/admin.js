@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
 const authenticate = require('../middleware/auth');
 const requireRole = require('../middleware/requireRole');
@@ -7,6 +9,9 @@ const jurusanController = require('../controllers/jurusanController');
 const kelasController = require('../controllers/kelasController');
 const userController = require('../controllers/userController');
 const mataPelajaranController = require('../controllers/mataPelajaranController');
+const adminSiswaController = require('../controllers/adminSiswaController');
+const adminGuruController = require('../controllers/adminGuruController');
+const adminJadwalController = require('../controllers/adminJadwalController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -39,6 +44,27 @@ router.post('/user', userController.create);
 router.get('/user/:id', userController.getById);
 router.put('/user/:id', userController.update);
 router.delete('/user/:id', userController.remove);
+
+// Siswa CRUD (Unified)
+router.get('/siswa', adminSiswaController.list);
+router.post('/siswa', adminSiswaController.create);
+router.put('/siswa/:id', adminSiswaController.update);
+router.delete('/siswa/:id', adminSiswaController.remove);
+router.post('/siswa/import', upload.single('file'), adminSiswaController.importSiswa);
+
+// Guru CRUD (Unified)
+router.get('/guru', adminGuruController.list);
+router.post('/guru', adminGuruController.create);
+router.put('/guru/:id', adminGuruController.update);
+router.delete('/guru/:id', adminGuruController.remove);
+router.post('/guru/import', upload.single('file'), adminGuruController.importGuru);
+
+// Jadwal Ujian
+router.get('/jadwal-ujian', adminJadwalController.listAll); // List all include custom
+router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official only
+router.post('/jadwal-ujian', adminJadwalController.create);
+router.put('/jadwal-ujian/:id', adminJadwalController.update);
+router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
 
 module.exports = router;
 
