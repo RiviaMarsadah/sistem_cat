@@ -21,6 +21,7 @@ export default function JadwalUjianGuru() {
   // Modals Data
   const [showPilihPaketModal, setShowPilihPaketModal] = useState(false);
   const [activeJadwalId, setActiveJadwalId] = useState(null);
+  const [searchPaket, setSearchPaket] = useState('');
   
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
   const [editingId, setEditingId] = useState(null); // null for create mode
@@ -70,11 +71,10 @@ export default function JadwalUjianGuru() {
     return `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
-  const cleanNamaUjian = (rawName) => (rawName || '').replace(/^\[Custom\]\s*/i, '');
-
   // HANDLER OFFICIAL EXAMS -----------------------------
   const handleOpenPilihPaket = (jdwlId) => {
     setActiveJadwalId(jdwlId);
+    setSearchPaket('');
     setShowPilihPaketModal(true);
   };
 
@@ -135,7 +135,7 @@ export default function JadwalUjianGuru() {
 
   const openEditCustom = (j) => {
     setEditingId(j.id);
-    setNama(j.nama.replace("[Custom] ", ""));
+    setNama(j.nama);
     setMataPelajaranId(j.mataPelajaranId);
     setPaketUjianId(j.paketUjianId);
     
@@ -277,7 +277,7 @@ export default function JadwalUjianGuru() {
                   <div key={j.id} className="jadwal-row">
                     <div className="col-main">
                       <div className="jadwal-nama">
-                        {cleanNamaUjian(j.nama)}
+                        {j.nama}
                       </div>
                       <div className="jadwal-meta-info">
                         <FiClock size={12} /> Durasi: <strong>{j.durasi} Menit</strong>
@@ -365,7 +365,7 @@ export default function JadwalUjianGuru() {
                  {customJadwal.map((j) => (
                    <div key={j.id} className="jadwal-row">
                       <div className="col-main">
-                        <div className="jadwal-nama">{cleanNamaUjian(j.nama)}</div>
+                        <div className="jadwal-nama">{j.nama}</div>
                         <div className="jadwal-meta-info">
                           <FiClock size={12} /> Durasi: <strong>{j.durasi} Menit</strong>
                         </div>
@@ -434,22 +434,61 @@ export default function JadwalUjianGuru() {
                 <button className="modal-close" onClick={() => setShowPilihPaketModal(false)} style={{background: 'none', border: 'none', cursor: 'pointer', color: '#64748b'}}><FiX size={20} /></button>
              </div>
              <div className="modal-body" style={{maxHeight:'50vh', overflowY:'auto', padding: '1.5rem 2rem'}}>
-                <p style={{marginBottom: '1.5rem', fontSize: '0.9rem', color: '#64748b'}}>Hanya paket berstatus Siap Ujian yang akan ditampilkan di sini.</p>
-                {myPakets.filter(p => !p.draft).length === 0 ? (
-                   <div className="user-alert" style={{textAlign: 'center'}}>Anda belum memiliki paket ujian siap pakai.</div>
-                ) : (
-                   <div style={{ display: 'grid', gap: '1rem' }}>
-                     {myPakets.map(p => (
-                        <div key={p.id} style={{ padding: '1.25rem', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-                           <div>
-                             <strong style={{display: 'block', color: '#0f172a'}}>{p.nama}</strong>
-                             <span style={{fontSize: '0.8rem', color: '#64748b'}}>{p.mataPelajaran?.namaMapel} • {p.jumlahSoal || 0} Soal</span>
-                           </div>
-                           <button className="btn-action success" onClick={() => handleLinkPaket(p.id)} disabled={saving}>Tautkan</button>
-                        </div>
-                     ))}
-                   </div>
-                )}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <p style={{marginBottom: '0.75rem', fontSize: '0.9rem', color: '#64748b'}}>Hanya paket berstatus Siap Ujian yang akan ditampilkan di sini.</p>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="Cari paket ujian..."
+                    value={searchPaket}
+                    onChange={(e) => setSearchPaket(e.target.value)}
+                    style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
+                  />
+                </div>
+                {(() => {
+                  const jadwalAktif = officialJadwal.find(j => j.id === activeJadwalId) || customJadwal.find(j => j.id === activeJadwalId);
+                  const filteredPakets = myPakets.filter(p => 
+                    !p.draft && 
+                    (jadwalAktif ? p.mataPelajaran?.id === jadwalAktif.mataPelajaranId : true) &&
+                    p.nama.toLowerCase().includes(searchPaket.toLowerCase())
+                  );
+
+                  if (filteredPakets.length === 0) {
+                     return <div className="user-alert" style={{textAlign: 'center'}}>Tidak ada paket ujian yang ditemukan untuk mata pelajaran ini.</div>;
+                  }
+
+                  return (
+                     <div style={{ display: 'grid', gap: '1rem' }}>
+                       {filteredPakets.map(p => (
+                          <div
+                             key={p.id}
+                             onClick={() => !saving && handleLinkPaket(p.id)}
+                             style={{
+                               padding: '1.25rem',
+                               border: '1px solid #e2e8f0',
+                               borderRadius: '12px',
+                               background: '#f8fafc',
+                               cursor: saving ? 'not-allowed' : 'pointer',
+                               transition: 'all 0.18s ease',
+                               opacity: saving ? 0.6 : 1,
+                             }}
+                             onMouseEnter={e => { if (!saving) { e.currentTarget.style.background = '#eff6ff'; e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(59,130,246,0.12)'; } }}
+                             onMouseLeave={e => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
+                           >
+                             <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
+                               <strong style={{display: 'block', color: '#0f172a', whiteSpace: 'normal', overflowWrap: 'break-word'}}>{p.nama}</strong>
+                               {p.guru?.user?.namaLengkap && (
+                                 <span style={{fontSize: '0.7rem', padding: '2px 6px', background: '#e2e8f0', borderRadius: '4px', color: '#475569', whiteSpace: 'nowrap', marginLeft: '8px'}}>Oleh: {p.guru.user.namaLengkap}</span>
+                               )}
+                             </div>
+                             <span style={{fontSize: '0.8rem', color: '#64748b', display: 'block', marginTop: '4px'}}>
+                               {p.mataPelajaran?.namaMapel} • {p._count?.soalPaket || 0} Soal
+                             </span>
+                          </div>
+                       ))}
+                     </div>
+                  );
+                })()}
              </div>
            </div>
          </div>

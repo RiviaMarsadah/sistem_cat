@@ -1,0 +1,743 @@
+.wizard-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+
+.wizard-header {
+  margin-bottom: 2rem;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+.back-link:hover { opacity: 0.8; }
+
+.wizard-header h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.wizard-header p {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+/* Stepper */
+.stepper {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 3rem;
+  position: relative;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  width: 100px;
+  position: relative;
+}
+
+.step-item::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: -1;
+}
+
+.step-item:last-child::after {
+  display: none;
+}
+
+.step-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s;
+  border: 2px solid white;
+}
+
+.step-item.active .step-circle {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 0 0 4px #bfdbfe;
+}
+
+.step-item.completed .step-circle {
+  background: #10b981;
+  color: white;
+}
+.step-item.completed::after {
+  background: #10b981;
+}
+
+.step-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: #64748b;
+}
+.step-item.active .step-label { color: #3b82f6; }
+.step-item.completed .step-label { color: #10b981; }
+
+/* Panels */
+.wizard-content {
+  background: white;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+  min-height: 400px;
+  margin-bottom: 2rem;
+}
+
+.step-panel h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+.step-panel .hint {
+  color: #64748b;
+  margin-bottom: 1.5rem;
+}
+
+/* Animations */
+.slide-in {
+  animation: slideIn 0.3s ease-out forwards;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Forms */
+.period-toggle {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.radio-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+.span-full { grid-column: 1 / -1; }
+
+/* Safety Option Step 1 */
+.safety-option-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.option-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.option-header strong {
+  display: block;
+  font-size: 1.1rem;
+  color: #0369a1;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 60px;
+  height: 30px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch label {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #cbd5e1;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-switch label:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + label {
+  background-color: #3b82f6;
+}
+
+.toggle-switch input:checked + label:before {
+  transform: translateX(30px);
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #334155;
+}
+
+.wizard-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+.wizard-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px #bfdbfe;
+}
+
+/* Cards List */
+.grid-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.action-row {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  background: #3b82f6;
+  color: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-small.btn-ghost {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.selection-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.selection-card:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+.selection-card.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+.selection-card input {
+  margin-top: 4px;
+  transform: scale(1.2);
+}
+.selection-card .details strong {
+  display: block;
+  color: #0f172a;
+}
+.selection-card .details span {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ============================================
+   Step 4: Session Distribution - Premium UI
+   ============================================ */
+
+.step4-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1.5rem;
+}
+
+.sessions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Session Card */
+.session-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s;
+}
+
+.session-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09);
+}
+
+/* Session Header */
+.session-card-header {
+  background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+  border-bottom: 1px solid #e0e8ff;
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+/* Session Badge (number circle) */
+.session-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.session-number {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  color: white;
+  font-size: 1.25rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  flex-shrink: 0;
+}
+
+.session-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+/* Time Inputs Row */
+.session-time-inputs {
+  display: flex;
+  gap: 1.25rem;
+  flex-grow: 1;
+  flex-wrap: wrap;
+}
+
+.time-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.time-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.time-label-icon {
+  font-size: 0.85rem;
+}
+
+.time-input {
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  border-radius: 10px;
+}
+
+.durasi-input {
+  width: 100px !important;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+/* Auto-calculated end time display */
+.selesai-display {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #059669;
+  font-weight: 700;
+  font-size: 0.95rem;
+  min-width: 140px;
+  white-space: nowrap;
+}
+
+/* Remove Session Button */
+.btn-remove-session {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-remove-session:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Bulk Action Bar */
+.session-bulk-actions {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.875rem 1.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.bulk-group {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex: 1;
+}
+
+.bulk-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.bulk-select {
+  max-width: 260px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+}
+
+.session-meta {
+  flex-shrink: 0;
+}
+
+.kelas-count-badge {
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  white-space: nowrap;
+}
+
+/* Class Rows Grid */
+.session-class-grid {
+  padding: 1.5rem 1.75rem;
+}
+
+.class-grid-header {
+  display: grid;
+  grid-template-columns: 28% 44% 28%;
+  padding: 0 0 0.75rem 0;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+}
+
+.col-required {
+  color: #ef4444;
+  margin-left: 2px;
+}
+
+.col-optional {
+  color: #94a3b8;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.class-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.class-row {
+  display: grid;
+  grid-template-columns: 28% 44% 28%;
+  align-items: center;
+  gap: 0;
+  padding: 0.625rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s;
+  border-radius: 8px;
+}
+
+.class-row:last-child {
+  border-bottom: none;
+}
+
+.class-row:hover {
+  background: #f8fafc;
+}
+
+.class-row.row-done .kelas-badge {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.class-row.row-done .kelas-tingkat {
+  background: #10b981;
+}
+
+/* Kelas Badge in row */
+.kelas-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.35rem 0.65rem;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
+.kelas-tingkat {
+  background: #64748b;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: background 0.2s;
+}
+
+.kelas-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Row inputs */
+.row-input {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  margin-right: 0.75rem;
+}
+
+.row-input.input-empty {
+  border-color: #fca5a5;
+  background: #fff7f7;
+}
+
+.row-input.input-empty:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+}
+
+/* Add Session Button */
+.btn-add-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-add-slot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 20px;
+  color: #94a3b8;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state h4 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #475569;
+  margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+  font-size: 0.9rem;
+  margin: 0;
+  color: #94a3b8;
+}
+
+/* Summary Step 5 */
+.summary-box {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.5rem;
+}
+.sum-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.sum-item:last-child { border-bottom: none; }
+
+.summary-alert {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 12px;
+}
+
+/* Footer Nav */
+.wizard-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn-wizard-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+.btn-wizard-nav.back {
+  background: white;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+.btn-wizard-nav.back:hover { background: #f8fafc; }
+
+.btn-wizard-nav.next {
+  background: #0f172a;
+  color: white;
+}
+.btn-wizard-nav.next:hover { background: #1e293b; }
+
+.btn-wizard-nav.finish {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+.btn-wizard-nav.finish:hover { opacity: 0.9; }

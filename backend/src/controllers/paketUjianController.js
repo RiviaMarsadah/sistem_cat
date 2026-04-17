@@ -25,11 +25,40 @@ exports.list = async (req, res) => {
     const guruId = req.guruId;
     if (!guruId) return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
 
+    const { mataPelajaranId } = req.query;
+    let whereClause = { guruId };
+
+    if (mataPelajaranId) {
+      whereClause = { mataPelajaranId: Number(mataPelajaranId) };
+    } else {
+      const mapels = await prisma.mataPelajaran.findMany({
+        where: {
+          OR: [
+            { paketUjian: { some: { guruId } } },
+            { bankSoal: { some: { guruId } } },
+            { jadwalUjians: { some: { guruId } } },
+          ]
+        },
+        select: { id: true }
+      });
+      const mapelIds = mapels.map(m => m.id);
+      
+      if (mapelIds.length > 0) {
+        whereClause = {
+          OR: [
+            { guruId },
+            { mataPelajaranId: { in: mapelIds } }
+          ]
+        };
+      }
+    }
+
     const items = await prisma.paketUjian.findMany({
-      where: { guruId },
+      where: whereClause,
       orderBy: { updatedAt: 'desc' },
       include: {
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
+        guru: { include: { user: { select: { namaLengkap: true } } } },
         _count: { select: { soalPaket: true } },
       },
     });

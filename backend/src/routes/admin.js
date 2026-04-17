@@ -12,6 +12,7 @@ const mataPelajaranController = require('../controllers/mataPelajaranController'
 const adminSiswaController = require('../controllers/adminSiswaController');
 const adminGuruController = require('../controllers/adminGuruController');
 const adminJadwalController = require('../controllers/adminJadwalController');
+const adminPeriodeController = require('../controllers/adminPeriodeController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -59,11 +60,15 @@ router.put('/guru/:id', adminGuruController.update);
 router.delete('/guru/:id', adminGuruController.remove);
 router.post('/guru/import', upload.single('file'), adminGuruController.importGuru);
 
+// Periode Ujian
+router.get('/periode', adminPeriodeController.list);
+router.post('/periode', adminPeriodeController.create);
+router.put('/periode/:id', adminPeriodeController.update);
+router.delete('/periode/:id', adminPeriodeController.remove);
+
 // Jadwal Ujian
-router.get('/jadwal-ujian', adminJadwalController.listAll); // List all include custom
 router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official only
-router.post('/jadwal-ujian', adminJadwalController.create);
-router.put('/jadwal-ujian/:id', adminJadwalController.update);
+router.post('/jadwal-ujian/bulk-generate', adminJadwalController.bulkGenerate);
 router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
 
 module.exports = router;

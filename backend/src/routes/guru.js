@@ -69,6 +69,8 @@ router.delete('/paket-ujian/:id', paketUjianController.remove);
 // Bank Soal CRUD & Import
 router.get('/bank-soal-koleksi', bankSoalKoleksiController.list);
 router.post('/bank-soal-koleksi', bankSoalKoleksiController.create);
+router.put('/bank-soal-koleksi/:id', bankSoalKoleksiController.update);
+router.delete('/bank-soal-koleksi/:id', bankSoalKoleksiController.remove);
 router.get('/bank-soal/template', bankSoalImportController.downloadTemplate);
 router.post('/bank-soal/import', upload.single('file'), bankSoalImportController.importExcel);
 router.get('/bank-soal', bankSoalController.list);

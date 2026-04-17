@@ -1,64 +1,98 @@
-import { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX } from 'react-icons/fi';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle, FiX, FiFolder, FiArrowLeft } from 'react-icons/fi';
 import api from '../../services/api';
 import './JadwalUjian.css';
 import './BankSoal.css';
 
-const TINGKAT_OPTIONS = [
-  { value: '10', label: '10' },
-  { value: '11', label: '11' },
-  { value: '12', label: '12' },
-  { value: '0', label: 'Semua Tingkat' },
+const KATEGORI_OPTIONS = [
+  { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
+  { value: 'pilgan_kompleks', label: 'Pilihan Ganda Kompleks' },
+  { value: 'pilgan_kategori', label: 'Pilihan Ganda Kategori' },
 ];
 
-export default function BankSoal() {
+const TINGKAT_OPTIONS = [
+  { value: '10', api: 'X', label: '10' },
+  { value: '11', api: 'XI', label: '11' },
+  { value: '12', api: 'XII', label: '12' },
+  { value: '0', api: 'SEMUA', label: 'Semua Tingkat' },
+];
+
+const ITEMS_PER_PAGE = 10;
+
+/** Mengembalikan array berisi nomor halaman dan '...' untuk paginasi ringkas (1, 2, ..., 46, 47). */
+function getPaginationPages(totalPages, currentPage) {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => ({ type: 'page', value: i + 1 }));
+  }
+  const delta = 2;
+  const rangeStart = Math.max(2, currentPage - delta);
+  const rangeEnd = Math.min(totalPages - 1, currentPage + delta);
+  const result = [];
+  result.push({ type: 'page', value: 1 });
+  if (rangeStart > 2) result.push({ type: 'ellipsis', key: 'left' });
+  for (let i = rangeStart; i <= rangeEnd; i++) result.push({ type: 'page', value: i });
+  if (rangeEnd < totalPages - 1) result.push({ type: 'ellipsis', key: 'right' });
+  if (totalPages > 1) result.push({ type: 'page', value: totalPages });
+  return result;
+}
+
+function tingkatToDisplay(t) {
+  if (t === 'X') return '10';
+  if (t === 'XI') return '11';
+  if (t === 'XII') return '12';
+  if (t === 'SEMUA') return 'Semua';
+  return t;
+}
+
+export default function BankSoalDetail() {
+  const { koleksiId } = useParams();
+  const navigate = useNavigate();
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [mapelList, setMapelList] = useState([]);
+  const [jurusanList, setJurusanList] = useState([]);
+  const [koleksiList, setKoleksiList] = useState([]);
 
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [namaKoleksi, setNamaKoleksi] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-
-  // Import Modal States
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showGuideModal, setShowGuideModal] = useState(false);
   const [importMapel, setImportMapel] = useState('');
   const [importTingkat, setImportTingkat] = useState('');
   const [importJurusan, setImportJurusan] = useState('');
-  const [importKoleksiId, setImportKoleksiId] = useState('');
   const [importNamaBankSoal, setImportNamaBankSoal] = useState('');
+  const [importKoleksiId, setImportKoleksiId] = useState('');
   const [importFile, setImportFile] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
   const [importResult, setImportResult] = useState(null);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState('');
   const [importNotice, setImportNotice] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
-
-  const [mapelList, setMapelList] = useState([]);
-  const [jurusanList, setJurusanList] = useState([]);
 
   const loadOptions = async () => {
     try {
-      const [mapelRes, jurusanRes] = await Promise.all([
+      const [mapelRes, jurusanRes, koleksiRes] = await Promise.all([
         api.get('/guru/mata-pelajaran'),
         api.get('/guru/jurusan'),
+        api.get('/guru/bank-soal-koleksi'),
       ]);
       setMapelList(mapelRes.data?.data || []);
       setJurusanList(jurusanRes.data?.data || []);
+      setKoleksiList(koleksiRes.data?.data || []);
     } catch (e) {
       console.error('Load options error:', e);
     }
   };
 
-  const load = async () => {
+  const loadSoal = async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await api.get('/guru/bank-soal-koleksi');
+      const params = new URLSearchParams();
+      if (koleksiId) params.set('bankSoalKoleksiId', koleksiId);
+      const res = await api.get(`/guru/bank-soal?${params.toString()}`);
       setItems(res.data?.data || []);
     } catch (e) {
       setError(e?.response?.data?.message || 'Gagal memuat bank soal');
@@ -69,39 +103,32 @@ export default function BankSoal() {
 
   useEffect(() => {
     loadOptions();
-    load();
   }, []);
 
+  useEffect(() => {
+    setCurrentPage(1);
+    loadSoal();
+  }, [koleksiId]);
+
   const handleDelete = async (id) => {
-    if (!window.confirm('Yakin hapus bank soal (koleksi) ini? Seluruh soal di dalamnya bisa terhapus atau kehilangan referensi koleksi.')) return;
+    if (!window.confirm('Yakin hapus soal ini?')) return;
     try {
-      await api.delete(`/guru/bank-soal-koleksi/${id}`);
-      load();
+      await api.delete(`/guru/bank-soal/${id}`);
+      loadSoal();
     } catch (e) {
       setError(e?.response?.data?.message || 'Gagal menghapus');
     }
   };
 
-  const handleSaveKoleksi = async (e) => {
-    e.preventDefault();
-    if (!namaKoleksi || !editingId) return;
-    setSaving(true);
-    try {
-      await api.put(`/guru/bank-soal-koleksi/${editingId}`, { nama: namaKoleksi });
-      setShowEditModal(false);
-      load();
-    } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal menyimpan koleksi');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  const openEdit = (item) => {
-    setEditingId(item.id);
-    setNamaKoleksi(item.nama);
-    setShowEditModal(true);
-  };
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages);
+  }, [totalPages, currentPage]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -109,7 +136,7 @@ export default function BankSoal() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'Template_Bank_Soal.xlsx');
+      link.setAttribute('download', 'template_import_bank_soal.xlsx');
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -160,7 +187,7 @@ export default function BankSoal() {
       setImportKoleksiId('');
       setImportFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
-      if (res.data?.data?.created > 0) load();
+      if (res.data?.data?.created > 0) loadSoal();
       setShowImportModal(false);
     } catch (e) {
       setImportError(e?.response?.data?.message || 'Gagal mengimpor. Periksa format file lalu coba lagi.');
@@ -170,145 +197,44 @@ export default function BankSoal() {
     }
   };
 
+  const currentKoleksi = koleksiList.find((k) => String(k.id) === String(koleksiId));
+  const koleksiName = currentKoleksi ? currentKoleksi.nama : loading ? 'Memuat...' : 'Koleksi Bank Soal';
+
   return (
-    <div className="bank-soal-page">
-      <div className="user-header">
-        <div>
-          <h1 className="user-title">
-            <span className="title-text">Bank Soal</span>
-            <span className="title-badge">Guru</span>
-          </h1>
-          <p className="user-subtitle">Kelola kotak (koleksi) bank soal Anda, klik pada nama bank soal untuk mengelola butir soal.</p>
-        </div>
-        <div className="user-meta">
-          <div className="meta-card">
-             <div className="meta-label">Total Koleksi</div>
-             <div className="meta-value">{items.length}</div>
+    <div className="periode-detail-view" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+        <button onClick={() => navigate('/guru/bank-soal')} style={{ background: 'none', border: 'none', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', marginBottom: '1.5rem', padding: 0, fontSize: '0.95rem' }}>
+          <FiArrowLeft /> Kembali ke Daftar Koleksi
+        </button>
+
+        <div style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '0.75rem', letterSpacing: '-0.5px', color: '#1e293b' }}>{koleksiName}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.9rem' }}>
+                <FiFolder /> Terdapat {items.length} Soal
+            </div>
           </div>
-        </div>
-      </div>
-
-      {error && <div className="user-alert" role="alert">{error}</div>}
-
-      <div className="user-card">
-         <div className="user-card-header" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-           <h2 className="user-card-title">Daftar Bank Soal</h2>
-           
-           <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
-             <button
-               type="button"
-               className="btn-import-excel"
-               onClick={() => setShowImportModal(true)}
-             >
-               <FiUpload /> Import Bank Soal
-             </button>
-             <Link to="/guru/bank-soal/tambah" className="btn-add-user">
-               <FiPlus className="btn-plus" /> 
-               <span>Tambah Bank Soal</span>
-             </Link>
-           </div>
-         </div>
-
-        {loading ? (
-          <div className="loading-state">Memuat...</div>
-        ) : (
-          <div className="paket-ujian-table-wrap">
-            <style>{`
-               .clickable-row:hover { background-color: #f8fafc !important; }
-            `}</style>
-            <table className="paket-ujian-table">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Nama Bank Soal</th>
-                  <th>Jumlah Soal</th>
-                  <th>Dibuat Pada</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="empty-row">Belum ada bank soal. Silakan buat yang baru.</td>
-                  </tr>
-                ) : (
-                  items.map((row, idx) => (
-                    <tr key={row.id} className="clickable-row" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)}>
-                      <td>{idx + 1}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b', fontWeight: '700' }}>
-                          <FiFolder size={20} style={{ color: '#3b82f6' }} />
-                          {row.nama}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#2563eb', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem'}}>
-                          {row._count?.bankSoal || 0} Soal
-                        </div>
-                      </td>
-                      <td>
-                         <div style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>
-                           {new Date(row.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}
-                         </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button type="button" className="btn-action" style={{ background: '#10b981', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
-                            <FiEye size={20} />
-                          </button>
-                          <button type="button" className="btn-action primary" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
-                            <FiEdit2 size={20} />
-                          </button>
-                          <button type="button" className="btn-action" style={{ background: '#ef4444', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
-                            <FiTrash2 size={20} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          
+          <div className="header-actions" style={{ zIndex: 1, display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              className="btn-import-excel"
+              onClick={() => setShowImportModal(true)}
+            >
+              <FiUpload /> Import Bank Soal
+            </button>
+            <Link to="/guru/bank-soal/tambah" className="btn-add-user">
+              <FiPlus className="btn-plus" /> 
+              <span>Tambah Bank Soal</span>
+            </Link>
           </div>
-        )}
-      </div>
+
+          {/* Decorative Background */}
+          <FiFolder style={{ position: 'absolute', right: '150px', top: '-40px', fontSize: '180px', opacity: '0.03', transform: 'rotate(15deg)', color: '#3b82f6' }} />
+        </div>
 
       {importNotice && (
         <div className={`bank-soal-notice ${importNotice.type}`}>
           {importNotice.text}
-        </div>
-      )}
-
-      {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal-container">
-            <div className="modal-header">
-              <h3 className="modal-title">Ubah Nama Bank Soal</h3>
-              <button className="modal-close" onClick={() => setShowEditModal(false)}><FiPlus style={{transform: 'rotate(45deg)'}} /></button>
-            </div>
-            <div className="modal-body">
-              <form onSubmit={handleSaveKoleksi}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nama Bank Soal</label>
-                  <input
-                    type="text"
-                    required
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px' }}
-                    value={namaKoleksi}
-                    onChange={(e) => setNamaKoleksi(e.target.value)}
-                  />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
-                  <button type="button" onClick={() => setShowEditModal(false)} style={{ padding: '10px 16px', background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>
-                    Batal
-                  </button>
-                  <button type="submit" disabled={saving} style={{ padding: '10px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
-                    {saving ? 'Loading...' : 'Simpan'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
         </div>
       )}
 
@@ -344,8 +270,8 @@ export default function BankSoal() {
                   <div className="filter-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
                     <label>Pilih Bank Soal</label>
                     <select value={importKoleksiId} onChange={(e) => setImportKoleksiId(e.target.value)}>
-                      <option value="">— Masukkan Koleksi —</option>
-                      {items.map((k) => (
+                      <option value="">— Jangan Masukkan Koleksi (Opsional) —</option>
+                      {koleksiList.map((k) => (
                         <option key={k.id} value={k.id}>{k.nama}</option>
                       ))}
                       <option value="new">+ Buat Koleksi Baru</option>
@@ -463,6 +389,106 @@ export default function BankSoal() {
               <p>Untuk <strong>pilgan_kategori</strong>, isi Jawaban dengan <strong>B</strong> (Benar) dan <strong>S</strong> (Salah) sesuai urutan Opsi A, B, C, …</p>
               <p>Gunakan file template yang didownload agar format kolom sesuai.</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter dihapus sesuai permintaan */}
+
+      {error && <div className="bank-soal-error">{error}</div>}
+
+      {loading ? (
+        <div className="bank-soal-loading">Memuat...</div>
+      ) : (
+        <div className="bank-soal-table-wrap">
+          <table className="bank-soal-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Mapel</th>
+                <th>Tingkat</th>
+                <th>Prodi</th>
+                <th>Kategori</th>
+                <th>Soal / Pernyataan</th>
+                <th>Jawaban</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.length === 0 ? (
+                <tr><td colSpan={8} className="empty-row">Belum ada soal. Klik &quot;Tambah Soal&quot;.</td></tr>
+              ) : (
+                paginatedItems.map((row, idx) => (
+                  <tr key={row.id}>
+                    <td>{startIndex + idx + 1}</td>
+                    <td>{row.mataPelajaran?.namaMapel}</td>
+                    <td>{tingkatToDisplay(row.tingkat)}</td>
+                    <td>{row.jurusan ? row.jurusan.nama : 'Semua Prodi'}</td>
+                    <td>
+                      <span className={`badge badge-${row.kategoriSoal}`}>
+                        {KATEGORI_OPTIONS.find((o) => o.value === row.kategoriSoal)?.label || row.kategoriSoal}
+                      </span>
+                    </td>
+                    <td className="soal-preview">{row.soal ? row.soal.slice(0, 80) + (row.soal.length > 80 ? '…' : '') : '(Pernyataan di kolom A-F)'}</td>
+                    <td>{row.jawaban}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <Link to={`/guru/bank-soal/edit/${row.id}`} className="btn-action primary" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', padding: 0 }} title="Edit"><FiEdit2 size={20} /></Link>
+                        <button type="button" className="btn-action" style={{ background: '#ef4444', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={() => handleDelete(row.id)} title="Hapus"><FiTrash2 size={20} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {!loading && totalItems > 0 && (
+        <div className="bank-soal-pagination">
+          <span className="pagination-info">
+            Menampilkan {startIndex + 1}-{startIndex + paginatedItems.length} dari {totalItems} soal
+          </span>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={displayPage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              aria-label="Halaman sebelumnya"
+            >
+              Sebelumnya
+            </button>
+            <div className="pagination-pages">
+              {getPaginationPages(totalPages, displayPage).map((item, idx) =>
+                item.type === 'ellipsis' ? (
+                  <span key={`ellipsis-${item.key}`} className="pagination-ellipsis" aria-hidden="true">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item.value}
+                    type="button"
+                    className={`pagination-page ${item.value === displayPage ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(item.value)}
+                    aria-label={`Halaman ${item.value}`}
+                    aria-current={item.value === displayPage ? 'page' : undefined}
+                  >
+                    {item.value}
+                  </button>
+                )
+              )}
+            </div>
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={displayPage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              aria-label="Halaman berikutnya"
+            >
+              Berikutnya
+            </button>
           </div>
         </div>
       )}

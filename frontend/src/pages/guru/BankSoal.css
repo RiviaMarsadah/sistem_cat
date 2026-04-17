@@ -61,6 +61,14 @@
   flex-wrap: wrap;
 }
 
+/* Override user-meta to align meta-card + header-actions side by side */
+.bank-soal-page .user-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .btn-import-excel {
   display: inline-flex;
   align-items: center;
@@ -148,14 +156,81 @@
 }
 
 .btn-submit-import {
-  padding: 0.7rem 1.25rem;
+  padding: 0.85rem 1.5rem;
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
-  align-self: flex-end;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.upload-zone-wrapper {
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-zone-wrapper:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.upload-zone-wrapper .upload-icon {
+  font-size: 3rem;
+  color: #3b82f6;
+  margin-bottom: 0.75rem;
+}
+
+.upload-zone-wrapper .upload-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+}
+
+.upload-zone-wrapper .upload-sub {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.upload-zone-wrapper input[type="file"] {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%; height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #dbeafe;
+  color: #1e40af;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-top: 1rem;
 }
 
 .btn-submit-import:hover:not(:disabled) {

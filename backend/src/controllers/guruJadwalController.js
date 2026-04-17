@@ -28,6 +28,8 @@ exports.listOfficial = async (req, res) => {
         paketUjian: {
           include: { guru: { include: { user: true } } }
         },
+        periode: true,
+        jurusan: true,
         kelasJadwal: {
           include: { kelas: true }
         }
@@ -121,6 +123,8 @@ exports.listCustom = async (req, res) => {
       include: {
         mataPelajaran: true,
         paketUjian: true,
+        periode: true,
+        jurusan: true,
         kelasJadwal: {
           include: { kelas: true }
         }
@@ -149,7 +153,8 @@ exports.createCustom = async (req, res) => {
     const result = await prisma.$transaction(async (tx) => {
       const jadwal = await tx.jadwalUjian.create({
         data: {
-          nama: "[Custom] " + nama,
+          nama: nama,
+          kategori: 'custom',
           mataPelajaranId: Number(mataPelajaranId),
           mulai: new Date(mulai),
           selesai: new Date(selesai),
@@ -197,7 +202,8 @@ exports.updateCustom = async (req, res) => {
       const updated = await tx.jadwalUjian.update({
         where: { id },
         data: {
-          nama: nama.startsWith("[Custom]") ? nama : "[Custom] " + nama,
+          nama: nama,
+          kategori: 'custom',
           mataPelajaranId: Number(mataPelajaranId),
           mulai: new Date(mulai),
           selesai: new Date(selesai),

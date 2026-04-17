@@ -11,10 +11,12 @@ import AdminGuru from './pages/admin/Guru';
 import AdminMataPelajaran from './pages/admin/MataPelajaran';
 import GuruDashboard from './pages/guru/Dashboard';
 import GuruBankSoal from './pages/guru/BankSoal';
+import GuruBankSoalDetail from './pages/guru/BankSoalDetail';
 import GuruBankSoalForm from './pages/guru/BankSoalForm';
 import GuruPaketUjian from './pages/guru/PaketUjian';
 import GuruPaketUjianForm from './pages/guru/PaketUjianForm';
 import AdminJadwalUjian from './pages/admin/JadwalUjian';
+import AdminJadwalWizard from './pages/admin/JadwalWizard';
 import GuruJadwalUjian from './pages/guru/JadwalUjian';
 
 function App() {
@@ -36,6 +38,7 @@ function App() {
             <Route path="siswa" element={<AdminSiswa />} />
             <Route path="guru" element={<AdminGuru />} />
             <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
+            <Route path="jadwal-ujian/wizard" element={<AdminJadwalWizard />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -43,6 +46,7 @@ function App() {
           <Route path="/guru" element={<DashboardLayout role="guru" />}>
             <Route path="dashboard" element={<GuruDashboard />} />
             <Route path="bank-soal" element={<GuruBankSoal />} />
+            <Route path="bank-soal/detail/:koleksiId" element={<GuruBankSoalDetail />} />
             <Route path="bank-soal/tambah" element={<GuruBankSoalForm />} />
             <Route path="bank-soal/edit/:id" element={<GuruBankSoalForm />} />
             <Route path="paket-ujian" element={<GuruPaketUjian />} />

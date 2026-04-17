@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiEdit2, FiEye, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
+import { FiEdit2, FiEye, FiPlus, FiTrash2, FiX, FiLock } from 'react-icons/fi';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import './JadwalUjian.css';
 import './PaketUjian.css';
 
 const TIPE_OPTIONS = [
@@ -26,6 +28,7 @@ function tingkatToDisplay(t) {
 }
 
 export default function PaketUjian() {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -82,24 +85,36 @@ export default function PaketUjian() {
 
   return (
     <div className="paket-ujian-page">
-      <div className="paket-ujian-header">
+      <div className="user-header">
         <div>
-          <h1 className="page-title guru-title">
+          <h1 className="user-title">
             <span className="title-text">Paket Ujian</span>
-            <span className="title-badge guru-badge">Guru</span>
+            <span className="title-badge">Guru</span>
           </h1>
-          <p className="page-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
+          <p className="user-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
         </div>
-        <Link to="/guru/paket-ujian/tambah" className="btn-tambah">
-          <FiPlus /> Buat Paket Ujian
-        </Link>
+        <div className="user-meta">
+          <div className="meta-card">
+            <div className="meta-label">Total Paket</div>
+            <div className="meta-value">{items.length}</div>
+          </div>
+          <Link to="/guru/paket-ujian/tambah" className="btn-add-user">
+            <FiPlus className="btn-plus" />
+            <span>Buat Paket Ujian</span>
+          </Link>
+        </div>
       </div>
 
-      {error && <div className="paket-ujian-error">{error}</div>}
+      {error && <div className="user-alert" role="alert">{error}</div>}
 
-      {loading ? (
-        <div className="paket-ujian-loading">Memuat...</div>
-      ) : (
+      <div className="user-card">
+        <div className="user-card-header">
+          <h2 className="user-card-title">Daftar Paket Ujian</h2>
+        </div>
+
+        {loading ? (
+          <div className="loading-state">Memuat...</div>
+        ) : (
         <div className="paket-ujian-table-wrap">
           <table className="paket-ujian-table">
             <thead>
@@ -124,7 +139,16 @@ export default function PaketUjian() {
                 items.map((row, idx) => (
                   <tr key={row.id}>
                     <td>{idx + 1}</td>
-                    <td>{row.nama}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                        <span>{row.nama}</span>
+                        {row.guru?.user?.namaLengkap && row.guru.user.namaLengkap !== user?.namaLengkap && (
+                          <span style={{ fontSize: '0.7rem', padding: '2px 6px', background: '#e2e8f0', borderRadius: '4px', color: '#475569', whiteSpace: 'nowrap' }}>
+                            Oleh: {row.guru.user.namaLengkap}
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td>{row.mataPelajaran?.namaMapel}</td>
                     <td>{tingkatToDisplay(row.tingkat)}</td>
                     <td>{TIPE_OPTIONS.find((o) => o.value === row.tipeUjian)?.label || row.tipeUjian}</td>
@@ -138,17 +162,25 @@ export default function PaketUjian() {
                       >
                         <FiEye />
                       </button>
-                      <Link to={`/guru/paket-ujian/edit/${row.id}`} className="btn-icon edit" title="Edit">
-                        <FiEdit2 />
-                      </Link>
-                      <button
-                        type="button"
-                        className="btn-icon delete"
-                        onClick={() => handleDelete(row.id)}
-                        title="Hapus"
-                      >
-                        <FiTrash2 />
-                      </button>
+                      {row.guru?.user?.namaLengkap === user?.namaLengkap ? (
+                        <>
+                          <Link to={`/guru/paket-ujian/edit/${row.id}`} className="btn-icon edit" title="Edit">
+                            <FiEdit2 />
+                          </Link>
+                          <button
+                            type="button"
+                            className="btn-icon delete"
+                            onClick={() => handleDelete(row.id)}
+                            title="Hapus"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', marginLeft: '6px' }} title="Hanya author yang bisa edit">
+                          <FiLock style={{ display: 'inline', marginBottom: '-2px' }} /> Shared
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -156,7 +188,8 @@ export default function PaketUjian() {
             </tbody>
           </table>
         </div>
-      )}
+        )}
+      </div>
 
       {soalModalOpen && (
         <div className="modal-overlay" onClick={closeSoalModal} role="dialog" aria-modal="true" aria-labelledby="modal-soal-title">

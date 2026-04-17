@@ -54,3 +54,60 @@ exports.create = async (req, res) => {
   }
 };
 
+exports.update = async (req, res) => {
+  const id = Number(req.params.id);
+  const guruId = req.guruId;
+  if (!guruId) return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
+
+  const { error, value } = createSchema.validate(req.body, { abortEarly: true });
+  if (error) return res.status(400).json({ success: false, message: error.details[0].message });
+
+  try {
+    const existing = await prisma.bankSoalKoleksi.findFirst({
+      where: { id, guruId },
+    });
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Koleksi tidak ditemukan atau Anda tidak memiliki akses' });
+    }
+
+    const duplicate = await prisma.bankSoalKoleksi.findFirst({
+      where: { guruId, nama: value.nama.trim(), id: { not: id } },
+    });
+    if (duplicate) {
+      return res.status(400).json({ success: false, message: 'Koleksi dengan nama tersebut sudah ada' });
+    }
+
+    const updated = await prisma.bankSoalKoleksi.update({
+      where: { id },
+      data: { nama: value.nama.trim() },
+    });
+
+    return res.json({ success: true, message: 'Koleksi bank soal berhasil diubah', data: updated });
+  } catch (err) {
+    console.error('BankSoalKoleksi update error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal mengubah koleksi bank soal' });
+  }
+};
+
+exports.remove = async (req, res) => {
+  const id = Number(req.params.id);
+  const guruId = req.guruId;
+  
+  try {
+    const existing = await prisma.bankSoalKoleksi.findFirst({
+      where: { id, guruId },
+    });
+    if (!existing) {
+      return res.status(404).json({ success: false, message: 'Koleksi tidak ditemukan atau Anda tidak memiliki akses' });
+    }
+
+    await prisma.bankSoalKoleksi.delete({
+      where: { id },
+    });
+
+    return res.json({ success: true, message: 'Koleksi bank soal berhasil dihapus' });
+  } catch (err) {
+    console.error('BankSoalKoleksi delete error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal menghapus koleksi bank soal (pastikan tidak ada soal yang terkait sebelum dihapus)' });
+  }
+};

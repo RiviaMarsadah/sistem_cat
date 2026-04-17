@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import '../guru/PaketUjian.css'; // Recycle PaketUjian CSS layout
+import '../guru/PaketUjian.css';
 import './JadwalUjian.css';
 
 export default function JadwalUjianAdmin() {
@@ -10,38 +11,32 @@ export default function JadwalUjianAdmin() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null means create mode
+  
+  // View State logic
+  const [activePeriodeId, setActivePeriodeId] = useState(null);
+  const [periodes, setPeriodes] = useState([]);
 
-  // Lists for dropdowns
-  const [mapelList, setMapelList] = useState([]);
-  const [kelasList, setKelasList] = useState([]);
-
-  // Form State
-  const [nama, setNama] = useState('');
-  const [mataPelajaranId, setMataPelajaranId] = useState('');
-  const [mulai, setMulai] = useState('');
-  const [selesai, setSelesai] = useState('');
-  const [durasi, setDurasi] = useState(60);
-  const [opsiKeamanan, setOpsiKeamanan] = useState(true);
-  const [selectedKelas, setSelectedKelas] = useState([]); // array of id strings
-
-  // Confirm Modal
+  // Confirm Modal (Jadwal)
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
+  
+  // Modal Periode Actions
+  const [showConfirmPeriodeModal, setShowConfirmPeriodeModal] = useState(false);
+  const [confirmPeriodeData, setConfirmPeriodeData] = useState(null);
+  const [showEditPeriodeModal, setShowEditPeriodeModal] = useState(false);
+  const [editPeriodeData, setEditPeriodeData] = useState({ id: '', nama: '', mulai: '', selesai: '', semester: 'Gasal', tahunAjaran: '' });
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const [resJadwal, resMapel, resKelas] = await Promise.all([
+      const [resJadwal, resPeriode] = await Promise.all([
         api.get('/admin/jadwal-ujian/admin'),
-        api.get('/admin/mata-pelajaran'),
-        api.get('/admin/kelas')
+        api.get('/admin/periode')
       ]);
       setItems(resJadwal.data?.data || []);
-      setMapelList(resMapel.data?.data || []);
-      setKelasList(resKelas.data?.data || []);
+      setPeriodes(resPeriode.data?.data || []);
     } catch (e) {
       setError('Gagal memuat jadwal. ' + (e?.response?.data?.message || ''));
     } finally {
@@ -63,88 +58,8 @@ export default function JadwalUjianAdmin() {
     }
   }, [error, success]);
 
-  const openAddModal = () => {
-    setEditingId(null);
-    setNama('');
-    setMataPelajaranId('');
-    
-    // Set default times: Today 00:00 to 23:59
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    setMulai(`${dateStr}T00:00`);
-    setSelesai(`${dateStr}T23:59`);
-    
-    setDurasi(60);
-    setOpsiKeamanan(true);
-    setSelectedKelas([]);
-    setShowAddModal(true);
-  };
-
-  const openEditModal = (j) => {
-    setEditingId(j.id);
-    setNama(j.nama);
-    setMataPelajaranId(j.mataPelajaranId);
-    
-    // Format dates for datetime-local input (YYYY-MM-DDTHH:mm)
-    const formatForInput = (dateStr) => {
-      const d = new Date(dateStr);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const hours = String(d.getHours()).padStart(2, '0');
-      const minutes = String(d.getMinutes()).padStart(2, '0');
-      return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-    
-    setMulai(formatForInput(j.mulai));
-    setSelesai(formatForInput(j.selesai));
-    setDurasi(j.durasi);
-    setOpsiKeamanan(j.opsiKeamanan);
-    setSelectedKelas((j.kelasJadwal || []).map(kj => String(kj.kelasId)));
-    setShowAddModal(true);
-  };
-
-  const toggleKelas = (idStr) => {
-    if (selectedKelas.includes(idStr)) {
-      setSelectedKelas(selectedKelas.filter(k => k !== idStr));
-    } else {
-      setSelectedKelas([...selectedKelas, idStr]);
-    }
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    if (!nama || !mataPelajaranId || !mulai || !selesai || selectedKelas.length === 0) {
-      setError('Lengkapi semua data, termasuk kelas.');
-      return;
-    }
-    setSaving(true);
-    try {
-      const payload = {
-        nama, 
-        mataPelajaranId: Number(mataPelajaranId), 
-        mulai, 
-        selesai, 
-        durasi: Number(durasi), 
-        opsiKeamanan,
-        kelasIds: selectedKelas.map(Number)
-      };
-
-      if (editingId) {
-        const res = await api.put(`/admin/jadwal-ujian/${editingId}`, payload);
-        setSuccess(res.data.message);
-      } else {
-        const res = await api.post('/admin/jadwal-ujian', payload);
-        setSuccess(res.data.message);
-      }
-      
-      setShowAddModal(false);
-      await loadData();
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Gagal menyimpan jadwal');
-    } finally {
-      setSaving(false);
-    }
+  const handleBuatWizard = () => {
+     navigate('/admin/jadwal-ujian/wizard');
   };
 
   const confirmDelete = (item) => {
@@ -166,9 +81,262 @@ export default function JadwalUjianAdmin() {
     }
   };
 
-  const formatDate = (dateStr) => {
-    const d = new Date(dateStr);
-    return `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
+  const openEditPeriode = (p, e) => {
+    e.stopPropagation();
+    setEditPeriodeData({ 
+        id: p.id, 
+        nama: p.nama, 
+        mulai: new Date(p.mulai).toISOString().split('T')[0], 
+        selesai: new Date(p.selesai).toISOString().split('T')[0], 
+        semester: p.semester, 
+        tahunAjaran: p.tahunAjaran 
+    });
+    setShowEditPeriodeModal(true);
+  };
+
+  const submitEditPeriode = async (e) => {
+      e.preventDefault();
+      setSaving(true);
+      try {
+          const res = await api.put(`/admin/periode/${editPeriodeData.id}`, editPeriodeData);
+          setShowEditPeriodeModal(false);
+          setSuccess("Periode berhasil diperbarui");
+          await loadData();
+      } catch (err) {
+          setError(err?.response?.data?.message || "Gagal memperbarui periode");
+      } finally {
+          setSaving(false);
+      }
+  };
+
+  const confirmDeletePeriode = (p) => {
+    setConfirmPeriodeData(p);
+    setShowConfirmPeriodeModal(true);
+  };
+
+  const handleDeletePeriode = async () => {
+    setSaving(true);
+    try {
+      const res = await api.delete(`/admin/periode/${confirmPeriodeData.id}`);
+      setShowConfirmPeriodeModal(false);
+      setSuccess("Periode berhasil dihapus");
+      await loadData();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Gagal menghapus periode');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const renderListPeriode = () => {
+    if (loading && periodes.length === 0) return <div className="paket-ujian-loading">Memuat periode...</div>;
+    if (periodes.length === 0) return (
+      <div className="user-alert">Belum ada periode ujian. Silakan buat jadwal baru melalui Wizard.</div>
+    );
+
+    return (
+      <div className="paket-ujian-table-wrap" style={{ marginTop: '1.5rem' }}>
+        <style>{`
+           .clickable-row:hover { background-color: #f8fafc !important; }
+        `}</style>
+        <table className="paket-ujian-table">
+          <thead>
+            <tr>
+              <th>Periode Ujian</th>
+              <th>Semester & Tahun Ajaran</th>
+              <th>Waktu Pelaksanaan</th>
+              <th>Total Jadwal Ujian</th>
+              <th>Kiosk Mode</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {periodes.map(p => {
+               const periodItems = items.filter(j => String(j.periodeId) === String(p.id));
+               const isKioskActive = periodItems.some(j => j.opsiKeamanan === true);
+
+               return (
+                 <tr key={p.id} onClick={() => setActivePeriodeId(p.id)} style={{ cursor: 'pointer', transition: 'background 0.2s' }} className="clickable-row">
+                   <td>
+                     <div style={{fontWeight: '700', color: '#1e293b'}}>{p.nama}</div>
+                   </td>
+                   <td>
+                     <div style={{fontWeight: '600', color: '#334155'}}>{p.semester} - {p.tahunAjaran}</div>
+                   </td>
+                   <td>
+                     <div style={{fontSize: '0.85rem', color: '#64748b'}}>
+                       <FiCalendar style={{marginRight: '4px', verticalAlign: 'text-bottom'}}/> 
+                       {new Date(p.mulai).toLocaleDateString('id-ID')} s/d {new Date(p.selesai).toLocaleDateString('id-ID')}
+                     </div>
+                   </td>
+                   <td>
+                     <div style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#2563eb', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem'}}>
+                        {p._count?.jadwalUjians || periodItems.length} Sesi Terjadwal
+                     </div>
+                   </td>
+                   <td>
+                      {isKioskActive ? (
+                         <span style={{ fontSize: '0.7rem', background: '#d1fae5', color: '#059669', padding: '4px 8px', borderRadius: '4px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <FiShield /> AKTIF
+                         </span>
+                      ) : (
+                         <span style={{ fontSize: '0.7rem', background: '#f1f5f9', color: '#94a3b8', padding: '4px 8px', borderRadius: '4px', fontWeight: '600' }}>
+                            NONAKTIF
+                         </span>
+                      )}
+                   </td>
+                   <td>
+                     <div style={{ display: 'flex', gap: '8px' }}>
+                       <button className="btn-action primary" onClick={(e) => openEditPeriode(p, e)} title="Edit Periode" style={{ background: '#3b82f6', color: 'white' }}>
+                          <FiEdit2 />
+                       </button>
+                       <button className="btn-action btn-delete" onClick={(e) => { e.stopPropagation(); confirmDeletePeriode(p); }} title="Hapus Periode">
+                          <FiTrash2 />
+                       </button>
+                     </div>
+                   </td>
+                 </tr>
+               )
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  const renderDetailPeriode = () => {
+    const periode = periodes.find(p => p.id === activePeriodeId);
+    if (!periode) return null;
+    const filteredItems = items
+      .filter(j => String(j.periodeId) === String(activePeriodeId))
+      .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
+    
+    // Check if Kiosk mode is active in any of the scheduled items
+    const isKioskActive = filteredItems.some(j => j.opsiKeamanan === true);
+
+    return (
+      <div className="periode-detail-view" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
+        <button onClick={() => setActivePeriodeId(null)} style={{ background: 'none', border: 'none', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', marginBottom: '1.5rem', padding: 0, fontSize: '0.95rem' }}>
+          <FiArrowLeft /> Kembali ke Daftar Periode
+        </button>
+
+        <div style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', border: '1px solid #e2e8f0' }}>Tahun {periode?.tahunAjaran}</span>
+              <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', border: '1px solid #e2e8f0' }}>Semester {periode?.semester}</span>
+              {isKioskActive && (
+                <span style={{ background: '#d1fae5', color: '#059669', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FiShield /> KIOSK MODE AKTIF
+                </span>
+              )}
+            </div>
+            <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '0.75rem', letterSpacing: '-0.5px', color: '#1e293b' }}>{periode?.nama}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.9rem' }}>
+                <FiCalendar /> Berlangsung: {new Date(periode?.mulai).toLocaleDateString('id-ID', { dateStyle: 'long' })} &mdash; {new Date(periode?.selesai).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+            </div>
+          </div>
+          
+          {/* Decorative Background */}
+          <FiCalendar style={{ position: 'absolute', right: '-20px', top: '-20px', fontSize: '180px', opacity: '0.03', transform: 'rotate(15deg)', color: '#3b82f6' }} />
+        </div>
+
+        <div className="paket-ujian-table-wrap">
+        {loading ? (
+          <div className="paket-ujian-loading">Memuat data jadwal...</div>
+        ) : filteredItems.length === 0 ? (
+          <table className="paket-ujian-table">
+            <tbody>
+              <tr><td className="empty-row" colSpan={6}>Belum ada sesi jadwal di dalam periode ini.</td></tr>
+            </tbody>
+          </table>
+        ) : (
+          <table className="paket-ujian-table">
+            <thead>
+              <tr>
+                <th>Hari dan Tanggal Ujian</th>
+                <th>Waktu Ujian</th>
+                <th>Kelas</th>
+                <th>Ruangan</th>
+                <th>Mata Pelajaran</th>
+                <th>Status Paket</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredItems.map(j => {
+                const tglObj = new Date(j.mulai);
+                const hariTanggal = tglObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const waktuMulai = tglObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+                const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+
+                return (
+                <tr key={j.id}>
+                  <td>
+                    <div style={{fontWeight: '600', color: '#1e293b'}}>
+                      {hariTanggal}
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{fontSize: '0.9rem', color: '#334155'}}>
+                        <FiClock style={{marginRight: '0.25rem', verticalAlign: 'text-bottom'}} />
+                        {waktuMulai} - {waktuSelesai}
+                        <div style={{fontSize: '0.75rem', color: '#64748b', marginTop: '2px'}}>({j.durasi} Menit)</div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '200px' }}>
+                      {j.kelasJadwal?.map((kj, idx) => {
+                          const tLabel = kj.kelas?.tingkat || '';
+                          const jLabel = kj.kelas?.jurusan?.idJurusan || '';
+                          const kName = `${tLabel} ${jLabel} ${kj.kelas?.inisial || ''}`;
+                          return (
+                            <span key={idx} style={{background: '#f8fafc', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#475569', fontWeight: '600'}}>
+                              {kName.trim()}
+                            </span>
+                          );
+                      })}
+                      {(!j.kelasJadwal || j.kelasJadwal.length === 0) && <span style={{color: '#94a3b8', fontSize: '0.8rem'}}>-</span>}
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '600' }}>
+                      {j.ruangan || '-'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="user-role-badge status-aktif" style={{display: 'inline-flex', whiteSpace: 'nowrap'}}>
+                        <FiBook style={{marginRight: '0.25rem'}} />
+                        {j.mataPelajaran?.namaMapel}
+                    </div>
+                  </td>
+                  <td>
+                    {j.paketUjianId ? (
+                      <span className="user-status-badge status-aktif" style={{whiteSpace: 'nowrap'}}>
+                        <FiCheckCircle /> Siap Ujian
+                      </span>
+                    ) : (
+                      <span className="user-status-badge status-nonaktif" style={{whiteSpace: 'nowrap'}}>
+                        <FiXCircle /> Belum Diisi Paket
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-action btn-delete" onClick={() => confirmDelete(j)} title="Hapus Jadwal">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                  </td>
+                </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -179,221 +347,106 @@ export default function JadwalUjianAdmin() {
             <span className="title-text">Jadwal Ujian</span>
             <span className="title-badge admin-title-badge">Admin</span>
           </h1>
-          <p className="page-subtitle">Buat kerangka jadwal resmi untuk simulasi ujian.</p>
+          <p className="page-subtitle">Pilih atau buat periode ujian untuk mengelola jadwal kelas.</p>
         </div>
-        <button className="btn-tambah" onClick={openAddModal} disabled={saving}>
-          <FiPlus className="btn-plus" /> Buat Jadwal Baru
+        <button className="btn-tambah" onClick={handleBuatWizard} disabled={saving} style={{background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 10px rgba(16,185,129,0.3)'}}>
+          <FiPlus className="btn-plus" /> Wizard Jadwal Ujian
         </button>
       </div>
 
       {error && <div className="paket-ujian-error">{error}</div>}
       {success && <div className="paket-ujian-error admin-success-alert">{success}</div>}
 
-      <div className="paket-ujian-table-wrap">
-        {loading ? (
-          <div className="paket-ujian-loading">Memuat data jadwal...</div>
-        ) : items.length === 0 ? (
-          <table className="paket-ujian-table">
-            <tbody>
-              <tr><td className="empty-row" colSpan={6}>Belum ada jadwal yang dibuat.<br/>Siswa tidak dapat ujian sebelum Anda membuat jadwalnya di sini.</td></tr>
-            </tbody>
-          </table>
-        ) : (
-          <table className="paket-ujian-table">
-             <thead>
-               <tr>
-                 <th>Informasi Ujian</th>
-                 <th>Mata Pelajaran</th>
-                 <th>Kelas & Waktu</th>
-                 <th>Token Akses (IN/OUT)</th>
-                 <th>Status</th>
-                 <th>Aksi</th>
-               </tr>
-             </thead>
-             <tbody>
-               {items.map((j) => (
-                 <tr key={j.id}>
-                    <td>
-                      <div className="user-main-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {j.nama}
-                        {j.opsiKeamanan && (
-                          <span title="Kiosk Mode Aktif" style={{ display: 'inline-flex', alignItems: 'center', color: '#059669', background: '#d1fae5', padding: '0.1rem 0.4rem', borderRadius: '4px', fontSize: '0.7rem', fontWeight: '700' }}>
-                             <FiShield style={{marginRight: '3px'}}/> KIOSK
-                          </span>
-                        )}
-                      </div>
-                      <div style={{fontSize: '0.8rem', color: '#64748b', marginTop: '4px'}}>
-                        Durasi: <strong>{j.durasi} Min</strong>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="user-role-badge status-aktif" style={{display: 'inline-flex'}}>
-                         <FiBook style={{marginRight: '0.25rem'}} />
-                         {j.mataPelajaran?.namaMapel}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{fontSize: '0.85rem', fontWeight: '500', marginBottom: '0.25rem'}}>
-                         {j.kelasJadwal?.length || 0} Kelas Terdaftar
-                      </div>
-                      <div style={{fontSize: '0.75rem', color: '#475569'}}>
-                         <FiClock style={{marginRight: '0.25rem', verticalAlign: 'text-bottom'}} />
-                         {formatDate(j.mulai)}
-                         <br/> s/d <br/> 
-                         {formatDate(j.selesai)}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ 
-                          fontFamily: 'monospace', 
-                          fontSize: '0.9rem', 
-                          background: '#f1f5f9', 
-                          padding: '0.3rem 0.6rem', 
-                          borderRadius: '6px', 
-                          color: '#334155',
-                          border: '1px solid #cbd5e1',
-                          textAlign: 'center'
-                        }}>
-                           IN: <strong style={{fontSize: '1.1rem'}}>{j.token}</strong>
-                        </div>
-                        <div style={{ 
-                          fontFamily: 'monospace', 
-                          fontSize: '0.9rem', 
-                          background: '#fee2e2', 
-                          color: '#991b1b', 
-                          padding: '0.3rem 0.6rem', 
-                          borderRadius: '6px',
-                          border: '1px solid #fecaca',
-                          textAlign: 'center'
-                        }}>
-                           OUT: <strong style={{fontSize: '1.1rem'}}>{j.tokenCheckOut}</strong>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      {j.paketUjianId ? (
-                        <span className="user-status-badge status-aktif">
-                          <FiCheckCircle /> Siap Ujian
-                        </span>
-                      ) : (
-                        <span className="user-status-badge status-nonaktif">
-                          <FiXCircle /> Belum Diisi Paket
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                       <div style={{ display: 'flex', gap: '8px' }}>
-                         <button className="btn-action" onClick={() => openEditModal(j)} title="Edit Jadwal" style={{background: '#3b82f6', color: 'white'}}>
-                            <FiCalendar />
-                         </button>
-                         <button className="btn-action btn-delete" onClick={() => confirmDelete(j)} title="Hapus Jadwal">
-                            <FiTrash2 />
-                         </button>
-                       </div>
-                    </td>
-                 </tr>
-               ))}
-             </tbody>
-          </table>
-        )}
-      </div>
+      {activePeriodeId === null ? renderListPeriode() : renderDetailPeriode()}
 
-      {/* Add Modal */}
-      {showAddModal && (
+      {/* Edit Periode Modal */}
+      {showEditPeriodeModal && (
         <div className="modal-overlay">
           <div className="modal-container modal-form">
-             <div className="modal-header">
-               <h3 className="modal-title">{editingId ? 'Edit Jadwal Resmi' : 'Buat Jadwal Resmi Baru'}</h3>
-               <button type="button" className="modal-close" onClick={() => setShowAddModal(false)}>
-                 <FiX />
-               </button>
-             </div>
-             <form className="user-form" onSubmit={handleSave}>
-               <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                 <div className="form-group">
-                    <div className="field-wrapper">
-                      <label className="label">Nama Ujian <span className="label-required">*</span></label>
-                      <input className="input" placeholder="Misal: PAS Ganjil 2024" value={nama} onChange={(e) => setNama(e.target.value)} required />
-                    </div>
-
-                    <div className="field-wrapper">
-                      <label className="label">Mata Pelajaran <span className="label-required">*</span></label>
-                      <select className="input" value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
-                         <option value="">Pilih Mapel...</option>
-                         {mapelList.map((m) => <option key={m.id} value={m.id}>{m.namaMapel}</option>)}
+            <div className="modal-header">
+              <h3 className="modal-title">Edit Periode Ujian</h3>
+              <button className="modal-close" onClick={() => setShowEditPeriodeModal(false)}><FiX /></button>
+            </div>
+            <form onSubmit={submitEditPeriode}>
+              <div className="modal-body">
+                <div className="form-group" style={{ marginBottom: '1rem' }}>
+                  <label className="label">Judul Periode <span className="label-required">*</span></label>
+                  <input className="input" required value={editPeriodeData.nama} onChange={(e) => setEditPeriodeData({...editPeriodeData, nama: e.target.value})} />
+                </div>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                   <div className="form-group">
+                      <label className="label">Tahun Ajaran <span className="label-required">*</span></label>
+                      <select className="input" required value={editPeriodeData.tahunAjaran} onChange={(e) => setEditPeriodeData({...editPeriodeData, tahunAjaran: e.target.value})}>
+                        {Array.from({length: 15}, (_, i) => 2020 + i).map(year => (
+                           <option key={year} value={`${year}/${year + 1}`}>{year}/{year + 1}</option>
+                        ))}
                       </select>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="field-wrapper">
-                        <label className="label">Waktu Mulai <span className="label-required">*</span></label>
-                        <input type="datetime-local" className="input" value={mulai} onChange={(e) => setMulai(e.target.value)} required />
-                      </div>
-                      <div className="field-wrapper">
-                        <label className="label">Waktu Selesai <span className="label-required">*</span></label>
-                        <input type="datetime-local" className="input" value={selesai} onChange={(e) => setSelesai(e.target.value)} required />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="field-wrapper">
-                        <label className="label">Durasi Pengerjaan (Menit) <span className="label-required">*</span></label>
-                        <input type="number" min="10" className="input" value={durasi} onChange={(e) => setDurasi(e.target.value)} required />
-                        <p className="field-hint">Batas waktu ujian.</p>
-                      </div>
-                      <div className="field-wrapper">
-                         <label className="label">Kiosk Mode (Anti-Curang)</label>
-                         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px', cursor: 'pointer' }}>
-                           <input type="checkbox" checked={opsiKeamanan} onChange={(e) => setOpsiKeamanan(e.target.checked)} style={{transform: 'scale(1.2)'}} />
-                           <span style={{ fontSize: '0.9rem', color: '#475569' }}>Aktifkan Kunci Layar</span>
-                         </label>
-                      </div>
-                    </div>
-
-                    <div className="field-wrapper">
-                      <label className="label">Kelas Peserta Ujian <span className="label-required">*</span></label>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: '#f8fafc', padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '10px', maxHeight: '200px', overflowY: 'auto' }}>
-                         {kelasList.map(k => {
-                           const tLabel = k.tingkat === 'X' ? '10' : k.tingkat === 'XI' ? '11' : '12';
-                           const kName = `${tLabel} ${k.jurusan?.idJurusan || ''} ${k.inisial}`;
-                           return (
-                             <label key={k.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                               <input type="checkbox" checked={selectedKelas.includes(String(k.id))} onChange={() => toggleKelas(String(k.id))} />
-                               <span style={{ fontSize: '0.9rem' }}>{kName}</span>
-                             </label>
-                           );
-                         })}
-                      </div>
-                    </div>
-                 </div>
-               </div>
-               <div className="modal-footer">
-                  <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setShowAddModal(false)}>Batal</button>
-                  <button type="submit" className="modal-btn modal-btn-confirm modal-btn-primary" disabled={saving}>
-                    {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Buat Jadwal'}
-                  </button>
-               </div>
-             </form>
+                   </div>
+                   <div className="form-group">
+                      <label className="label">Semester <span className="label-required">*</span></label>
+                      <select className="input" required value={editPeriodeData.semester} onChange={(e) => setEditPeriodeData({...editPeriodeData, semester: e.target.value})}>
+                         <option value="Gasal">Gasal</option>
+                         <option value="Genap">Genap</option>
+                      </select>
+                   </div>
+                </div>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                   <div className="form-group">
+                      <label className="label">Tgl Mulai Ujian <span className="label-required">*</span></label>
+                      <input type="date" className="input" required value={editPeriodeData.mulai} onChange={(e) => setEditPeriodeData({...editPeriodeData, mulai: e.target.value})} />
+                   </div>
+                   <div className="form-group">
+                      <label className="label">Tgl Selesai Ujian <span className="label-required">*</span></label>
+                      <input type="date" className="input" required value={editPeriodeData.selesai} onChange={(e) => setEditPeriodeData({...editPeriodeData, selesai: e.target.value})} />
+                   </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setShowEditPeriodeModal(false)}>Batal</button>
+                <button type="submit" className="modal-btn modal-btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Conform Delete */}
+      {/* Conform Delete Jadwal Sesi */}
       {showConfirmModal && confirmData && (
         <div className="modal-overlay">
           <div className="modal-container modal-confirm">
              <div className="modal-header">
-               <h3 className="modal-title">Hapus Jadwal?</h3>
+               <h3 className="modal-title">Hapus Sesi Jadwal?</h3>
                <button className="modal-close" onClick={() => setShowConfirmModal(false)}><FiX /></button>
              </div>
              <div className="modal-body">
-               Apakah Anda yakin menghapus <strong>"{confirmData.nama}"</strong>? Seluruh record ujian siswa (jika ada) di jadwal ini juga akan terhapus.
+               Apakah Anda yakin menghapus jadwal pada <strong>"{new Date(confirmData.mulai).toLocaleDateString()}"</strong>? Seluruh record ujian siswa (jika ada) di jadwal ini juga akan terhapus.
              </div>
              <div className="modal-footer">
                <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)}>Batal</button>
                <button className="modal-btn modal-btn-danger" onClick={handleDelete} disabled={saving}>
                  {saving ? 'Menghapus...' : 'Hapus Jadwal'}
+               </button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Conform Delete Periode */}
+      {showConfirmPeriodeModal && confirmPeriodeData && (
+        <div className="modal-overlay">
+          <div className="modal-container modal-confirm">
+             <div className="modal-header">
+               <h3 className="modal-title">Hapus Periode Ujian?</h3>
+               <button className="modal-close" onClick={() => setShowConfirmPeriodeModal(false)}><FiX /></button>
+             </div>
+             <div className="modal-body">
+               <strong>Perhatian Lengkap:</strong><br/>
+               Apakah Anda yakin menghapus seluruh periode <strong>"{confirmPeriodeData.nama}"</strong>? Aksi ini dijamin akan menghapus seluruh data jadwal sesi di dalamnya beserta hasil ujian siswa di dalam periode tersebut secara permanen.
+             </div>
+             <div className="modal-footer">
+               <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmPeriodeModal(false)}>Batal</button>
+               <button className="modal-btn modal-btn-danger" onClick={handleDeletePeriode} disabled={saving}>
+                 {saving ? 'Menghapus...' : 'Ya, Hapus Semua'}
                </button>
              </div>
           </div>

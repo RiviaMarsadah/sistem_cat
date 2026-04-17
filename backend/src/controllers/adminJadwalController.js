@@ -25,6 +25,8 @@ exports.list = async (req, res) => {
       include: {
         mataPelajaran: true,
         paketUjian: true,
+        periode: true,
+        jurusan: true,
         kelasJadwal: {
           include: {
             kelas: {
@@ -43,87 +45,61 @@ exports.list = async (req, res) => {
   }
 };
 
-exports.create = async (req, res) => {
-  const { nama, mataPelajaranId, mulai, selesai, durasi, kelasIds } = req.body;
+exports.bulkGenerate = async (req, res) => {
+  const { periodeId, slots } = req.body;
   
-  if (!nama || !mataPelajaranId || !mulai || !selesai || !durasi || !kelasIds || !kelasIds.length) {
-    return res.status(400).json({ success: false, message: 'Semua field wajib diisi' });
+  if (!periodeId || !slots || !slots.length) {
+    return res.status(400).json({ success: false, message: 'Data periode dan slots diperlukan' });
   }
 
   try {
-    const token = await generateToken();
+    const periode = await prisma.periodeUjian.findUnique({ where: { id: Number(periodeId) } });
+    if (!periode) return res.status(404).json({ success: false, message: 'Periode tidak ditemukan' });
 
-    const result = await prisma.$transaction(async (tx) => {
-      const jadwal = await tx.jadwalUjian.create({
-        data: {
-          nama,
-          mataPelajaranId: Number(mataPelajaranId),
-          mulai: new Date(mulai),
-          selesai: new Date(selesai),
-          durasi: Number(durasi),
-          token,
-          tokenCheckOut: await generateToken(), // Token keluar
-          guruId: null // Dibuat oleh admin
-        }
-      });
+    const results = [];
+    
+    await prisma.$transaction(async (tx) => {
+      for (const slot of slots) {
+        // slot: { jurusanId, kelasIds: [], mapelId, ruangan, mulai, selesai, durasi, opsiKeamanan }
+        const tokenIn = await generateToken();
+        const tokenOut = await generateToken();
 
-      // Insert pivot kelas
-      for (const kelasId of kelasIds) {
-        await tx.kelasJadwal.create({
+        const jadwal = await tx.jadwalUjian.create({
           data: {
-            jadwalUjianId: jadwal.id,
-            kelasId: Number(kelasId)
+            nama: periode.nama,
+            kategori: 'terjadwal',
+            mataPelajaranId: Number(slot.mapelId),
+            periodeId: Number(periodeId),
+            jurusanId: slot.jurusanId ? Number(slot.jurusanId) : null,
+            ruangan: slot.ruangan || null,
+            mulai: new Date(slot.mulai),
+            selesai: new Date(slot.selesai),
+            durasi: Number(slot.durasi),
+            token: tokenIn,
+            tokenCheckOut: tokenOut,
+            guruId: null, // Always true for admin scheduled exams
+            opsiKeamanan: Boolean(slot.opsiKeamanan)
           }
         });
-      }
 
-      return jadwal;
-    });
-
-    return res.json({ success: true, message: 'Jadwal berhasil dibuat', data: result });
-  } catch (error) {
-    console.error('Error creating jadwal:', error);
-    return res.status(500).json({ success: false, message: 'Gagal membuat jadwal ujian' });
-  }
-};
-
-exports.update = async (req, res) => {
-  const id = Number(req.params.id);
-  const { nama, mataPelajaranId, mulai, selesai, durasi, kelasIds } = req.body;
-  
-  try {
-    await prisma.$transaction(async (tx) => {
-      await tx.jadwalUjian.update({
-        where: { id },
-        data: {
-          nama,
-          mataPelajaranId: Number(mataPelajaranId),
-          mulai: new Date(mulai),
-          selesai: new Date(selesai),
-          durasi: Number(durasi)
+        if (slot.kelasIds && slot.kelasIds.length) {
+          for (const kelasId of slot.kelasIds) {
+             await tx.kelasJadwal.create({
+               data: {
+                 jadwalUjianId: jadwal.id,
+                 kelasId: Number(kelasId)
+               }
+             });
+          }
         }
-      });
-
-      // Update kelasIds (hapus yang lama, insert yang baru)
-      if (kelasIds && kelasIds.length > 0) {
-        await tx.kelasJadwal.deleteMany({
-          where: { jadwalUjianId: id }
-        });
-        for (const kelasId of kelasIds) {
-          await tx.kelasJadwal.create({
-            data: {
-              jadwalUjianId: id,
-              kelasId: Number(kelasId)
-            }
-          });
-        }
+        results.push(jadwal);
       }
     });
 
-    return res.json({ success: true, message: 'Jadwal berhasil diperbarui' });
+    return res.json({ success: true, message: `${results.length} slot ujian berhasil digenerate`, data: results });
   } catch (error) {
-    console.error('Error updating jadwal:', error);
-    return res.status(500).json({ success: false, message: 'Gagal memperbarui jadwal ujian' });
+    console.error('Error in bulk generate:', error);
+    return res.status(500).json({ success: false, message: 'Gagal menggenerate jadwal' });
   }
 };
 

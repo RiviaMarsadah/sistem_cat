@@ -43,6 +43,11 @@ enum TipeUjian {
   Lainnya
 }
 
+enum KategoriJadwal {
+  terjadwal
+  custom
+}
+
 enum JenisKelamin {
   L
   P
@@ -186,6 +191,7 @@ model Jurusan {
   kelas         Kelas[]
   mataPelajaran MataPelajaran[]
   bankSoal      BankSoal[]
+  jadwalUjians  JadwalUjian[]
 
   @@map("jurusan")
 }
@@ -254,6 +260,7 @@ model SoalPaketUjian {
 model JadwalUjian {
   id              Int      @id @default(autoincrement())
   nama            String   @db.VarChar(100)
+  kategori        KategoriJadwal @default(terjadwal)
   mataPelajaranId Int      @map("mata_pelajaran_id")
   mulai           DateTime @map("mulai_pada")
   selesai         DateTime @map("selesai_pada")
@@ -264,11 +271,16 @@ model JadwalUjian {
   guruId       Int?    @map("guru_id")
   opsiKeamanan Boolean @default(false) @map("opsi_keamanan")
 
-  paketUjianId Int? @map("paket_ujian_id")
+  paketUjianId Int?    @map("paket_ujian_id")
+  periodeId    Int?    @map("periode_id")
+  jurusanId    Int?    @map("jurusan_id")
+  ruangan      String? @db.VarChar(50)
 
   mataPelajaran MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
   paketUjian    PaketUjian?   @relation(fields: [paketUjianId], references: [id], onDelete: SetNull)
   guru          Guru?         @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  periode       PeriodeUjian? @relation(fields: [periodeId], references: [id], onDelete: SetNull)
+  jurusan       Jurusan?      @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
 
   kelasJadwal KelasJadwal[]
   ujianSiswa  UjianSiswa[]
@@ -332,4 +344,19 @@ model JawabanSiswa {
   @@unique([ujianSiswaId, bankSoalId])
   @@index([ujianSiswaId, nomorSoal])
   @@map("jawaban_siswa")
+}
+
+model PeriodeUjian {
+  id          Int      @id @default(autoincrement())
+  nama        String   @db.VarChar(100)
+  mulai       DateTime @map("mulai_periode")
+  selesai     DateTime @map("selesai_periode")
+  semester    String   @db.VarChar(10)
+  tahunAjaran String   @map("tahun_ajaran") @db.VarChar(20)
+  createdBy   Int      @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  jadwalUjians JadwalUjian[]
+
+  @@map("periode_ujian")
 }

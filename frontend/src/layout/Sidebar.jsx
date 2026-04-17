@@ -128,12 +128,23 @@ const Sidebar = ({ role, user }) => {
               src={user.googlePicture} 
               alt={userName}
               className="profile-avatar-img"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.target.onerror = null;
+                // If image fails to load, replace it with initials dynamically
+                e.target.style.display = 'none';
+                if (e.target.nextElementSibling) {
+                  e.target.nextElementSibling.style.display = 'flex';
+                }
+              }}
             />
-          ) : (
-            <span className="profile-avatar-initial">
-              {userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-            </span>
-          )}
+          ) : null}
+          <span 
+            className="profile-avatar-initial" 
+            style={{ display: user?.googlePicture ? 'none' : 'flex' }}
+          >
+            {userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+          </span>
         </div>
         <div className="profile-info">
           <div className="profile-name">{userName}</div>

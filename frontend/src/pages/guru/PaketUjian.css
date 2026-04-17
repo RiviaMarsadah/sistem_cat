@@ -1,5 +1,6 @@
 /* Paket Ujian - Guru */
 
+
 .paket-ujian-page {
   width: 100%;
   max-width: 100%;
@@ -8,47 +9,8 @@
   box-sizing: border-box;
 }
 
-.paket-ujian-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
 
-.paket-ujian-header .page-title {
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-}
-
-.paket-ujian-header .page-subtitle {
-  font-size: 1rem;
-  color: #64748b;
-  margin: 0;
-}
-
-.paket-ujian-header .btn-tambah {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  text-decoration: none;
-}
-
-.paket-ujian-header .btn-tambah:hover {
-  opacity: 0.95;
-  transform: translateY(-1px);
-  color: #fff;
-}
+/* ===== TABLE ===== */
 
 .paket-ujian-error {
   padding: 0.75rem 1rem;
@@ -66,9 +28,7 @@
 
 .paket-ujian-table-wrap {
   overflow-x: auto;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .paket-ujian-table {
@@ -79,8 +39,10 @@
 .paket-ujian-table th,
 .paket-ujian-table td {
   padding: 0.75rem 1rem;
-  text-align: left;
+  text-align: left !important;
   border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9375rem;
+  color: #0f172a;
 }
 
 .paket-ujian-table th {
@@ -88,6 +50,11 @@
   font-weight: 600;
   font-size: 0.85rem;
   color: #475569;
+  text-align: left !important;
+}
+
+.paket-ujian-table tbody tr:hover {
+  background: #f8fafc;
 }
 
 .paket-ujian-table .empty-row {
