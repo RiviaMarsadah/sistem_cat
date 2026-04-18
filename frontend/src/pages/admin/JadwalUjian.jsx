@@ -350,7 +350,7 @@ export default function JadwalUjianAdmin() {
           <p className="page-subtitle">Pilih atau buat periode ujian untuk mengelola jadwal kelas.</p>
         </div>
         <button className="btn-tambah" onClick={handleBuatWizard} disabled={saving} style={{background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 10px rgba(16,185,129,0.3)'}}>
-          <FiPlus className="btn-plus" /> Wizard Jadwal Ujian
+          <FiPlus className="btn-plus" /> Jadwal Ujian
         </button>
       </div>
 

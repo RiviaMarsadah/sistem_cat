@@ -292,7 +292,7 @@ export default function JadwalWizard() {
     <div className="wizard-page">
        <div className="wizard-header">
           <button className="back-link" onClick={() => navigate('/admin/jadwal-ujian')}>&larr; Kembali ke Daftar Jadwal</button>
-          <h2>Wizard Penjadwalan Terpusat</h2>
+          <h2>Penjadwalan Terpusat</h2>
           <p>Ikuti langkah-langkah berikut untuk meng-generate jadwal ujian skalabel secara tertib.</p>
        </div>
 
