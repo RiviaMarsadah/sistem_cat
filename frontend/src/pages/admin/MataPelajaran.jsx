@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './MataPelajaran.css';
 
 const KATEGORI_OPTIONS = [
@@ -210,124 +211,130 @@ export default function MataPelajaran() {
         ) : items.length === 0 ? (
           <div className="mapel-empty">Belum ada mata pelajaran. Klik &quot;Tambah Mata Pelajaran&quot;.</div>
         ) : (
-          <div className="mapel-table">
-            <div className="mapel-row mapel-row-head">
-              <div className="col-nama">Nama Mapel</div>
-              <div className="col-kode">Kode</div>
-              <div className="col-kategori">Kategori</div>
-              <div className="col-prodi">Prodi / Jurusan</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-            {items.map((item) => {
-              const isEditing = editingId === item.id;
-              return (
-                <div key={item.id} className="mapel-row">
-                  <div className="col-nama">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        value={editNamaMapel}
-                        onChange={(e) => setEditNamaMapel(e.target.value)}
-                        placeholder="Nama mata pelajaran"
-                        disabled={saving}
-                        maxLength={100}
-                      />
-                    ) : (
-                      <div className="nama-text">{item.namaMapel}</div>
-                    )}
-                  </div>
-                  <div className="col-kode">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        value={editKodeMapel}
-                        onChange={(e) => setEditKodeMapel(e.target.value)}
-                        placeholder="Kode (opsional)"
-                        disabled={saving}
-                        maxLength={20}
-                      />
-                    ) : (
-                      <div className="kode-text">{item.kodeMapel || '–'}</div>
-                    )}
-                  </div>
-                  <div className="col-kategori">
-                    {isEditing ? (
-                      <select
-                        className="input small"
-                        value={editKategori}
-                        onChange={(e) => setEditKategori(e.target.value)}
-                        disabled={saving}
-                      >
-                        {KATEGORI_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className={`badge badge-${item.kategori}`}>
-                        {KATEGORI_OPTIONS.find((o) => o.value === item.kategori)?.label || item.kategori}
-                      </span>
-                    )}
-                  </div>
-                  <div className="col-prodi">
-                    {isEditing ? (
-                      editKategori === 'prodi' ? (
-                        <select
-                          className="input small"
-                          value={editJurusanId}
-                          onChange={(e) => setEditJurusanId(e.target.value)}
-                          disabled={saving}
-                        >
-                          <option value="">Pilih prodi yang sudah ada</option>
-                          {jurusanList.map((j) => (
-                            <option key={j.id} value={j.id}>{j.nama}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="muted">Muatan Lokal</span>
-                      )
-                    ) : (
-                      <div className="prodi-text">
-                        {item.kategori === 'prodi' && item.jurusan
-                          ? item.jurusan.nama
-                          : item.kategori === 'muatan_lokal'
-                            ? 'Muatan Lokal'
-                            : '–'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-actions">
-                    {isEditing ? (
-                      <>
-                        <button
-                          type="button"
-                          className="btn btn-save"
-                          onClick={saveEdit}
-                          disabled={saving || !editNamaMapel.trim() || (editKategori === 'prodi' && !editJurusanId)}
-                        >
-                          <FiSave />
-                          <span>Simpan</span>
-                        </button>
-                        <button type="button" className="btn btn-ghost" onClick={cancelEdit} disabled={saving}>
-                          <FiX />
-                          <span>Batal</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button type="button" className="btn btn-edit" onClick={() => startEdit(item)} disabled={saving}>
-                          <FiEdit2 />
-                          <span>Edit</span>
-                        </button>
-                        <button type="button" className="btn btn-danger" onClick={() => openDeleteConfirm(item)} disabled={saving}>
-                          <FiTrash2 />
-                          <span>Hapus</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mapel-table-wrap">
+            <style>{`
+               .clickable-row:hover { background-color: #f8fafc !important; }
+            `}</style>
+            <table className="mapel-table">
+              <thead>
+                <tr>
+                  <th>Nama Mapel</th>
+                  <th>Kode</th>
+                  <th>Kategori</th>
+                  <th>Prodi / Jurusan</th>
+                  <th style={{ width: '150px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const isEditing = editingId === item.id;
+                  return (
+                    <tr key={item.id} className="clickable-row">
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <input
+                            className="input small"
+                            value={editNamaMapel}
+                            onChange={(e) => setEditNamaMapel(e.target.value)}
+                            placeholder="Nama mata pelajaran"
+                            disabled={saving}
+                            maxLength={100}
+                            style={{ margin: 0, width: '100%' }}
+                          />
+                        ) : (
+                          <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.namaMapel}</div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <input
+                            className="input small"
+                            value={editKodeMapel}
+                            onChange={(e) => setEditKodeMapel(e.target.value)}
+                            placeholder="Kode (opsional)"
+                            disabled={saving}
+                            maxLength={20}
+                            style={{ margin: 0, width: '100%' }}
+                          />
+                        ) : (
+                          <div className="kode-text">{item.kodeMapel || '–'}</div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <select
+                            className="input small"
+                            value={editKategori}
+                            onChange={(e) => setEditKategori(e.target.value)}
+                            disabled={saving}
+                            style={{ margin: 0, width: '100%' }}
+                          >
+                            {KATEGORI_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className={`badge badge-${item.kategori}`}>
+                            {KATEGORI_OPTIONS.find((o) => o.value === item.kategori)?.label || item.kategori}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          editKategori === 'prodi' ? (
+                            <select
+                              className="input small"
+                              value={editJurusanId}
+                              onChange={(e) => setEditJurusanId(e.target.value)}
+                              disabled={saving}
+                              style={{ margin: 0, width: '100%' }}
+                            >
+                              <option value="">Pilih prodi</option>
+                              {jurusanList.map((j) => (
+                                <option key={j.id} value={j.id}>{j.nama}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="muted">Muatan Lokal</span>
+                          )
+                        ) : (
+                          <div className="prodi-text">
+                            {item.kategori === 'prodi' && item.jurusan
+                              ? item.jurusan.nama
+                              : item.kategori === 'muatan_lokal'
+                                ? 'Muatan Lokal'
+                                : '–'}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {isEditing ? (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editNamaMapel.trim() || (editKategori === 'prodi' && !editJurusanId)} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
+                                <FiSave />
+                              </button>
+                              <button className="btn-action" type="button" onClick={cancelEdit} disabled={saving} title="Batal" style={{ background: '#64748b', color: 'white' }}>
+                                <FiX />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={() => startEdit(item)} disabled={saving} title="Edit" style={{ background: '#3b82f6', color: 'white' }}>
+                                <FiEdit2 />
+                              </button>
+                              <button className="btn-action btn-delete" type="button" onClick={() => openDeleteConfirm(item)} disabled={saving} title="Hapus">
+                                <FiTrash2 />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

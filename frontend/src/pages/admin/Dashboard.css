@@ -11,9 +11,14 @@
 }
 
 .page-title {
-  font-size: 2rem;
+  font-size: 2.25rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .admin-title .title-text {
@@ -33,11 +38,9 @@
   font-weight: 600;
   letter-spacing: 0.025em;
   text-transform: uppercase;
-}
-
-.admin-badge {
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   color: #ffffff;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 
 .page-subtitle {

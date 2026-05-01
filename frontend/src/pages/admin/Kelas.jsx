@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './Kelas.css';
 
 const AdminKelas = () => {
@@ -237,119 +238,127 @@ const AdminKelas = () => {
         ) : items.length === 0 ? (
           <div className="kelas-empty">Belum ada kelas</div>
         ) : (
-          <div className="kelas-table">
-            <div className="kelas-row kelas-row-head">
-              <div className="col-nama">Nama Kelas</div>
-              <div className="col-tingkat">Tingkat</div>
-              <div className="col-jurusan">Jurusan</div>
-              <div className="col-inisial">Inisial</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-
-            {items.map((item) => {
-              const isEditing = editingId === item.id;
-              return (
-                <div key={item.id} className="kelas-row">
-                  <div className="col-nama">
-                    {isEditing ? (
-                      <div className="nama-preview">
-                        {editingTingkat && editingJurusanId && editingInisial.trim() 
-                          ? getNamaKelasDisplay({ 
-                              tingkat: editingTingkat, 
-                              inisial: editingInisial.trim(), 
-                              jurusan: jurusanList.find(j => j.id === parseInt(editingJurusanId)) 
-                            })
-                          : 'Preview akan muncul setelah semua field diisi'
-                        }
-                      </div>
-                    ) : (
-                      <div className="nama-text">{getNamaKelasDisplay(item)}</div>
-                    )}
-                  </div>
-                  <div className="col-tingkat">
-                    {isEditing ? (
-                      <select
-                        className="input small"
-                        value={editingTingkat}
-                        onChange={(e) => setEditingTingkat(e.target.value)}
-                        disabled={saving}
-                        required
-                      >
-                        <option value="">Pilih</option>
-                        <option value="X">10</option>
-                        <option value="XI">11</option>
-                        <option value="XII">12</option>
-                      </select>
-                    ) : (
-                      <div className="tingkat-text">{getTingkatLabel(item.tingkat)}</div>
-                    )}
-                  </div>
-                  <div className="col-jurusan">
-                    {isEditing ? (
-                      <select
-                        className="input small"
-                        value={editingJurusanId}
-                        onChange={(e) => setEditingJurusanId(e.target.value)}
-                        disabled={saving}
-                        required
-                      >
-                        <option value="">Pilih Jurusan</option>
-                        {jurusanList.map((jurusan) => (
-                          <option key={jurusan.id} value={jurusan.id}>
-                            {jurusan.idJurusan} - {jurusan.nama}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div className="jurusan-text">
-                        {item.jurusan ? `${item.jurusan.idJurusan} - ${item.jurusan.nama}` : '-'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-inisial">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        placeholder="Inisial"
-                        value={editingInisial}
-                        onChange={(e) => setEditingInisial(e.target.value.toUpperCase())}
-                        disabled={saving}
-                        maxLength={10}
-                        required
-                      />
-                    ) : (
-                      <div className="inisial-text">{item.inisial}</div>
-                    )}
-                  </div>
-
-                  <div className="col-actions">
-                    {isEditing ? (
-                      <>
-                        <button className="btn" type="button" onClick={saveEdit} disabled={saving || !editingTingkat || !editingJurusanId || !editingInisial.trim()}>
-                          <FiSave />
-                          <span>Simpan</span>
-                        </button>
-                        <button className="btn ghost" type="button" onClick={cancelEdit} disabled={saving}>
-                          <FiX />
-                          <span>Batal</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="btn" type="button" onClick={() => startEdit(item)} disabled={saving}>
-                          <FiEdit2 />
-                          <span>Edit</span>
-                        </button>
-                        <button className="btn danger" type="button" onClick={() => remove(item)} disabled={saving}>
-                          <FiTrash2 />
-                          <span>Hapus</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="kelas-table-wrap">
+            <style>{`
+               .clickable-row:hover { background-color: #f8fafc !important; }
+            `}</style>
+            <table className="kelas-table">
+              <thead>
+                <tr>
+                  <th>Nama Kelas</th>
+                  <th>Tingkat</th>
+                  <th>Jurusan</th>
+                  <th>Inisial</th>
+                  <th style={{ width: '150px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const isEditing = editingId === item.id;
+                  return (
+                    <tr key={item.id} className="clickable-row">
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <div className="nama-preview">
+                            {editingTingkat && editingJurusanId && editingInisial.trim() 
+                              ? getNamaKelasDisplay({ 
+                                  tingkat: editingTingkat, 
+                                  inisial: editingInisial.trim(), 
+                                  jurusan: jurusanList.find(j => j.id === parseInt(editingJurusanId)) 
+                                })
+                              : '-'
+                            }
+                          </div>
+                        ) : (
+                          <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{getNamaKelasDisplay(item)}</div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <select
+                            className="input small"
+                            value={editingTingkat}
+                            onChange={(e) => setEditingTingkat(e.target.value)}
+                            disabled={saving}
+                            required
+                            style={{ margin: 0, width: '100%' }}
+                          >
+                            <option value="">Pilih</option>
+                            <option value="X">10</option>
+                            <option value="XI">11</option>
+                            <option value="XII">12</option>
+                          </select>
+                        ) : (
+                          <div className="tingkat-text">{getTingkatLabel(item.tingkat)}</div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <select
+                            className="input small"
+                            value={editingJurusanId}
+                            onChange={(e) => setEditingJurusanId(e.target.value)}
+                            disabled={saving}
+                            required
+                            style={{ margin: 0, width: '100%' }}
+                          >
+                            <option value="">Pilih Jurusan</option>
+                            {jurusanList.map((jurusan) => (
+                              <option key={jurusan.id} value={jurusan.id}>
+                                {jurusan.idJurusan} - {jurusan.nama}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div className="jurusan-text">
+                            {item.jurusan ? `${item.jurusan.idJurusan} - ${item.jurusan.nama}` : '-'}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <input
+                            className="input small"
+                            placeholder="Inisial"
+                            value={editingInisial}
+                            onChange={(e) => setEditingInisial(e.target.value.toUpperCase())}
+                            disabled={saving}
+                            maxLength={10}
+                            required
+                            style={{ margin: 0, width: '100%' }}
+                          />
+                        ) : (
+                          <div className="inisial-text">{item.inisial}</div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {isEditing ? (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editingTingkat || !editingJurusanId || !editingInisial.trim()} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
+                                <FiSave />
+                              </button>
+                              <button className="btn-action" type="button" onClick={cancelEdit} disabled={saving} title="Batal" style={{ background: '#64748b', color: 'white' }}>
+                                <FiX />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={() => startEdit(item)} disabled={saving} title="Edit" style={{ background: '#3b82f6', color: 'white' }}>
+                                <FiEdit2 />
+                              </button>
+                              <button className="btn-action btn-delete" type="button" onClick={() => remove(item)} disabled={saving} title="Hapus">
+                                <FiTrash2 />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

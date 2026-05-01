@@ -1,16 +1,3 @@
-.admin-title-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.375rem 1rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: #ffffff;
-  margin-left: 1rem;
-}
 
 .btn-plus {
   width: 22px;
@@ -26,6 +13,14 @@
 
 .paket-ujian-table th,
 .paket-ujian-table td {
-  text-align: center;
+  text-align: left !important;
   vertical-align: middle;
+}
+
+.clickable-row {
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: #f1f5f9 !important;
 }

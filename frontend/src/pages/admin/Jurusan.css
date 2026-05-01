@@ -138,13 +138,14 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
-  border: none;
+  border: 1px solid transparent;
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   color: #ffffff;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  min-width: 140px;
   user-select: none;
   box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
 }
@@ -197,6 +198,40 @@
   color: #64748b;
   margin: 0;
   line-height: 1.5;
+}
+
+/* Table Premium Styles */
+.jurusan-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.jurusan-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.jurusan-table th,
+.jurusan-table td {
+  padding: 0.75rem 1rem;
+  text-align: left !important;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9375rem;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.jurusan-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.jurusan-table tbody tr:hover {
+  background: #f8fafc;
 }
 
 .jurusan-form {
@@ -427,63 +462,67 @@
   color: #64748b;
 }
 
-.jurusan-table {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.jurusan-row {
-  display: grid;
-  grid-template-columns: 120px 1fr auto;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.85rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: linear-gradient(to bottom, #ffffff 0%, #f8fafc 100%);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.jurusan-row-head {
-  border: 1px solid transparent; /* Match border width for alignment */
-  background: transparent;
-  padding: 0 0.75rem;
-}
-
-.jurusan-row-head .col-id,
-.jurusan-row-head .col-name,
-.jurusan-row-head .col-actions {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.col-actions {
-  display: inline-flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.col-id {
-  min-width: 0;
-}
-
-.id-text {
-  font-weight: 600;
-  color: #3b82f6;
-  font-size: 0.9375rem;
-  font-family: 'Courier New', monospace;
-  letter-spacing: 0.05em;
-}
-
 .name-text {
   font-weight: 600;
   color: #0f172a;
+}
+
+.paket-ujian-table th,
+.paket-ujian-table td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+.paket-ujian-table th:first-child,
+.paket-ujian-table td:first-child,
+.paket-ujian-table th:nth-child(2),
+.paket-ujian-table td:nth-child(2) {
+  text-align: left;
+}
+
+/* Common Table Actions */
+.btn-action {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.btn-action:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-action.primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.btn-action.primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-action.btn-delete {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+}
+
+.btn-action.btn-delete:hover:not(:disabled) {
+  background: #dc2626;
 }
 
 @keyframes fadeIn {

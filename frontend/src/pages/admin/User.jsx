@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './User.css';
 
 const AdminUser = () => {
@@ -190,39 +191,44 @@ const AdminUser = () => {
         ) : items.length === 0 ? (
           <div className="user-empty">Belum ada user</div>
         ) : (
-          <div className="user-table">
-            <div className="user-row user-row-head">
-              <div className="col-email">Email</div>
-              <div className="col-nama">Nama Lengkap</div>
-              <div className="col-status">Status</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-
-            {items.map((item) => (
-              <div key={item.id} className="user-row">
-                <div className="col-email">
-                  <div className="email-text">{item.email}</div>
-                </div>
-                <div className="col-nama">
-                  <div className="nama-text">{item.namaLengkap}</div>
-                </div>
-                <div className="col-status">
-                  <span className={`status-badge ${getStatusBadge(item.status)}`}>
-                    {item.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </div>
-                <div className="col-actions">
-                  <button className="btn" type="button" onClick={() => startEdit(item)} disabled={saving}>
-                    <FiEdit2 />
-                    <span>Edit</span>
-                  </button>
-                  <button className="btn danger" type="button" onClick={() => remove(item)} disabled={saving || item.googleLinked}>
-                    <FiTrash2 />
-                    <span>Hapus</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="user-table-wrap">
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Nama Lengkap</th>
+                  <th className="text-center">Status</th>
+                  <th style={{ width: '120px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="email-text" style={{ fontFamily: 'monospace', fontWeight: '600' }}>{item.email}</div>
+                    </td>
+                    <td>
+                      <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.namaLengkap}</div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${getStatusBadge(item.status)}`}>
+                        {item.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-action primary" type="button" onClick={() => startEdit(item)} disabled={saving} title="Edit">
+                          <FiEdit2 />
+                        </button>
+                        <button className="btn-action btn-delete" type="button" onClick={() => remove(item)} disabled={saving || item.googleLinked} title="Hapus">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

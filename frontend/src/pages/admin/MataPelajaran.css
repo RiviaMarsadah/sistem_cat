@@ -121,13 +121,14 @@
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 12px;
-  border: none;
+  border: 1px solid transparent;
   background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
   color: #ffffff;
   font-size: 0.9375rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 140px;
 }
 
 .btn-add-mapel:hover:not(:disabled) {
@@ -150,138 +151,84 @@
   color: #64748b;
 }
 
-.mapel-table {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mapel-row {
-  display: grid;
-  grid-template-columns: 1fr 100px 140px 1fr auto;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.85rem 0.75rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.mapel-row-head {
-  border: 1px solid transparent; /* Match border width for alignment */
-  background: transparent;
-  padding: 0 0.75rem;
-}
-
-.mapel-row-head .col-nama,
-.mapel-row-head .col-kode,
-.mapel-row-head .col-kategori,
-.mapel-row-head .col-prodi,
-.mapel-row-head .col-actions {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.mapel-row .col-actions {
-  display: inline-flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.mapel-row .input.small {
-  padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  font-size: 0.9rem;
-  width: 100%;
-}
-
-.nama-text,
-.kode-text,
-.prodi-text {
-  font-size: 0.9375rem;
-  color: #0f172a;
-}
-
-.kode-text {
-  color: #64748b;
-}
-
-.muted {
-  color: #94a3b8;
-  font-size: 0.875rem;
-}
-
-.badge {
-  display: inline-block;
-  padding: 0.25rem 0.6rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.badge-prodi {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.badge-muatan_lokal {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.mapel-row .btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.75rem;
+.mapel-table-wrap {
+  overflow-x: auto;
   border-radius: 10px;
   border: 1px solid #e2e8f0;
-  background: #ffffff;
+  background: #fff;
+}
+
+.mapel-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mapel-table th,
+.mapel-table td {
+  padding: 0.75rem 1rem;
+  text-align: left !important;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9375rem;
   color: #0f172a;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  vertical-align: middle;
 }
 
-.mapel-row .btn:hover:not(:disabled) {
-  transform: translateY(-1px);
+.mapel-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
 }
 
-.mapel-row .btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.mapel-row .btn-save {
-  border-color: rgba(59, 130, 246, 0.5);
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: #fff;
-}
-
-.mapel-row .btn-ghost {
+.mapel-table tbody tr:hover {
   background: #f8fafc;
 }
 
-.mapel-row .btn-edit {
-  color: #1e40af;
+/* Common Table Actions */
+.btn-action {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
 }
 
-.mapel-row .btn-danger {
-  border-color: rgba(239, 68, 68, 0.35);
-  color: #b91c1c;
+.btn-action:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
 }
 
-.mapel-row .btn-danger:hover:not(:disabled) {
-  background: #fef2f2;
+.btn-action.primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #2563eb;
 }
+
+.btn-action.primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-action.btn-delete {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+}
+
+.btn-action.btn-delete:hover:not(:disabled) {
+  background: #dc2626;
+}
+
 
 /* Form in modal */
 .mapel-form .form-group {
@@ -468,27 +415,6 @@
 }
 
 @media (max-width: 900px) {
-  .mapel-row {
-    grid-template-columns: 1fr 1fr auto;
-  }
-
-  .mapel-row .col-kode {
-    grid-column: 1;
-  }
-
-  .mapel-row .col-kategori {
-    grid-column: 2;
-  }
-
-  .mapel-row .col-prodi {
-    grid-column: 1 / -1;
-  }
-
-  .mapel-row .col-actions {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
-  }
-}
 
 /* Theme alignment with Guru pages */
 .mapel-header {
@@ -516,10 +442,6 @@
   box-shadow: none;
 }
 
-.mapel-row {
-  border-radius: 10px;
-  background: #ffffff;
-}
 
 .btn-add-mapel {
   border-radius: 10px;
@@ -529,4 +451,5 @@
   width: 26px; /* Increased from 22px */
   height: 26px; /* Increased from 22px */
   font-size: 1.4rem; /* Increased from 1.2rem */
+}
 }

@@ -125,6 +125,15 @@ exports.create = async (req, res) => {
       hashedPassword = await bcrypt.hash(value.password.trim(), 10);
     }
 
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: value.email.trim().toLowerCase() }
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: 'Email sudah digunakan' });
+    }
+
     const created = await prisma.user.create({
       data: {
         email: value.email.trim().toLowerCase(),
@@ -204,6 +213,19 @@ exports.update = async (req, res) => {
     // Hash password if provided
     if (value.password !== undefined && value.password !== null && value.password.trim()) {
       updateData.password = await bcrypt.hash(value.password.trim(), 10);
+    }
+
+    // Check if email is being updated and if it's already used by another user
+    if (updateData.email) {
+      const emailConflict = await prisma.user.findFirst({
+        where: {
+          email: updateData.email,
+          id: { not: id }
+        }
+      });
+      if (emailConflict) {
+        return res.status(409).json({ success: false, message: 'Email sudah digunakan oleh user lain' });
+      }
     }
 
     const updated = await prisma.user.update({

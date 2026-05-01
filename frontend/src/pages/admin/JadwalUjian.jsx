@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './JadwalUjian.css';
+import './User.css';
 
 export default function JadwalUjianAdmin() {
   const [items, setItems] = useState([]);
@@ -130,15 +131,18 @@ export default function JadwalUjianAdmin() {
 
   const renderListPeriode = () => {
     if (loading && periodes.length === 0) return <div className="paket-ujian-loading">Memuat periode...</div>;
-    if (periodes.length === 0) return (
-      <div className="user-alert">Belum ada periode ujian. Silakan buat jadwal baru melalui Wizard.</div>
-    );
-
+    
     return (
-      <div className="paket-ujian-table-wrap" style={{ marginTop: '1.5rem' }}>
-        <style>{`
-           .clickable-row:hover { background-color: #f8fafc !important; }
-        `}</style>
+      <div className="user-card" style={{ marginTop: '1.5rem' }}>
+        <div className="user-card-header">
+          <h2 className="user-card-title">Daftar Periode Ujian</h2>
+          <button className="btn-add-user" onClick={handleBuatWizard} disabled={saving}>
+            <FiPlus className="btn-icon" />
+            <span>Jadwal Ujian</span>
+          </button>
+        </div>
+
+        <div className="paket-ujian-table-wrap">
         <table className="paket-ujian-table">
           <thead>
             <tr>
@@ -200,6 +204,13 @@ export default function JadwalUjianAdmin() {
             })}
           </tbody>
         </table>
+        </div>
+
+        {periodes.length === 0 && (
+          <div className="user-empty" style={{ padding: '3rem 0' }}>
+            Belum ada periode ujian. Silakan buat jadwal baru melalui tombol di atas.
+          </div>
+        )}
       </div>
     );
   };
@@ -340,18 +351,21 @@ export default function JadwalUjianAdmin() {
   };
 
   return (
-    <div className="paket-ujian-page">
-      <div className="paket-ujian-header">
+    <div className="user-page" style={{ padding: '0 20px 20px 20px' }}>
+      <div className="user-header">
         <div>
-          <h1 className="page-title">
+          <h1 className="user-title">
             <span className="title-text">Jadwal Ujian</span>
-            <span className="title-badge admin-title-badge">Admin</span>
+            <span className="title-badge">Admin</span>
           </h1>
-          <p className="page-subtitle">Pilih atau buat periode ujian untuk mengelola jadwal kelas.</p>
+          <p className="user-subtitle">Pilih atau buat periode ujian untuk mengelola jadwal kelas.</p>
         </div>
-        <button className="btn-tambah" onClick={handleBuatWizard} disabled={saving} style={{background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', boxShadow: '0 4px 10px rgba(16,185,129,0.3)'}}>
-          <FiPlus className="btn-plus" /> Jadwal Ujian
-        </button>
+        <div className="user-meta">
+          <div className="meta-card">
+            <div className="meta-label">Total</div>
+            <div className="meta-value">{periodes.length}</div>
+          </div>
+        </div>
       </div>
 
       {error && <div className="paket-ujian-error">{error}</div>}

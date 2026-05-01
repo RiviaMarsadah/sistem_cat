@@ -84,7 +84,7 @@ export default function JadwalUjianGuru() {
       const res = await api.put(`/guru/jadwal-ujian/official/${activeJadwalId}/paket`, { paketUjianId: paketId });
       setSuccess(res.data.message);
       setShowPilihPaketModal(false);
-      fetchData();
+      fetchData(); //mengambil data terbaru
     } catch(err) {
       setError(err?.response?.data?.message || 'Gagal menautkan paket.');
     } finally {
@@ -158,7 +158,7 @@ export default function JadwalUjianGuru() {
   };
 
   const handleSaveCustom = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); //menghapus settingan default browser
     if(!nama || !mataPelajaranId || !paketUjianId || !mulai || !selesai || selectedKelas.length === 0) {
        setError('Mohon isi semua data, termasuk kelas peserta.'); return;
     }

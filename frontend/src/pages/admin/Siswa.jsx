@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './Siswa.css';
 import './User.css'; // Reuse common styles
 
@@ -230,13 +231,13 @@ const AdminSiswa = () => {
         <div>
           <h1 className="user-title">
             <span className="title-text">Management Siswa</span>
-            <span className="title-badge">Siswa</span>
+            <span className="title-badge">Admin</span>
           </h1>
           <p className="user-subtitle">Kelola data siswa terpadu (Akun & Identitas)</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">
-            <div className="meta-label">Total Siswa</div>
+            <div className="meta-label">Total</div>
             <div className="meta-value">{count}</div>
           </div>
         </div>
@@ -273,47 +274,56 @@ const AdminSiswa = () => {
         ) : items.length === 0 ? (
           <div className="user-empty">Belum ada data siswa</div>
         ) : (
-          <div className="user-table siswa-table-grid">
-            <div className="user-row user-row-head">
-              <div className="col-identitas">Identitas & Akun</div>
-              <div className="col-nis">NIS/NISN</div>
-              <div className="col-kelas">Kelas</div>
-              <div className="col-status">Status</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-
-            {items.map((item) => (
-              <div key={item.id} className="user-row">
-                <div className="col-identitas">
-                  <div className="identitas-wrapper">
-                    <div className="nama-text">{item.user.namaLengkap}</div>
-                    <div className="email-text">{item.user.email}</div>
-                  </div>
-                </div>
-                <div className="col-nis">
-                  <div className="nis-wrapper">
-                    <span className="nis-label">NIS: {item.nis || '-'}</span>
-                    <span className="nisn-label">NISN: {item.nisn || '-'}</span>
-                  </div>
-                </div>
-                <div className="col-kelas">
-                  <div className="kelas-badge">{item.kelas?.namaKelas || 'N/A'}</div>
-                </div>
-                <div className="col-status">
-                  <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
-                    {item.user.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </div>
-                <div className="col-actions">
-                  <button className="btn" onClick={() => startEdit(item)} disabled={saving}>
-                    <FiEdit2 /> <span>Edit</span>
-                  </button>
-                  <button className="btn danger" onClick={() => remove(item)} disabled={saving}>
-                    <FiTrash2 /> <span>Hapus</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="siswa-table-wrap">
+            <table className="siswa-table">
+              <thead>
+                <tr>
+                  <th>Identitas & Akun</th>
+                  <th>NIS/NISN</th>
+                  <th>Kelas</th>
+                  <th className="text-center">Status</th>
+                  <th style={{ width: '120px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="identitas-wrapper">
+                        <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.user.namaLengkap}</div>
+                        <div className="email-text" style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.user.email}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="nis-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.85rem' }}>
+                        <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>NIS: {item.nis || '-'}</span>
+                        <span style={{ color: '#64748b' }}>NISN: {item.nisn || '-'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="kelas-badge" style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600', display: 'inline-block' }}>
+                        {item.kelas?.namaKelas || 'N/A'}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
+                        {item.user.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-action primary" onClick={() => startEdit(item)} disabled={saving} title="Edit">
+                          <FiEdit2 />
+                        </button>
+                        <button className="btn-action btn-delete" onClick={() => remove(item)} disabled={saving} title="Hapus">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

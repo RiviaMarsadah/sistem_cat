@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './Guru.css';
 import './User.css'; // Reuse common styles
 
@@ -217,13 +218,13 @@ const AdminGuru = () => {
         <div>
           <h1 className="user-title">
             <span className="title-text">Management Guru</span>
-            <span className="title-badge">Guru</span>
+            <span className="title-badge">Admin</span>
           </h1>
           <p className="user-subtitle">Kelola data guru pengajar (Akun & Identitas)</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">
-            <div className="meta-label">Total Guru</div>
+            <div className="meta-label">Total</div>
             <div className="meta-value">{count}</div>
           </div>
         </div>
@@ -260,40 +261,47 @@ const AdminGuru = () => {
         ) : items.length === 0 ? (
           <div className="user-empty">Belum ada data guru</div>
         ) : (
-          <div className="user-table">
-            <div className="user-row user-row-head">
-              <div className="col-identitas">Identitas & Akun</div>
-              <div className="col-nip">NIP</div>
-              <div className="col-status">Status</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-
-            {items.map((item) => (
-              <div key={item.id} className="user-row">
-                <div className="col-identitas">
-                  <div className="identitas-wrapper">
-                    <div className="nama-text">{item.user.namaLengkap}</div>
-                    <div className="email-text">{item.user.email}</div>
-                  </div>
-                </div>
-                <div className="col-nip">
-                  <div className="nip-text">{item.nip || '-'}</div>
-                </div>
-                <div className="col-status">
-                  <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
-                    {item.user.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </div>
-                <div className="col-actions">
-                  <button className="btn" onClick={() => startEdit(item)} disabled={saving}>
-                    <FiEdit2 /> <span>Edit</span>
-                  </button>
-                  <button className="btn danger" onClick={() => remove(item)} disabled={saving}>
-                    <FiTrash2 /> <span>Hapus</span>
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="guru-table-wrap">
+            <table className="guru-table">
+              <thead>
+                <tr>
+                  <th>Identitas & Akun</th>
+                  <th>NIP</th>
+                  <th className="text-center">Status</th>
+                  <th style={{ width: '120px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <div className="identitas-wrapper">
+                        <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.user.namaLengkap}</div>
+                        <div className="email-text" style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.user.email}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="nip-text" style={{ fontFamily: 'monospace', fontWeight: '600' }}>{item.nip || '-'}</div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
+                        {item.user.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn-action primary" onClick={() => startEdit(item)} disabled={saving} title="Edit">
+                          <FiEdit2 />
+                        </button>
+                        <button className="btn-action btn-delete" onClick={() => remove(item)} disabled={saving} title="Hapus">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

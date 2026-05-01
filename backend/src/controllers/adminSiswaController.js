@@ -72,6 +72,15 @@ exports.create = async (req, res) => {
   }
 
   try {
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email: value.email.trim().toLowerCase() }
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ success: false, message: 'Email sudah digunakan' });
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create User
       let hashedPassword = null;

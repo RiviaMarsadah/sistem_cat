@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import api from '../../services/api';
+import '../guru/PaketUjian.css';
 import './Jurusan.css';
 
 const AdminJurusan = () => {
@@ -190,75 +191,86 @@ const AdminJurusan = () => {
         ) : items.length === 0 ? (
           <div className="jurusan-empty">Belum ada jurusan</div>
         ) : (
-          <div className="jurusan-table">
-            <div className="jurusan-row jurusan-row-head">
-              <div className="col-id">ID</div>
-              <div className="col-name">Nama</div>
-              <div className="col-actions">Aksi</div>
-            </div>
-
-            {items.map((item) => {
-              const isEditing = editingId === item.id;
-              return (
-                <div key={item.id} className="jurusan-row">
-                  <div className="col-id">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        placeholder="ID Jurusan"
-                        value={editingIdJurusan}
-                        onChange={(e) => setEditingIdJurusan(e.target.value.toUpperCase())}
-                        disabled={saving}
-                        maxLength={20}
-                        required
-                      />
-                    ) : (
-                      <div className="id-text">{item.idJurusan}</div>
-                    )}
-                  </div>
-                  <div className="col-name">
-                    {isEditing ? (
-                      <input
-                        className="input small"
-                        placeholder="Nama Jurusan"
-                        value={editingNama}
-                        onChange={(e) => setEditingNama(e.target.value)}
-                        disabled={saving}
-                        maxLength={100}
-                      />
-                    ) : (
-                      <div className="name-text">{item.nama}</div>
-                    )}
-                  </div>
-
-                  <div className="col-actions">
-                    {isEditing ? (
-                      <>
-                        <button className="btn" type="button" onClick={saveEdit} disabled={saving || !editingIdJurusan.trim() || !editingNama.trim()}>
-                          <FiSave />
-                          <span>Simpan</span>
-                        </button>
-                        <button className="btn ghost" type="button" onClick={cancelEdit} disabled={saving}>
-                          <FiX />
-                          <span>Batal</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="btn" type="button" onClick={() => startEdit(item)} disabled={saving}>
-                          <FiEdit2 />
-                          <span>Edit</span>
-                        </button>
-                        <button className="btn danger" type="button" onClick={() => remove(item)} disabled={saving}>
-                          <FiTrash2 />
-                          <span>Hapus</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="jurusan-table-wrap">
+            <style>{`
+               .clickable-row:hover { background-color: #f8fafc !important; }
+            `}</style>
+            <table className="jurusan-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '250px' }}>ID Jurusan</th>
+                  <th>Nama Jurusan</th>
+                  <th style={{ width: '200px' }}>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => {
+                  const isEditing = editingId === item.id;
+                  return (
+                    <tr key={item.id} className="clickable-row">
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <input
+                            className="input small"
+                            placeholder="ID Jurusan"
+                            value={editingIdJurusan}
+                            onChange={(e) => setEditingIdJurusan(e.target.value.toUpperCase())}
+                            disabled={saving}
+                            maxLength={20}
+                            required
+                            style={{ margin: 0, width: '100%' }}
+                          />
+                        ) : (
+                          <div style={{ fontWeight: '700', color: '#1e293b', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
+                            {item.idJurusan}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        {isEditing ? (
+                          <input
+                            className="input small"
+                            placeholder="Nama Jurusan"
+                            value={editingNama}
+                            onChange={(e) => setEditingNama(e.target.value)}
+                            disabled={saving}
+                            maxLength={100}
+                            style={{ margin: 0, width: '100%' }}
+                          />
+                        ) : (
+                          <div style={{ fontWeight: '600', color: '#334155' }}>
+                            {item.nama}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-start' }}>
+                          {isEditing ? (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editingIdJurusan.trim() || !editingNama.trim()} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
+                                <FiSave />
+                              </button>
+                              <button className="btn-action" type="button" onClick={cancelEdit} disabled={saving} title="Batal" style={{ background: '#64748b', color: 'white' }}>
+                                <FiX />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button className="btn-action primary" type="button" onClick={() => startEdit(item)} disabled={saving} title="Edit" style={{ background: '#3b82f6', color: 'white' }}>
+                                <FiEdit2 />
+                              </button>
+                              <button className="btn-action btn-delete" type="button" onClick={() => remove(item)} disabled={saving} title="Hapus">
+                                <FiTrash2 />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

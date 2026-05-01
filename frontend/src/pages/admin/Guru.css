@@ -1,8 +1,88 @@
 /* Admin Guru Page Style */
 @import './User.css';
 
-.guru-table-grid .user-row {
-  grid-template-columns: 2fr 1.5fr 100px auto;
+.identitas-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guru-table-wrap {
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.guru-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.guru-table th,
+.guru-table td {
+  padding: 0.75rem 1rem;
+  text-align: left !important;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.9375rem;
+  color: #0f172a;
+  vertical-align: middle;
+}
+
+.guru-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.guru-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+/* Common Table Actions */
+.btn-action {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.btn-action:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.btn-action.primary {
+  background: #3b82f6;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.btn-action.primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-action.btn-delete {
+  background: #ef4444;
+  color: white;
+  border-color: #dc2626;
+}
+
+.btn-action.btn-delete:hover:not(:disabled) {
+  background: #dc2626;
 }
 
 .nip-text {

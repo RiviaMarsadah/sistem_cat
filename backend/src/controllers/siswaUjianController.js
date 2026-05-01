@@ -49,10 +49,10 @@ function seededShuffle(items, seed) {
   let state = seed >>> 0;
   const rand = () => {
     state = (1664525 * state + 1013904223) >>> 0;
-    return state / 0x100000000;
+    return state / 0x100000000; //4.294.967.296
   };
 
-  for (let i = arr.length - 1; i > 0; i--) {
+  for (let i = arr.length - 1; i > 0; i--) { //fisher yates shuffle algoritma
     const j = Math.floor(rand() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
