@@ -130,7 +130,7 @@ exports.list = async (req, res) => {
       include: {
         bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
-        jurusan: { select: { id: true, nama: true, idJurusan: true } },
+        jurusan: { select: { id: true, namaProdi: true, kodeProdi: true } },
       },
     });
 
@@ -155,7 +155,7 @@ exports.getById = async (req, res) => {
       include: {
         bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
-        jurusan: { select: { id: true, nama: true, idJurusan: true } },
+        jurusan: { select: { id: true, namaProdi: true, kodeProdi: true } },
       },
     });
     if (!item) return res.status(404).json({ success: false, message: 'Soal tidak ditemukan' });
@@ -203,7 +203,7 @@ exports.create = async (req, res) => {
       include: {
         bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
-        jurusan: { select: { id: true, nama: true, idJurusan: true } },
+        jurusan: { select: { id: true, namaProdi: true, kodeProdi: true } },
       },
     });
     return res.status(201).json({ success: true, message: 'Soal berhasil ditambah', data: created });
@@ -259,7 +259,7 @@ exports.update = async (req, res) => {
       include: {
         bankSoalKoleksi: { select: { id: true, nama: true } },
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
-        jurusan: { select: { id: true, nama: true, idJurusan: true } },
+        jurusan: { select: { id: true, namaProdi: true, kodeProdi: true } },
       },
     });
     return res.json({ success: true, message: 'Soal berhasil diubah', data: item });

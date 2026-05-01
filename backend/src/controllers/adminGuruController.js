@@ -16,7 +16,18 @@ const createGuruSchema = Joi.object({
     'any.required': 'Nama lengkap wajib diisi'
   }),
   nip: Joi.string().trim().max(20).allow(null, '').optional(),
-  status: Joi.string().valid('aktif', 'nonaktif').default('aktif')
+  status: Joi.string().valid('aktif', 'nonaktif').default('aktif'),
+  jk: Joi.string().valid('L', 'P').allow(null, '').optional(),
+  foto: Joi.string().trim().max(255).allow(null, '').optional(),
+  tempat_lahir: Joi.string().trim().max(100).allow(null, '').optional(),
+  tgl_lahir: Joi.string().trim().max(20).allow(null, '').optional(),
+  agama: Joi.string().trim().max(50).allow(null, '').optional(),
+  nohp: Joi.string().trim().max(20).allow(null, '').optional(),
+  provinsi: Joi.string().trim().max(100).allow(null, '').optional(),
+  kabupaten: Joi.string().trim().max(100).allow(null, '').optional(),
+  kecamatan: Joi.string().trim().max(100).allow(null, '').optional(),
+  desa: Joi.string().trim().max(100).allow(null, '').optional(),
+  alamat: Joi.string().trim().allow(null, '').optional()
 });
 
 const updateGuruSchema = Joi.object({
@@ -24,7 +35,18 @@ const updateGuruSchema = Joi.object({
   password: Joi.string().trim().min(6).max(255).allow(null, '').optional(),
   namaLengkap: Joi.string().trim().min(2).max(100).optional(),
   nip: Joi.string().trim().max(20).allow(null, '').optional(),
-  status: Joi.string().valid('aktif', 'nonaktif').optional()
+  status: Joi.string().valid('aktif', 'nonaktif').optional(),
+  jk: Joi.string().valid('L', 'P').allow(null, '').optional(),
+  foto: Joi.string().trim().max(255).allow(null, '').optional(),
+  tempat_lahir: Joi.string().trim().max(100).allow(null, '').optional(),
+  tgl_lahir: Joi.string().trim().max(20).allow(null, '').optional(),
+  agama: Joi.string().trim().max(50).allow(null, '').optional(),
+  nohp: Joi.string().trim().max(20).allow(null, '').optional(),
+  provinsi: Joi.string().trim().max(100).allow(null, '').optional(),
+  kabupaten: Joi.string().trim().max(100).allow(null, '').optional(),
+  kecamatan: Joi.string().trim().max(100).allow(null, '').optional(),
+  desa: Joi.string().trim().max(100).allow(null, '').optional(),
+  alamat: Joi.string().trim().allow(null, '').optional()
 });
 
 exports.list = async (req, res) => {
@@ -94,7 +116,18 @@ exports.create = async (req, res) => {
       const guru = await tx.guru.create({
         data: {
           userId: user.id,
-          nip: value.nip
+          nip: value.nip,
+          jk: value.jk,
+          foto: value.foto,
+          tempatLahir: value.tempat_lahir,
+          tglLahir: value.tgl_lahir,
+          agama: value.agama,
+          noHp: value.nohp,
+          provinsi: value.provinsi,
+          kabupaten: value.kabupaten,
+          kecamatan: value.kecamatan,
+          desa: value.desa,
+          alamat: value.alamat
         },
         include: {
           user: true
@@ -154,6 +187,17 @@ exports.update = async (req, res) => {
       // Update Guru details
       const guruData = {};
       if (value.nip !== undefined) guruData.nip = value.nip;
+      if (value.jk !== undefined) guruData.jk = value.jk;
+      if (value.foto !== undefined) guruData.foto = value.foto;
+      if (value.tempat_lahir !== undefined) guruData.tempatLahir = value.tempat_lahir;
+      if (value.tgl_lahir !== undefined) guruData.tglLahir = value.tgl_lahir;
+      if (value.agama !== undefined) guruData.agama = value.agama;
+      if (value.nohp !== undefined) guruData.noHp = value.nohp;
+      if (value.provinsi !== undefined) guruData.provinsi = value.provinsi;
+      if (value.kabupaten !== undefined) guruData.kabupaten = value.kabupaten;
+      if (value.kecamatan !== undefined) guruData.kecamatan = value.kecamatan;
+      if (value.desa !== undefined) guruData.desa = value.desa;
+      if (value.alamat !== undefined) guruData.alamat = value.alamat;
 
       const updatedGuru = await tx.guru.update({
         where: { id },

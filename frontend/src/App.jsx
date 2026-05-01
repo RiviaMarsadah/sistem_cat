@@ -9,6 +9,8 @@ import AdminUser from './pages/admin/User';
 import AdminSiswa from './pages/admin/Siswa';
 import AdminGuru from './pages/admin/Guru';
 import AdminMataPelajaran from './pages/admin/MataPelajaran';
+import AdminAngkatan from './pages/admin/Angkatan';
+import AdminApiSync from './pages/admin/ApiSync';
 import GuruDashboard from './pages/guru/Dashboard';
 import GuruBankSoal from './pages/guru/BankSoal';
 import GuruBankSoalDetail from './pages/guru/BankSoalDetail';
@@ -37,6 +39,8 @@ function App() {
             <Route path="user" element={<AdminUser />} />
             <Route path="siswa" element={<AdminSiswa />} />
             <Route path="guru" element={<AdminGuru />} />
+            <Route path="angkatan" element={<AdminAngkatan />} />
+            <Route path="api-sync" element={<AdminApiSync />} />
             <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
             <Route path="jadwal-ujian/wizard" element={<AdminJadwalWizard />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />

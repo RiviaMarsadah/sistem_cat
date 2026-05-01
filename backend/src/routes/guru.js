@@ -36,7 +36,7 @@ router.get('/kelas', async (req, res) => {
     const items = await prisma.kelas.findMany({
       orderBy: [{ tingkat: 'asc' }, { namaKelas: 'asc' }],
       include: {
-        jurusan: { select: { id: true, idJurusan: true, nama: true } },
+        jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } },
       },
     });
     return res.json({ success: true, data: items });
@@ -49,8 +49,8 @@ router.get('/kelas', async (req, res) => {
 router.get('/jurusan', async (req, res) => {
   try {
     const items = await prisma.jurusan.findMany({
-      orderBy: { nama: 'asc' },
-      select: { id: true, idJurusan: true, nama: true },
+      orderBy: { namaProdi: 'asc' },
+      select: { id: true, kodeProdi: true, namaProdi: true },
     });
     return res.json({ success: true, data: items });
   } catch (err) {

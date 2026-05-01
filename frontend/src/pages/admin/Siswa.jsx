@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './Siswa.css';
@@ -11,6 +11,9 @@ const AdminSiswa = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const fileInputRef = useRef(null);
 
   // Form state (Shared for Add/Edit Modal)
@@ -25,6 +28,20 @@ const AdminSiswa = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
   
+  // New API fields
+  const [jk, setJk] = useState('L');
+  const [foto, setFoto] = useState('default.jpg');
+  const [tempatLahir, setTempatLahir] = useState('');
+  const [tglLahir, setTglLahir] = useState('');
+  const [agama, setAgama] = useState('');
+  const [nohp, setNohp] = useState('');
+  const [provinsi, setProvinsi] = useState('');
+  const [kabupaten, setKabupaten] = useState('');
+  const [kecamatan, setKecamatan] = useState('');
+  const [desa, setDesa] = useState('');
+  const [alamat, setAlamat] = useState('');
+  const [idAngkatan, setIdAngkatan] = useState('');
+  
   // Modal states
   const [showFormModal, setShowFormModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -38,6 +55,28 @@ const AdminSiswa = () => {
   // Confirm state
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(s => 
+      s.user.namaLengkap.toLowerCase().includes(search.toLowerCase()) || 
+      s.user.email.toLowerCase().includes(search.toLowerCase()) ||
+      (s.nis && s.nis.toLowerCase().includes(search.toLowerCase())) ||
+      (s.nisn && s.nisn.toLowerCase().includes(search.toLowerCase())) ||
+      (s.kelas?.namaKelas && s.kelas.namaKelas.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [items, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  
+  const paginatedItems = useMemo(() => {
+    if (itemsPerPage === 0) return filteredItems;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -83,6 +122,18 @@ const AdminSiswa = () => {
     setNisn('');
     setKelasId('');
     setStatus('aktif');
+    setJk('L');
+    setFoto('default.jpg');
+    setTempatLahir('');
+    setTglLahir('');
+    setAgama('');
+    setNohp('');
+    setProvinsi('');
+    setKabupaten('');
+    setKecamatan('');
+    setDesa('');
+    setAlamat('');
+    setIdAngkatan('');
     setError('');
     setShowFormModal(true);
   };
@@ -96,6 +147,18 @@ const AdminSiswa = () => {
     setNisn(item.nisn || '');
     setKelasId(item.kelasId || '');
     setStatus(item.user.status);
+    setJk(item.jk || 'L');
+    setFoto(item.foto || 'default.jpg');
+    setTempatLahir(item.tempat_lahir || '');
+    setTglLahir(item.tgl_lahir || '');
+    setAgama(item.agama || '');
+    setNohp(item.nohp || '');
+    setProvinsi(item.provinsi || '');
+    setKabupaten(item.kabupaten || '');
+    setKecamatan(item.kecamatan || '');
+    setDesa(item.desa || '');
+    setAlamat(item.alamat || '');
+    setIdAngkatan(item.id_angkatan || '');
     setError('');
     setShowFormModal(true);
   };
@@ -118,7 +181,18 @@ const AdminSiswa = () => {
         nis: nis.trim() || null,
         nisn: nisn.trim() || null,
         kelasId: parseInt(kelasId),
-        status
+        status,
+        jk,
+        tempat_lahir: tempatLahir,
+        tgl_lahir: tglLahir,
+        agama,
+        nohp,
+        provinsi,
+        kabupaten,
+        kecamatan,
+        desa,
+        alamat,
+        id_angkatan: idAngkatan ? parseInt(idAngkatan) : null
       };
 
       if (!editingId && password.trim()) data.password = password.trim();
@@ -257,7 +331,18 @@ const AdminSiswa = () => {
 
       <div className="user-card">
         <div className="user-card-header">
-          <h2 className="user-card-title">Daftar Siswa</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="user-card-title">Daftar Siswa</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari siswa..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <div className="action-buttons">
             <button className="btn" onClick={handleOpenImportModal} disabled={saving}>
               <FiUpload /> <span>Import Excel</span>
@@ -278,32 +363,67 @@ const AdminSiswa = () => {
             <table className="siswa-table">
               <thead>
                 <tr>
-                  <th>Identitas & Akun</th>
-                  <th>NIS/NISN</th>
+                  <th>Foto</th>
+                  <th>Nama</th>
+                  <th>Email</th>
+                  <th>NISN</th>
+                  <th>NIS</th>
                   <th>Kelas</th>
+                  <th>Angkatan</th>
+                  <th>JK</th>
+                  <th>Tempat Lahir</th>
+                  <th>Tgl Lahir</th>
+                  <th>Agama</th>
+                  <th>No HP</th>
+                  <th>Provinsi</th>
+                  <th>Kabupaten</th>
+                  <th>Kecamatan</th>
+                  <th>Desa</th>
+                  <th>Alamat</th>
                   <th className="text-center">Status</th>
                   <th style={{ width: '120px' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {paginatedItems.map((item) => (
                   <tr key={item.id}>
-                    <td>
-                      <div className="identitas-wrapper">
-                        <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.user.namaLengkap}</div>
-                        <div className="email-text" style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.user.email}</div>
+                    <td className="text-center">
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        background: '#f1f5f9',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        color: '#475569'
+                      }}>
+                        {item.foto && item.foto !== 'default.jpg' ? 'IMG' : (item.user.namaLengkap?.charAt(0) || 'S')}
                       </div>
                     </td>
+                    <td style={{ fontWeight: '600' }}>{item.user.namaLengkap}</td>
+                    <td>{item.user.email}</td>
+                    <td style={{ fontFamily: 'monospace' }}>{item.nisn || '-'}</td>
+                    <td style={{ fontFamily: 'monospace' }}>{item.nis || '-'}</td>
                     <td>
-                      <div className="nis-wrapper" style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.85rem' }}>
-                        <span style={{ fontFamily: 'monospace', fontWeight: '600' }}>NIS: {item.nis || '-'}</span>
-                        <span style={{ color: '#64748b' }}>NISN: {item.nisn || '-'}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="kelas-badge" style={{ background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: '600', display: 'inline-block' }}>
+                      <div className="kelas-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', display: 'inline-block' }}>
                         {item.kelas?.namaKelas || 'N/A'}
                       </div>
+                    </td>
+                    <td>{item.angkatan?.namaAngkatan || '-'}</td>
+                    <td>{item.jk === 'L' ? 'L' : item.jk === 'P' ? 'P' : '-'}</td>
+                    <td>{item.tempat_lahir || '-'}</td>
+                    <td>{item.tgl_lahir || '-'}</td>
+                    <td>{item.agama || '-'}</td>
+                    <td>{item.nohp || '-'}</td>
+                    <td>{item.provinsi || '-'}</td>
+                    <td>{item.kabupaten || '-'}</td>
+                    <td>{item.kecamatan || '-'}</td>
+                    <td>{item.desa || '-'}</td>
+                    <td title={item.alamat} style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.alamat || '-'}
                     </td>
                     <td>
                       <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
@@ -326,6 +446,55 @@ const AdminSiswa = () => {
             </table>
           </div>
         )}
+
+        {filteredItems.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Unified Form Modal (Add/Edit) */}
@@ -340,6 +509,12 @@ const AdminSiswa = () => {
             </div>
             <form onSubmit={handleFormSubmit}>
               <div className="modal-body">
+                {error && (
+                  <div className="user-alert error" style={{ marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiAlertCircle />
+                    {error}
+                  </div>
+                )}
                 <div className="form-group">
                   <div className="field-wrapper">
                     <label className="label">Nama Lengkap *</label>
@@ -365,11 +540,23 @@ const AdminSiswa = () => {
                   <div className="form-row">
                     <div className="field-wrapper">
                       <label className="label">NIS</label>
-                      <input className="input" value={nis} onChange={(e) => setNis(e.target.value)} disabled={saving} />
+                      <input 
+                        className="input" 
+                        value={nis} 
+                        onChange={(e) => setNis(e.target.value.replace(/\D/g, ''))} 
+                        placeholder="Hanya angka"
+                        disabled={saving} 
+                      />
                     </div>
                     <div className="field-wrapper">
                       <label className="label">NISN</label>
-                      <input className="input" value={nisn} onChange={(e) => setNisn(e.target.value)} disabled={saving} />
+                      <input 
+                        className="input" 
+                        value={nisn} 
+                        onChange={(e) => setNisn(e.target.value.replace(/\D/g, ''))} 
+                        placeholder="Hanya angka"
+                        disabled={saving} 
+                      />
                     </div>
                   </div>
                   <div className="form-row">
@@ -382,23 +569,88 @@ const AdminSiswa = () => {
                         ))}
                       </select>
                     </div>
-                    {editingId && (
-                      <div className="field-wrapper">
-                        <label className="label">Status Akun</label>
-                        <div className="toggle-wrapper">
-                          <label className="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              checked={status === 'aktif'} 
-                              onChange={(e) => setStatus(e.target.checked ? 'aktif' : 'nonaktif')}
-                            />
-                            <span className="toggle-slider"></span>
-                          </label>
-                          <span className="toggle-label-text">{status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="field-wrapper">
+                      <label className="label">Jenis Kelamin</label>
+                      <select className="input" value={jk} onChange={(e) => setJk(e.target.value)} disabled={saving}>
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
                   </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Tempat Lahir</label>
+                      <input className="input" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Tanggal Lahir</label>
+                      <input className="input" type="date" value={tglLahir} onChange={(e) => setTglLahir(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Agama</label>
+                      <input className="input" value={agama} onChange={(e) => setAgama(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">No HP</label>
+                      <input 
+                        className="input" 
+                        value={nohp} 
+                        onChange={(e) => setNohp(e.target.value.replace(/\D/g, ''))} 
+                        placeholder="Hanya angka"
+                        disabled={saving} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group-title" style={{ margin: '1rem 0 0.5rem', fontWeight: '700', fontSize: '0.9rem', color: '#64748b' }}>Alamat Lengkap</div>
+                  
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Provinsi</label>
+                      <input className="input" value={provinsi} onChange={(e) => setProvinsi(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Kabupaten</label>
+                      <input className="input" value={kabupaten} onChange={(e) => setKabupaten(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Kecamatan</label>
+                      <input className="input" value={kecamatan} onChange={(e) => setKecamatan(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Desa</label>
+                      <input className="input" value={desa} onChange={(e) => setDesa(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="field-wrapper">
+                    <label className="label">Alamat Jalan</label>
+                    <textarea className="input" style={{ minHeight: '80px', padding: '10px' }} value={alamat} onChange={(e) => setAlamat(e.target.value)} disabled={saving}></textarea>
+                  </div>
+
+                  {editingId && (
+                    <div className="field-wrapper">
+                      <label className="label">Status Akun</label>
+                      <div className="toggle-wrapper">
+                        <label className="toggle-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={status === 'aktif'} 
+                            onChange={(e) => setStatus(e.target.checked ? 'aktif' : 'nonaktif')}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                        <span className="toggle-label-text">{status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
@@ -502,21 +754,29 @@ const AdminSiswa = () => {
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-icon-wrapper modal-icon-danger">
-                <FiAlertCircle className="modal-icon" />
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus Siswa?</h3>
               </div>
-              <h3 className="modal-title">Hapus Siswa?</h3>
-            </div>
-            <div className="modal-body text-center">
-              <p>Apakah Anda yakin ingin menghapus siswa <strong>{confirmData?.namaLengkap}</strong>?</p>
-              <p className="modal-warning">Seluruh data akun dan nilai siswa ini akan terhapus permanen.</p>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)} disabled={saving}>Batal</button>
-              <button className="modal-btn modal-btn-danger" onClick={handleConfirmDelete} disabled={saving}>
-                {saving ? 'Memproses...' : 'Ya, Hapus'}
-              </button>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus siswa <span className="modal-confirm-item">{confirmData?.namaLengkap}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan. Seluruh data nilai siswa ini akan terhapus.
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleConfirmDelete} disabled={saving}>
+                  {saving ? 'Memproses...' : <><FiTrash2 /> Ya, Hapus</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>

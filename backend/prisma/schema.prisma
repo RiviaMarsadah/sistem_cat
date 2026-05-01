@@ -25,6 +25,8 @@ enum KelasTingkat {
   X
   XI
   XII
+  ALUMNI
+  KI
 }
 
 /// Untuk bank_soal: X, XI, XII, atau SEMUA (soal dipakai semua tingkat).
@@ -76,9 +78,20 @@ model User {
 model Guru {
   id        Int      @id @default(autoincrement())
   userId    Int      @unique @map("user_id")
-  nip       String?  @db.VarChar(20)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  nip             String?       @db.VarChar(20)
+  jk              JenisKelamin? @map("jk")
+  foto            String?       @default("default.jpg") @db.VarChar(255)
+  tempatLahir     String?       @map("tempat_lahir") @db.VarChar(100)
+  tglLahir        String?       @map("tgl_lahir") @db.VarChar(20)
+  agama           String?       @db.VarChar(50)
+  noHp            String?       @map("nohp") @db.VarChar(20)
+  provinsi        String?       @db.VarChar(100)
+  kabupaten       String?       @db.VarChar(100)
+  kecamatan       String?       @db.VarChar(100)
+  desa            String?       @db.VarChar(100)
+  alamat          String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
   // Relations
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -110,14 +123,25 @@ model Siswa {
   nis          String?       @unique @db.VarChar(20)
   nisn         String?       @unique @db.VarChar(20)
   kelasId      Int?          @map("kelas_id")
-  noTelp       String?       @map("no_telp") @db.VarChar(20)
-  jenisKelamin JenisKelamin? @map("jenis_kelamin")
+  idAngkatan   Int?          @map("id_angkatan")
+  jk           JenisKelamin? @map("jk")
+  foto         String?       @default("default.jpg") @db.VarChar(255)
+  tempatLahir  String?       @map("tempat_lahir") @db.VarChar(100)
+  tglLahir     String?       @map("tgl_lahir") @db.VarChar(20)
+  agama        String?       @db.VarChar(50)
+  noHp         String?       @map("nohp") @db.VarChar(20)
+  provinsi     String?       @db.VarChar(100)
+  kabupaten    String?       @db.VarChar(100)
+  kecamatan    String?       @db.VarChar(100)
+  desa         String?       @db.VarChar(100)
+  alamat       String?       @db.Text
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
   // Relations
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   kelas      Kelas?       @relation(fields: [kelasId], references: [id])
+  angkatan   Angkatan?    @relation(fields: [idAngkatan], references: [id])
   ujianSiswa UjianSiswa[]
 
   @@map("siswa")
@@ -150,11 +174,8 @@ model MataPelajaran {
   namaMapel String        @map("nama_mapel") @db.VarChar(100)
   kodeMapel String?       @unique @map("kode_mapel") @db.VarChar(20)
   deskripsi String?       @db.Text
-  kategori  KategoriMapel @default(prodi)
-  jurusanId Int?          @map("jurusan_id")
   createdAt DateTime      @default(now()) @map("created_at")
 
-  jurusan      Jurusan?      @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
   bankSoal     BankSoal[]
   paketUjian   PaketUjian[]
   jadwalUjians JadwalUjian[]
@@ -182,14 +203,13 @@ model Kelas {
 
 model Jurusan {
   id        Int      @id @default(autoincrement())
-  idJurusan String   @unique @map("id_jurusan") @db.VarChar(20)
-  nama      String   @unique @db.VarChar(100)
+  kodeProdi String   @unique @map("kode_prodi") @db.VarChar(20)
+  namaProdi String   @map("nama_prodi") @db.VarChar(100)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   kelas         Kelas[]
-  mataPelajaran MataPelajaran[]
   bankSoal      BankSoal[]
   jadwalUjians  JadwalUjian[]
 
@@ -359,4 +379,17 @@ model PeriodeUjian {
   jadwalUjians JadwalUjian[]
 
   @@map("periode_ujian")
+}
+
+model Angkatan {
+  id            Int      @id @default(autoincrement())
+  namaAngkatan  String   @map("nama_angkatan") @db.VarChar(100)
+  tahunAngkatan Int      @unique @map("tahun_angkatan")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  siswa Siswa[]
+
+  @@map("angkatan")
 }

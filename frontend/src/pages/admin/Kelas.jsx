@@ -1,13 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './Kelas.css';
+
+const getTingkatLabel = (tingkat) => {
+  const map = { X: '10', XI: '11', XII: '12', ALUMNI: 'ALUMNI', KI: 'KI' };
+  return map[tingkat] || tingkat;
+};
+
+const getNamaKelasDisplay = (item) => {
+  if (!item.tingkat || !item.jurusan || !item.inisial) return '-';
+  const displayKode = item.jurusan.kodeProdi || item.jurusan.idJurusan || '';
+  return `${getTingkatLabel(item.tingkat)} ${displayKode} ${item.inisial}`;
+};
 
 const AdminKelas = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Form state
   const [tingkat, setTingkat] = useState('');
@@ -32,6 +46,27 @@ const AdminKelas = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(k => {
+      const namaKelas = getNamaKelasDisplay(k).toLowerCase();
+      const jurusan = k.jurusan?.nama?.toLowerCase() || '';
+      const query = search.toLowerCase();
+      return namaKelas.includes(query) || jurusan.includes(query);
+    });
+  }, [items, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  
+  const paginatedItems = useMemo(() => {
+    if (itemsPerPage === 0) return filteredItems;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -190,15 +225,6 @@ const AdminKelas = () => {
     setShowConfirmModal(true);
   };
 
-  const getTingkatLabel = (tingkat) => {
-    const map = { X: '10', XI: '11', XII: '12' };
-    return map[tingkat] || tingkat;
-  };
-
-  const getNamaKelasDisplay = (item) => {
-    if (!item.tingkat || !item.jurusan || !item.inisial) return '-';
-    return `${getTingkatLabel(item.tingkat)} ${item.jurusan.idJurusan} ${item.inisial}`;
-  };
 
   return (
     <div className="admin-kelas-page">
@@ -226,7 +252,18 @@ const AdminKelas = () => {
 
       <div className="kelas-card">
         <div className="kelas-card-header">
-          <h2 className="kelas-card-title">Daftar Kelas</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="kelas-card-title">Daftar Kelas</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari kelas..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <button className="btn-add-kelas" onClick={handleOpenAddModal} disabled={saving}>
             <FiPlus className="btn-icon" />
             <span>Tambah Kelas</span>
@@ -253,7 +290,7 @@ const AdminKelas = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => {
+                {paginatedItems.map((item) => {
                   const isEditing = editingId === item.id;
                   return (
                     <tr key={item.id} className="clickable-row">
@@ -305,13 +342,13 @@ const AdminKelas = () => {
                             <option value="">Pilih Jurusan</option>
                             {jurusanList.map((jurusan) => (
                               <option key={jurusan.id} value={jurusan.id}>
-                                {jurusan.idJurusan} - {jurusan.nama}
+                                {jurusan.kodeProdi} - {jurusan.namaProdi}
                               </option>
                             ))}
                           </select>
                         ) : (
                           <div className="jurusan-text">
-                            {item.jurusan ? `${item.jurusan.idJurusan} - ${item.jurusan.nama}` : '-'}
+                            {item.jurusan ? `${item.jurusan.kodeProdi} - ${item.jurusan.namaProdi}` : '-'}
                           </div>
                         )}
                       </td>
@@ -361,6 +398,55 @@ const AdminKelas = () => {
             </table>
           </div>
         )}
+
+        {filteredItems.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Kelas Modal */}
@@ -375,6 +461,12 @@ const AdminKelas = () => {
             </div>
             <form className="kelas-form" onSubmit={onCreate}>
               <div className="modal-body">
+                {error && (
+                  <div className="kelas-alert" style={{ marginTop: 0, marginBottom: '1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiAlertCircle />
+                    {error}
+                  </div>
+                )}
                 <div className="form-group">
                   <div className="field-wrapper">
                     <label className="label" htmlFor="modal-tingkat">
@@ -416,7 +508,7 @@ const AdminKelas = () => {
                         <option value="">Pilih Jurusan</option>
                         {jurusanList.map((jurusan) => (
                           <option key={jurusan.id} value={jurusan.id}>
-                            {jurusan.idJurusan} - {jurusan.nama}
+                            {jurusan.kodeProdi} - {jurusan.namaProdi}
                           </option>
                         ))}
                       </select>
@@ -483,78 +575,55 @@ const AdminKelas = () => {
         </div>
       )}
 
-      {/* Confirmation Modal */}
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className={`modal-icon-wrapper ${
-                confirmAction === 'create' ? 'modal-icon-success' : 'modal-icon-danger'
-              }`}>
-                {confirmAction === 'create' ? (
-                  <FiCheckCircle className="modal-icon" />
-                ) : (
-                  <FiAlertCircle className="modal-icon" />
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className={`modal-confirm-icon-box ${confirmAction === 'create' ? 'success' : 'danger'}`}>
+                  {confirmAction === 'create' ? <FiCheckCircle className="modal-icon" /> : <FiAlertCircle className="modal-icon" />}
+                </div>
+                <h3 className="modal-confirm-title">
+                  {confirmAction === 'create' ? 'Tambah Kelas?' : 'Hapus Kelas?'}
+                </h3>
+              </div>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  {confirmAction === 'create' ? (
+                    <>
+                      Yakin ingin menambah kelas <span className="modal-confirm-item">{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}</span>?
+                    </>
+                  ) : (
+                    <>
+                      Yakin ingin menghapus kelas <span className="modal-confirm-item">{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}</span>?
+                    </>
+                  )}
+                </div>
+                {confirmAction === 'delete' && (
+                  <div className="modal-confirm-warning">
+                    <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan.
+                  </div>
                 )}
               </div>
-              <h3 className="modal-title">
-                {confirmAction === 'create' ? 'Tambah Kelas?' : 'Hapus Kelas?'}
-              </h3>
-            </div>
-            <div className="modal-body">
-              <p className="modal-message">
-                {confirmAction === 'create' ? (
-                  <>
-                    Apakah Anda yakin ingin menambah kelas{' '}
-                    <strong>"{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}"</strong>?
-                  </>
-                ) : (
-                  <>
-                    Apakah Anda yakin ingin menghapus kelas{' '}
-                    <strong>"{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}"</strong>?
-                    <br />
-                    <span className="modal-warning">Tindakan ini tidak dapat dibatalkan.</span>
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button
-                className="modal-btn modal-btn-cancel"
-                onClick={handleCancelConfirm}
-                disabled={saving}
-              >
-                <FiX className="modal-btn-icon" />
-                <span>Batal</span>
-              </button>
-              <button
-                className={`modal-btn modal-btn-confirm ${
-                  confirmAction === 'create' ? 'modal-btn-primary' : 'modal-btn-danger'
-                }`}
-                onClick={handleConfirm}
-                disabled={saving}
-              >
-                {saving ? (
-                  <>
-                    <span className="spinner-small"></span>
-                    <span>Memproses...</span>
-                  </>
-                ) : (
-                  <>
-                    {confirmAction === 'create' ? (
-                      <>
-                        <FiCheckCircle className="modal-btn-icon" />
-                        <span>Ya, Tambahkan</span>
-                      </>
-                    ) : (
-                      <>
-                        <FiTrash2 className="modal-btn-icon" />
-                        <span>Ya, Hapus</span>
-                      </>
-                    )}
-                  </>
-                )}
-              </button>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={handleCancelConfirm} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button 
+                  className={`btn ${confirmAction === 'create' ? 'primary' : 'btn-danger'}`} 
+                  onClick={handleConfirm} 
+                  disabled={saving}
+                >
+                  {saving ? (
+                    'Memproses...'
+                  ) : (
+                    <>
+                      {confirmAction === 'create' ? <FiCheckCircle /> : <FiTrash2 />} 
+                      {confirmAction === 'create' ? 'Ya, Tambahkan' : 'Ya, Hapus'}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

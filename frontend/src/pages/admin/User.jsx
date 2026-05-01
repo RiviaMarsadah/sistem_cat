@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './User.css';
@@ -8,6 +8,9 @@ const AdminUser = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   // Form state (untuk modal tambah)
   const [email, setEmail] = useState('');
@@ -27,6 +30,25 @@ const AdminUser = () => {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(u => 
+      u.namaLengkap.toLowerCase().includes(search.toLowerCase()) || 
+      u.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [items, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  
+  const paginatedItems = useMemo(() => {
+    if (itemsPerPage === 0) return filteredItems;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -179,7 +201,18 @@ const AdminUser = () => {
 
       <div className="user-card">
         <div className="user-card-header">
-          <h2 className="user-card-title">Daftar User</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="user-card-title">Daftar User</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari admin..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <button className="btn-add-user" onClick={handleOpenAddModal} disabled={saving}>
             <FiPlus className="btn-icon" />
             <span>Tambah User</span>
@@ -202,7 +235,7 @@ const AdminUser = () => {
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {paginatedItems.map((item) => (
                   <tr key={item.id}>
                     <td>
                       <div className="email-text" style={{ fontFamily: 'monospace', fontWeight: '600' }}>{item.email}</div>
@@ -231,6 +264,55 @@ const AdminUser = () => {
             </table>
           </div>
         )}
+
+        {filteredItems.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Unified User Modal (Add & Edit) */}
@@ -245,6 +327,12 @@ const AdminUser = () => {
             </div>
             <form className="user-form" onSubmit={editingId ? onSave : onCreate}>
               <div className="modal-body">
+                {error && (
+                  <div className="user-alert error" style={{ marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiAlertCircle />
+                    {error}
+                  </div>
+                )}
                 <div className="form-group">
                   <div className="field-wrapper">
                     <label className="label">
@@ -350,31 +438,29 @@ const AdminUser = () => {
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-icon-wrapper modal-icon-danger">
-                <FiAlertCircle className="modal-icon" />
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus User Admin?</h3>
               </div>
-              <h3 className="modal-title">Hapus User Admin?</h3>
-            </div>
-            <div className="modal-body">
-              <p className="modal-message">
-                Apakah Anda yakin ingin menghapus user <strong>"{confirmData?.email}"</strong> ({confirmData?.namaLengkap})?
-                <br />
-                <span className="modal-warning">Tindakan ini tidak dapat dibatalkan. Akun ini tidak akan bisa login lagi.</span>
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)} disabled={saving}>
-                <FiX className="modal-btn-icon" />
-                <span>Batal</span>
-              </button>
-              <button
-                className="modal-btn modal-btn-confirm modal-btn-danger"
-                onClick={handleConfirm}
-                disabled={saving}
-              >
-                {saving ? 'Memproses...' : 'Ya, Hapus'}
-              </button>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus user <span className="modal-confirm-item">{confirmData?.email}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan.
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleConfirm} disabled={saving}>
+                  {saving ? 'Memproses...' : <><FiTrash2 /> Ya, Hapus</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>

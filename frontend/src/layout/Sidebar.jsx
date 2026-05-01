@@ -14,7 +14,8 @@ import {
   FiLogOut,
   FiBell,
   FiSettings,
-  FiChevronDown
+  FiChevronDown,
+  FiRefreshCw
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -36,6 +37,7 @@ const Sidebar = ({ role, user }) => {
       category: 'Utama',
       items: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
+        { path: '/admin/api-sync', label: 'Sinkronisasi API', icon: FiRefreshCw, disabled: false },
       ]
     },
     {
@@ -44,6 +46,7 @@ const Sidebar = ({ role, user }) => {
         { path: '/admin/jurusan', label: 'Jurusan', icon: FiLayers, disabled: false },
         { path: '/admin/mata-pelajaran', label: 'Mata Pelajaran', icon: FiBookOpen, disabled: false },
         { path: '/admin/kelas', label: 'Kelas', icon: FiUsers, disabled: false },
+        { path: '/admin/angkatan', label: 'Angkatan', icon: FiLayers, disabled: false },
       ]
     },
     {

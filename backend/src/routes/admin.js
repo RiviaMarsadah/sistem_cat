@@ -13,6 +13,8 @@ const adminSiswaController = require('../controllers/adminSiswaController');
 const adminGuruController = require('../controllers/adminGuruController');
 const adminJadwalController = require('../controllers/adminJadwalController');
 const adminPeriodeController = require('../controllers/adminPeriodeController');
+const adminAngkatanController = require('../controllers/adminAngkatanController');
+const adminSyncController = require('../controllers/adminSyncController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -66,10 +68,21 @@ router.post('/periode', adminPeriodeController.create);
 router.put('/periode/:id', adminPeriodeController.update);
 router.delete('/periode/:id', adminPeriodeController.remove);
 
+// Angkatan CRUD
+router.get('/angkatan', adminAngkatanController.list);
+router.post('/angkatan', adminAngkatanController.create);
+router.get('/angkatan/:id', adminAngkatanController.getById);
+router.put('/angkatan/:id', adminAngkatanController.update);
+router.delete('/angkatan/:id', adminAngkatanController.remove);
+
 // Jadwal Ujian
 router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official only
 router.post('/jadwal-ujian/bulk-generate', adminJadwalController.bulkGenerate);
 router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
+
+// API Sync
+router.get('/sync/analyze', adminSyncController.analyze);
+router.post('/sync/execute', adminSyncController.execute);
 
 module.exports = router;
 

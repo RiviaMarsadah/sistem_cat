@@ -1,46 +1,51 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './MataPelajaran.css';
 
-const KATEGORI_OPTIONS = [
-  { value: 'prodi', label: 'Prodi (Jurusan)' },
-  { value: 'muatan_lokal', label: 'Muatan Lokal' },
-];
 
 export default function MataPelajaran() {
   const [items, setItems] = useState([]);
-  const [jurusanList, setJurusanList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [namaMapel, setNamaMapel] = useState('');
   const [kodeMapel, setKodeMapel] = useState('');
-  const [kategori, setKategori] = useState('prodi');
-  const [jurusanId, setJurusanId] = useState('');
 
   const [editingId, setEditingId] = useState(null);
   const [editNamaMapel, setEditNamaMapel] = useState('');
   const [editKodeMapel, setEditKodeMapel] = useState('');
-  const [editKategori, setEditKategori] = useState('prodi');
-  const [editJurusanId, setEditJurusanId] = useState('');
 
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmData, setConfirmData] = useState(null);
 
+  const filteredItems = useMemo(() => {
+    return items.filter(m => 
+      m.namaMapel.toLowerCase().includes(search.toLowerCase()) || 
+      (m.kodeMapel && m.kodeMapel.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [items, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  
+  const paginatedItems = useMemo(() => {
+    if (itemsPerPage === 0) return filteredItems;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
+
   const count = useMemo(() => items.length, [items.length]);
 
-  const loadJurusan = async () => {
-    try {
-      const res = await api.get('/admin/jurusan');
-      setJurusanList(res.data?.data || []);
-    } catch (e) {
-      console.error('Load jurusan error:', e);
-    }
-  };
 
   const load = async () => {
     setLoading(true);
@@ -55,9 +60,6 @@ export default function MataPelajaran() {
     }
   };
 
-  useEffect(() => {
-    loadJurusan();
-  }, []);
 
   useEffect(() => {
     load();
@@ -66,8 +68,6 @@ export default function MataPelajaran() {
   const resetAddForm = () => {
     setNamaMapel('');
     setKodeMapel('');
-    setKategori('prodi');
-    setJurusanId('');
   };
 
   const openAddModal = () => {
@@ -84,18 +84,12 @@ export default function MataPelajaran() {
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     if (!namaMapel.trim()) return;
-    if (kategori === 'prodi' && !jurusanId) {
-      setError('Pilih prodi/jurusan untuk kategori Prodi.');
-      return;
-    }
     setSaving(true);
     setError('');
     try {
       await api.post('/admin/mata-pelajaran', {
         namaMapel: namaMapel.trim(),
         kodeMapel: kodeMapel.trim() || null,
-        kategori,
-        jurusanId: kategori === 'prodi' ? Number(jurusanId) : null,
       });
       closeAddModal();
       await load();
@@ -110,8 +104,6 @@ export default function MataPelajaran() {
     setEditingId(item.id);
     setEditNamaMapel(item.namaMapel || '');
     setEditKodeMapel(item.kodeMapel || '');
-    setEditKategori(item.kategori || 'prodi');
-    setEditJurusanId(item.jurusanId != null ? String(item.jurusanId) : '');
     setError('');
   };
 
@@ -119,24 +111,16 @@ export default function MataPelajaran() {
     setEditingId(null);
     setEditNamaMapel('');
     setEditKodeMapel('');
-    setEditKategori('prodi');
-    setEditJurusanId('');
   };
 
   const saveEdit = async () => {
     if (!editNamaMapel.trim()) return;
-    if (editKategori === 'prodi' && !editJurusanId) {
-      setError('Pilih prodi/jurusan untuk kategori Prodi.');
-      return;
-    }
     setSaving(true);
     setError('');
     try {
       await api.put(`/admin/mata-pelajaran/${editingId}`, {
         namaMapel: editNamaMapel.trim(),
         kodeMapel: editKodeMapel.trim() || null,
-        kategori: editKategori,
-        jurusanId: editKategori === 'prodi' ? Number(editJurusanId) : null,
       });
       cancelEdit();
       await load();
@@ -181,7 +165,7 @@ export default function MataPelajaran() {
             <span className="title-text">Mata Pelajaran</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="mapel-subtitle">Kelola mata pelajaran dengan kategori Prodi atau Muatan Lokal</p>
+          <p className="mapel-subtitle">Kelola mata pelajaran</p>
         </div>
         <div className="mapel-meta">
           <div className="meta-card">
@@ -199,7 +183,18 @@ export default function MataPelajaran() {
 
       <div className="mapel-card">
         <div className="mapel-card-header">
-          <h2 className="mapel-card-title">Daftar Mata Pelajaran</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="mapel-card-title">Daftar Mata Pelajaran</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari mapel..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <button type="button" className="btn-add-mapel" onClick={openAddModal} disabled={saving}>
             <FiPlus className="btn-icon" />
             <span>Tambah Mata Pelajaran</span>
@@ -219,14 +214,12 @@ export default function MataPelajaran() {
               <thead>
                 <tr>
                   <th>Nama Mapel</th>
-                  <th>Kode</th>
-                  <th>Kategori</th>
-                  <th>Prodi / Jurusan</th>
-                  <th style={{ width: '150px' }}>Aksi</th>
+                  <th>Kode Mapel</th>
+                  <th style={{ width: '120px' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => {
+                {paginatedItems.map((item) => {
                   const isEditing = editingId === item.id;
                   return (
                     <tr key={item.id} className="clickable-row">
@@ -242,7 +235,7 @@ export default function MataPelajaran() {
                             style={{ margin: 0, width: '100%' }}
                           />
                         ) : (
-                          <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.namaMapel}</div>
+                          <div style={{ fontWeight: '600', color: '#1e293b' }}>{item.namaMapel}</div>
                         )}
                       </td>
                       <td style={{ verticalAlign: 'middle' }}>
@@ -251,67 +244,20 @@ export default function MataPelajaran() {
                             className="input small"
                             value={editKodeMapel}
                             onChange={(e) => setEditKodeMapel(e.target.value)}
-                            placeholder="Kode (opsional)"
+                            placeholder="Kode"
                             disabled={saving}
                             maxLength={20}
                             style={{ margin: 0, width: '100%' }}
                           />
                         ) : (
-                          <div className="kode-text">{item.kodeMapel || '–'}</div>
-                        )}
-                      </td>
-                      <td style={{ verticalAlign: 'middle' }}>
-                        {isEditing ? (
-                          <select
-                            className="input small"
-                            value={editKategori}
-                            onChange={(e) => setEditKategori(e.target.value)}
-                            disabled={saving}
-                            style={{ margin: 0, width: '100%' }}
-                          >
-                            {KATEGORI_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className={`badge badge-${item.kategori}`}>
-                            {KATEGORI_OPTIONS.find((o) => o.value === item.kategori)?.label || item.kategori}
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ verticalAlign: 'middle' }}>
-                        {isEditing ? (
-                          editKategori === 'prodi' ? (
-                            <select
-                              className="input small"
-                              value={editJurusanId}
-                              onChange={(e) => setEditJurusanId(e.target.value)}
-                              disabled={saving}
-                              style={{ margin: 0, width: '100%' }}
-                            >
-                              <option value="">Pilih prodi</option>
-                              {jurusanList.map((j) => (
-                                <option key={j.id} value={j.id}>{j.nama}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="muted">Muatan Lokal</span>
-                          )
-                        ) : (
-                          <div className="prodi-text">
-                            {item.kategori === 'prodi' && item.jurusan
-                              ? item.jurusan.nama
-                              : item.kategori === 'muatan_lokal'
-                                ? 'Muatan Lokal'
-                                : '–'}
-                          </div>
+                          <div style={{ fontFamily: 'monospace', fontWeight: '600' }}>{item.kodeMapel || '-'}</div>
                         )}
                       </td>
                       <td style={{ verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', gap: '8px' }}>
                           {isEditing ? (
                             <>
-                              <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editNamaMapel.trim() || (editKategori === 'prodi' && !editJurusanId)} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
+                              <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editNamaMapel.trim()} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
                                 <FiSave />
                               </button>
                               <button className="btn-action" type="button" onClick={cancelEdit} disabled={saving} title="Batal" style={{ background: '#64748b', color: 'white' }}>
@@ -337,6 +283,55 @@ export default function MataPelajaran() {
             </table>
           </div>
         )}
+
+        {filteredItems.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Tambah */}
@@ -351,6 +346,12 @@ export default function MataPelajaran() {
             </div>
             <form className="mapel-form" onSubmit={handleSubmitAdd}>
               <div className="modal-body">
+                {error && (
+                  <div className="mapel-alert" style={{ marginTop: 0, marginBottom: '1.5rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiAlertCircle />
+                    {error}
+                  </div>
+                )}
                 <div className="form-group">
                   <label className="label">
                     <span className="label-text">Nama Mata Pelajaran</span>
@@ -377,48 +378,6 @@ export default function MataPelajaran() {
                     maxLength={20}
                   />
                 </div>
-                <div className="form-group">
-                  <label className="label">
-                    <span className="label-text">Kategori</span>
-                    <span className="label-required">*</span>
-                  </label>
-                  <div className="kategori-options">
-                    {KATEGORI_OPTIONS.map((o) => (
-                      <label key={o.value} className="radio-label">
-                        <input
-                          type="radio"
-                          name="kategori"
-                          value={o.value}
-                          checked={kategori === o.value}
-                          onChange={(e) => setKategori(e.target.value)}
-                          disabled={saving}
-                        />
-                        <span>{o.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                {kategori === 'prodi' && (
-                  <div className="form-group">
-                    <label className="label">
-                      <span className="label-text">Prodi / Jurusan</span>
-                      <span className="label-required">*</span>
-                    </label>
-                    <select
-                      className="input"
-                      value={jurusanId}
-                      onChange={(e) => setJurusanId(e.target.value)}
-                      disabled={saving}
-                      required={kategori === 'prodi'}
-                    >
-                      <option value="">Pilih dari prodi yang sudah ada di database</option>
-                      {jurusanList.map((j) => (
-                        <option key={j.id} value={j.id}>{j.nama} ({j.idJurusan})</option>
-                      ))}
-                    </select>
-                    <p className="field-hint">Daftar diambil dari data Jurusan yang sudah diinput di menu Jurusan.</p>
-                  </div>
-                )}
               </div>
               <div className="modal-footer">
                 <button type="button" className="modal-btn modal-btn-cancel" onClick={closeAddModal} disabled={saving}>
@@ -428,7 +387,7 @@ export default function MataPelajaran() {
                 <button
                   type="submit"
                   className="modal-btn modal-btn-confirm modal-btn-primary"
-                  disabled={saving || !namaMapel.trim() || (kategori === 'prodi' && !jurusanId)}
+                  disabled={saving || !namaMapel.trim()}
                 >
                   {saving ? (
                     <>
@@ -451,28 +410,30 @@ export default function MataPelajaran() {
       {/* Modal Konfirmasi Hapus */}
       {showConfirmModal && confirmData && (
         <div className="modal-overlay">
-          <div className="modal-container modal-confirm" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">Konfirmasi Hapus</h3>
-              <button type="button" className="modal-close" onClick={closeConfirmModal} disabled={saving}>
-                <FiX />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>Yakin ingin menghapus mata pelajaran <strong>{confirmData.namaMapel}</strong>?</p>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="modal-btn modal-btn-cancel" onClick={closeConfirmModal} disabled={saving}>
-                Batal
-              </button>
-              <button
-                type="button"
-                className="modal-btn modal-btn-danger"
-                onClick={handleConfirmDelete}
-                disabled={saving}
-              >
-                {saving ? 'Menghapus...' : 'Hapus'}
-              </button>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus Mata Pelajaran?</h3>
+              </div>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus mata pelajaran <span className="modal-confirm-item">{confirmData.namaMapel}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan.
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={closeConfirmModal} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleConfirmDelete} disabled={saving}>
+                  {saving ? 'Menghapus...' : <><FiTrash2 /> Ya, Hapus</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>

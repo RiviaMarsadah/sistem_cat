@@ -32,7 +32,7 @@ function isPrismaUniqueError(err) {
 async function buildNamaKelas({ tingkat, jurusanId, inisial }) {
   const jurusan = await prisma.jurusan.findUnique({
     where: { id: jurusanId },
-    select: { id: true, idJurusan: true, nama: true },
+    select: { id: true, kodeProdi: true, namaProdi: true },
   });
   if (!jurusan) {
     const e = new Error('Jurusan not found');
@@ -43,7 +43,7 @@ async function buildNamaKelas({ tingkat, jurusanId, inisial }) {
 
   const tingkatLabel = tingkatMap[tingkat] || tingkat;
   const inisialUp = String(inisial).trim().toUpperCase();
-  const namaKelas = `${tingkatLabel} ${jurusan.idJurusan} ${inisialUp}`.trim();
+  const namaKelas = `${tingkatLabel} ${jurusan.kodeProdi} ${inisialUp}`.trim();
 
   return { jurusan, inisialUp, namaKelas };
 }
@@ -52,7 +52,7 @@ exports.list = async (req, res) => {
   const items = await prisma.kelas.findMany({
     orderBy: [{ tingkat: 'asc' }, { namaKelas: 'asc' }],
     include: {
-      jurusan: { select: { id: true, idJurusan: true, nama: true } },
+      jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } },
     },
   });
 
@@ -67,7 +67,7 @@ exports.getById = async (req, res) => {
 
   const item = await prisma.kelas.findUnique({
     where: { id },
-    include: { jurusan: { select: { id: true, idJurusan: true, nama: true } } },
+      include: { jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } } },
   });
   if (!item) {
     return res.status(404).json({ success: false, message: 'Kelas not found' });
@@ -91,7 +91,7 @@ exports.create = async (req, res) => {
         inisial: inisialUp,
         namaKelas,
       },
-      include: { jurusan: { select: { id: true, idJurusan: true, nama: true } } },
+        include: { jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } } },
     });
 
     return res.status(201).json({

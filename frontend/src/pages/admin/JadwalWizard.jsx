@@ -401,8 +401,8 @@ export default function JadwalWizard() {
                     <label key={j.id} className={`selection-card ${selectedJurusans.includes(String(j.id)) ? 'selected' : ''}`}>
                        <input type="checkbox" checked={selectedJurusans.includes(String(j.id))} onChange={() => toggleJurusan(String(j.id))} />
                        <div className="details">
-                          <strong>{j.idJurusan}</strong>
-                          <span>{j.nama}</span>
+                          <strong>{j.kodeProdi}</strong>
+                          <span>{j.namaProdi}</span>
                        </div>
                     </label>
                  ))}
@@ -430,9 +430,9 @@ export default function JadwalWizard() {
                        <div key={jurusanId} className="kelas-group">
                           <h4 style={{marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #e2e8f0', color: '#1e293b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700'}}>
                             <span style={{background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)', color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px'}}>
-                               {jurusan?.idJurusan || 'PRODI'}
+                               {jurusan?.kodeProdi || 'PRODI'}
                             </span>
-                            {jurusan?.nama || 'Program Studi'}
+                            {jurusan?.namaProdi || 'Program Studi'}
                           </h4>
                           <div className="grid-list">
                             {classesInJurusan.map(k => {
@@ -441,7 +441,7 @@ export default function JadwalWizard() {
                                  <label key={k.id} className={`selection-card ${selectedKelas.includes(String(k.id)) ? 'selected' : ''}`}>
                                     <input type="checkbox" checked={selectedKelas.includes(String(k.id))} onChange={() => toggleKelas(String(k.id))} />
                                     <div className="details">
-                                       <strong>{tLabel} {k.jurusan?.idJurusan} {k.inisial}</strong>
+                                       <strong>{tLabel} {k.jurusan?.kodeProdi} {k.inisial}</strong>
                                     </div>
                                  </label>
                                );
@@ -542,7 +542,7 @@ export default function JadwalWizard() {
                                <div className="col-kelas">
                                  <div className="kelas-badge">
                                    <span className="kelas-tingkat">{kInfo?.tingkat}</span>
-                                   <span className="kelas-name">{kInfo?.jurusan?.idJurusan} – {kInfo?.inisial}</span>
+                                   <span className="kelas-name">{kInfo?.jurusan?.kodeProdi} – {kInfo?.inisial}</span>
                                  </div>
                                </div>
                                <div className="col-mapel">

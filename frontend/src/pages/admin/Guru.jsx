@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiEye, FiEyeOff, FiUsers, FiUpload, FiDownload, FiFileText, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
 import './Guru.css';
@@ -10,6 +10,9 @@ const AdminGuru = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const fileInputRef = useRef(null);
 
   // Form state (Shared for Add/Edit Modal)
@@ -21,6 +24,19 @@ const AdminGuru = () => {
   const [status, setStatus] = useState('aktif');
   const [showPassword, setShowPassword] = useState(false);
   const [saving, setSaving] = useState(false);
+  
+  // New API fields
+  const [jk, setJk] = useState('L');
+  const [foto, setFoto] = useState('default.jpg');
+  const [tempatLahir, setTempatLahir] = useState('');
+  const [tglLahir, setTglLahir] = useState('');
+  const [agama, setAgama] = useState('');
+  const [nohp, setNohp] = useState('');
+  const [provinsi, setProvinsi] = useState('');
+  const [kabupaten, setKabupaten] = useState('');
+  const [kecamatan, setKecamatan] = useState('');
+  const [desa, setDesa] = useState('');
+  const [alamat, setAlamat] = useState('');
   
   // Modal states
   const [showFormModal, setShowFormModal] = useState(false);
@@ -35,6 +51,26 @@ const AdminGuru = () => {
   // Confirm state
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
+
+  const filteredItems = useMemo(() => {
+    return items.filter(g => 
+      g.user.namaLengkap.toLowerCase().includes(search.toLowerCase()) || 
+      g.user.email.toLowerCase().includes(search.toLowerCase()) ||
+      (g.nip && g.nip.toLowerCase().includes(search.toLowerCase()))
+    );
+  }, [items, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  
+  const paginatedItems = useMemo(() => {
+    if (itemsPerPage === 0) return filteredItems;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredItems.slice(start, start + itemsPerPage);
+  }, [filteredItems, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -74,6 +110,17 @@ const AdminGuru = () => {
     setNamaLengkap('');
     setNip('');
     setStatus('aktif');
+    setJk('L');
+    setFoto('default.jpg');
+    setTempatLahir('');
+    setTglLahir('');
+    setAgama('');
+    setNohp('');
+    setProvinsi('');
+    setKabupaten('');
+    setKecamatan('');
+    setDesa('');
+    setAlamat('');
     setError('');
     setShowFormModal(true);
   };
@@ -85,6 +132,17 @@ const AdminGuru = () => {
     setNamaLengkap(item.user.namaLengkap);
     setNip(item.nip || '');
     setStatus(item.user.status);
+    setJk(item.jk || 'L');
+    setFoto(item.foto || 'default.jpg');
+    setTempatLahir(item.tempat_lahir || '');
+    setTglLahir(item.tgl_lahir || '');
+    setAgama(item.agama || '');
+    setNohp(item.nohp || '');
+    setProvinsi(item.provinsi || '');
+    setKabupaten(item.kabupaten || '');
+    setKecamatan(item.kecamatan || '');
+    setDesa(item.desa || '');
+    setAlamat(item.alamat || '');
     setError('');
     setShowFormModal(true);
   };
@@ -105,7 +163,17 @@ const AdminGuru = () => {
         email: email.trim().toLowerCase(),
         namaLengkap: namaLengkap.trim(),
         nip: nip.trim() || null,
-        status
+        status,
+        jk,
+        tempat_lahir: tempatLahir,
+        tgl_lahir: tglLahir,
+        agama,
+        nohp,
+        provinsi,
+        kabupaten,
+        kecamatan,
+        desa,
+        alamat
       };
 
       if (!editingId && password.trim()) data.password = password.trim();
@@ -244,7 +312,18 @@ const AdminGuru = () => {
 
       <div className="user-card">
         <div className="user-card-header">
-          <h2 className="user-card-title">Daftar Guru</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="user-card-title">Daftar Guru</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari guru..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <div className="action-buttons">
             <button className="btn" onClick={handleOpenImportModal} disabled={saving}>
               <FiUpload /> <span>Import Excel</span>
@@ -265,23 +344,57 @@ const AdminGuru = () => {
             <table className="guru-table">
               <thead>
                 <tr>
-                  <th>Identitas & Akun</th>
+                  <th>Foto</th>
+                  <th>Nama</th>
+                  <th>Email</th>
                   <th>NIP</th>
+                  <th>JK</th>
+                  <th>Tempat Lahir</th>
+                  <th>Tgl Lahir</th>
+                  <th>Agama</th>
+                  <th>No HP</th>
+                  <th>Provinsi</th>
+                  <th>Kabupaten</th>
+                  <th>Kecamatan</th>
+                  <th>Desa</th>
+                  <th>Alamat</th>
                   <th className="text-center">Status</th>
                   <th style={{ width: '120px' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item) => (
+                {paginatedItems.map((item) => (
                   <tr key={item.id}>
-                    <td>
-                      <div className="identitas-wrapper">
-                        <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{item.user.namaLengkap}</div>
-                        <div className="email-text" style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.user.email}</div>
+                    <td className="text-center">
+                      <div style={{ 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        background: '#e2e8f0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.7rem',
+                        fontWeight: '700',
+                        color: '#64748b'
+                      }}>
+                        {item.foto && item.foto !== 'default.jpg' ? 'IMG' : (item.user.namaLengkap?.charAt(0) || 'G')}
                       </div>
                     </td>
-                    <td>
-                      <div className="nip-text" style={{ fontFamily: 'monospace', fontWeight: '600' }}>{item.nip || '-'}</div>
+                    <td style={{ fontWeight: '600' }}>{item.user.namaLengkap}</td>
+                    <td>{item.user.email}</td>
+                    <td style={{ fontFamily: 'monospace' }}>{item.nip || '-'}</td>
+                    <td>{item.jk === 'L' ? 'L' : item.jk === 'P' ? 'P' : '-'}</td>
+                    <td>{item.tempat_lahir || '-'}</td>
+                    <td>{item.tgl_lahir || '-'}</td>
+                    <td>{item.agama || '-'}</td>
+                    <td>{item.nohp || '-'}</td>
+                    <td>{item.provinsi || '-'}</td>
+                    <td>{item.kabupaten || '-'}</td>
+                    <td>{item.kecamatan || '-'}</td>
+                    <td>{item.desa || '-'}</td>
+                    <td title={item.alamat} style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.alamat || '-'}
                     </td>
                     <td>
                       <span className={`status-badge ${item.user.status === 'aktif' ? 'status-aktif' : 'status-nonaktif'}`}>
@@ -304,6 +417,55 @@ const AdminGuru = () => {
             </table>
           </div>
         )}
+
+        {filteredItems.length > 0 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Unified Form Modal (Add/Edit) */}
@@ -318,6 +480,12 @@ const AdminGuru = () => {
             </div>
             <form onSubmit={handleFormSubmit}>
               <div className="modal-body">
+                {error && (
+                  <div className="user-alert error" style={{ marginTop: 0, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <FiAlertCircle />
+                    {error}
+                  </div>
+                )}
                 <div className="form-group">
                   <div className="field-wrapper">
                     <label className="label">Nama Lengkap *</label>
@@ -343,25 +511,96 @@ const AdminGuru = () => {
                   <div className="form-row">
                     <div className="field-wrapper">
                       <label className="label">NIP</label>
-                      <input className="input" value={nip} onChange={(e) => setNip(e.target.value)} disabled={saving} />
+                      <input 
+                        className="input" 
+                        value={nip} 
+                        onChange={(e) => setNip(e.target.value.replace(/\D/g, ''))} 
+                        placeholder="Hanya angka"
+                        disabled={saving} 
+                      />
                     </div>
-                    {editingId && (
-                      <div className="field-wrapper">
-                        <label className="label">Status Akun</label>
-                        <div className="toggle-wrapper">
-                          <label className="toggle-switch">
-                            <input 
-                              type="checkbox" 
-                              checked={status === 'aktif'} 
-                              onChange={(e) => setStatus(e.target.checked ? 'aktif' : 'nonaktif')}
-                            />
-                            <span className="toggle-slider"></span>
-                          </label>
-                          <span className="toggle-label-text">{status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="field-wrapper">
+                      <label className="label">Jenis Kelamin</label>
+                      <select className="input" value={jk} onChange={(e) => setJk(e.target.value)} disabled={saving}>
+                        <option value="L">Laki-laki</option>
+                        <option value="P">Perempuan</option>
+                      </select>
+                    </div>
                   </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Tempat Lahir</label>
+                      <input className="input" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Tanggal Lahir</label>
+                      <input className="input" type="date" value={tglLahir} onChange={(e) => setTglLahir(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Agama</label>
+                      <input className="input" value={agama} onChange={(e) => setAgama(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">No HP</label>
+                      <input 
+                        className="input" 
+                        value={nohp} 
+                        onChange={(e) => setNohp(e.target.value.replace(/\D/g, ''))} 
+                        placeholder="Hanya angka"
+                        disabled={saving} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group-title" style={{ margin: '1rem 0 0.5rem', fontWeight: '700', fontSize: '0.9rem', color: '#64748b' }}>Alamat Lengkap</div>
+                  
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Provinsi</label>
+                      <input className="input" value={provinsi} onChange={(e) => setProvinsi(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Kabupaten</label>
+                      <input className="input" value={kabupaten} onChange={(e) => setKabupaten(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="form-row">
+                    <div className="field-wrapper">
+                      <label className="label">Kecamatan</label>
+                      <input className="input" value={kecamatan} onChange={(e) => setKecamatan(e.target.value)} disabled={saving} />
+                    </div>
+                    <div className="field-wrapper">
+                      <label className="label">Desa</label>
+                      <input className="input" value={desa} onChange={(e) => setDesa(e.target.value)} disabled={saving} />
+                    </div>
+                  </div>
+
+                  <div className="field-wrapper">
+                    <label className="label">Alamat Jalan</label>
+                    <textarea className="input" style={{ minHeight: '80px', padding: '10px' }} value={alamat} onChange={(e) => setAlamat(e.target.value)} disabled={saving}></textarea>
+                  </div>
+
+                  {editingId && (
+                    <div className="field-wrapper">
+                      <label className="label">Status Akun</label>
+                      <div className="toggle-wrapper">
+                        <label className="toggle-switch">
+                          <input 
+                            type="checkbox" 
+                            checked={status === 'aktif'} 
+                            onChange={(e) => setStatus(e.target.checked ? 'aktif' : 'nonaktif')}
+                          />
+                          <span className="toggle-slider"></span>
+                        </label>
+                        <span className="toggle-label-text">{status === 'aktif' ? 'Aktif' : 'Nonaktif'}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">
@@ -464,21 +703,29 @@ const AdminGuru = () => {
       {showConfirmModal && (
         <div className="modal-overlay">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div className="modal-icon-wrapper modal-icon-danger">
-                <FiAlertCircle className="modal-icon" />
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus Guru?</h3>
               </div>
-              <h3 className="modal-title">Hapus Guru?</h3>
-            </div>
-            <div className="modal-body text-center">
-              <p>Apakah Anda yakin ingin menghapus guru <strong>{confirmData?.namaLengkap}</strong>?</p>
-              <p className="modal-warning">Data akun dan seluruh paket ujian guru ini akan terhapus permanen.</p>
-            </div>
-            <div className="modal-footer">
-              <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)} disabled={saving}>Batal</button>
-              <button className="modal-btn modal-btn-danger" onClick={handleConfirmDelete} disabled={saving}>
-                {saving ? 'Memproses...' : 'Ya, Hapus'}
-              </button>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus guru <span className="modal-confirm-item">{confirmData?.namaLengkap}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan. Seluruh data paket ujian guru ini akan hilang.
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleConfirmDelete} disabled={saving}>
+                  {saving ? 'Memproses...' : <><FiTrash2 /> Ya, Hapus</>}
+                </button>
+              </div>
             </div>
           </div>
         </div>

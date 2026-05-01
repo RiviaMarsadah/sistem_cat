@@ -2,13 +2,16 @@ const Joi = require('joi');
 const prisma = require('../config/prisma');
 
 const jurusanSchema = Joi.object({
-  idJurusan: Joi.string().trim().min(1).max(20).required().messages({
-    'string.empty': 'ID Jurusan tidak boleh kosong',
-    'string.min': 'ID Jurusan minimal 1 karakter',
-    'string.max': 'ID Jurusan maksimal 20 karakter',
-    'any.required': 'ID Jurusan wajib diisi'
+  kodeProdi: Joi.string().trim().min(1).max(20).required().messages({
+    'string.empty': 'Kode Prodi tidak boleh kosong',
+    'string.min': 'Kode Prodi minimal 1 karakter',
+    'string.max': 'Kode Prodi maksimal 20 karakter',
+    'any.required': 'Kode Prodi wajib diisi'
   }),
-  nama: Joi.string().trim().min(2).max(100).required(),
+  namaProdi: Joi.string().trim().min(2).max(100).required().messages({
+    'string.empty': 'Nama Prodi tidak boleh kosong',
+    'any.required': 'Nama Prodi wajib diisi'
+  }),
 });
 
 function isPrismaUniqueError(err) {
@@ -17,7 +20,7 @@ function isPrismaUniqueError(err) {
 
 exports.list = async (req, res) => {
   const items = await prisma.jurusan.findMany({
-    orderBy: { nama: 'asc' },
+    orderBy: { namaProdi: 'asc' },
   });
 
   return res.json({
@@ -49,8 +52,8 @@ exports.create = async (req, res) => {
   try {
     const created = await prisma.jurusan.create({
       data: { 
-        idJurusan: value.idJurusan.trim(),
-        nama: value.nama 
+        kodeProdi: value.kodeProdi.trim(),
+        namaProdi: value.namaProdi.trim() 
       },
     });
 
@@ -62,15 +65,15 @@ exports.create = async (req, res) => {
   } catch (err) {
     if (isPrismaUniqueError(err)) {
       const field = err.meta?.target?.[0];
-      if (field === 'id_jurusan') {
+      if (field === 'kode_prodi') {
         return res.status(409).json({
           success: false,
-          message: 'ID Jurusan sudah digunakan',
+          message: 'Kode Prodi sudah digunakan',
         });
       }
       return res.status(409).json({
         success: false,
-        message: 'Nama jurusan sudah ada',
+        message: 'Nama Prodi sudah ada',
       });
     }
     throw err;
@@ -92,8 +95,8 @@ exports.update = async (req, res) => {
     const updated = await prisma.jurusan.update({
       where: { id },
       data: { 
-        idJurusan: value.idJurusan.trim(),
-        nama: value.nama 
+        kodeProdi: value.kodeProdi.trim(),
+        namaProdi: value.namaProdi.trim() 
       },
     });
 
@@ -105,15 +108,15 @@ exports.update = async (req, res) => {
   } catch (err) {
     if (isPrismaUniqueError(err)) {
       const field = err.meta?.target?.[0];
-      if (field === 'id_jurusan') {
+      if (field === 'kode_prodi') {
         return res.status(409).json({
           success: false,
-          message: 'ID Jurusan sudah digunakan',
+          message: 'Kode Prodi sudah digunakan',
         });
       }
       return res.status(409).json({
         success: false,
-        message: 'Nama jurusan sudah ada',
+        message: 'Nama Prodi sudah ada',
       });
     }
 

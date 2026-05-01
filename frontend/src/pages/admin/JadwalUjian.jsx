@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2 } from 'react-icons/fi';
+import { useEffect, useState, useMemo } from 'react';
+import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2, FiAlertCircle, FiChevronLeft } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import '../guru/PaketUjian.css';
@@ -14,6 +14,9 @@ export default function JadwalUjianAdmin() {
 
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   
   // View State logic
   const [activePeriodeId, setActivePeriodeId] = useState(null);
@@ -28,6 +31,26 @@ export default function JadwalUjianAdmin() {
   const [confirmPeriodeData, setConfirmPeriodeData] = useState(null);
   const [showEditPeriodeModal, setShowEditPeriodeModal] = useState(false);
   const [editPeriodeData, setEditPeriodeData] = useState({ id: '', nama: '', mulai: '', selesai: '', semester: 'Gasal', tahunAjaran: '' });
+
+  const filteredPeriodes = useMemo(() => {
+    return periodes.filter(p => 
+      p.nama.toLowerCase().includes(search.toLowerCase()) || 
+      p.semester.toLowerCase().includes(search.toLowerCase()) ||
+      p.tahunAjaran.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [periodes, search]);
+
+  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredPeriodes.length / itemsPerPage);
+  
+  const paginatedPeriodes = useMemo(() => {
+    if (itemsPerPage === 0) return filteredPeriodes;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPeriodes.slice(start, start + itemsPerPage);
+  }, [filteredPeriodes, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, itemsPerPage]);
 
   const loadData = async () => {
     setLoading(true);
@@ -135,7 +158,18 @@ export default function JadwalUjianAdmin() {
     return (
       <div className="user-card" style={{ marginTop: '1.5rem' }}>
         <div className="user-card-header">
-          <h2 className="user-card-title">Daftar Periode Ujian</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <h2 className="user-card-title">Daftar Periode Ujian</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari periode..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+              />
+            </div>
+          </div>
           <button className="btn-add-user" onClick={handleBuatWizard} disabled={saving}>
             <FiPlus className="btn-icon" />
             <span>Jadwal Ujian</span>
@@ -155,7 +189,7 @@ export default function JadwalUjianAdmin() {
             </tr>
           </thead>
           <tbody>
-            {periodes.map(p => {
+            {paginatedPeriodes.map(p => {
                const periodItems = items.filter(j => String(j.periodeId) === String(p.id));
                const isKioskActive = periodItems.some(j => j.opsiKeamanan === true);
 
@@ -205,6 +239,55 @@ export default function JadwalUjianAdmin() {
           </tbody>
         </table>
         </div>
+
+        {filteredPeriodes.length > 0 && (
+          <div className="pagination-container" style={{ padding: '1rem' }}>
+            <div className="pagination-info">
+              Menampilkan <strong>{itemsPerPage === 0 ? filteredPeriodes.length : Math.min(filteredPeriodes.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredPeriodes.length : Math.min(filteredPeriodes.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredPeriodes.length}</strong> data
+            </div>
+            <div className="pagination-controls">
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1 || itemsPerPage === 0}
+              >
+                <FiChevronLeft />
+              </button>
+              
+              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                  return (
+                    <button 
+                      key={page} 
+                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </button>
+                  );
+                } else if (page === currentPage - 2 || page === currentPage + 2) {
+                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
+                }
+                return null;
+              })}
+
+              <button 
+                className="btn-pagination" 
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages || itemsPerPage === 0}
+              >
+                <FiChevronRight />
+              </button>
+
+              <button 
+                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
+                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
+              >
+                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {periodes.length === 0 && (
           <div className="user-empty" style={{ padding: '3rem 0' }}>
@@ -427,20 +510,31 @@ export default function JadwalUjianAdmin() {
       {/* Conform Delete Jadwal Sesi */}
       {showConfirmModal && confirmData && (
         <div className="modal-overlay">
-          <div className="modal-container modal-confirm">
-             <div className="modal-header">
-               <h3 className="modal-title">Hapus Sesi Jadwal?</h3>
-               <button className="modal-close" onClick={() => setShowConfirmModal(false)}><FiX /></button>
-             </div>
-             <div className="modal-body">
-               Apakah Anda yakin menghapus jadwal pada <strong>"{new Date(confirmData.mulai).toLocaleDateString()}"</strong>? Seluruh record ujian siswa (jika ada) di jadwal ini juga akan terhapus.
-             </div>
-             <div className="modal-footer">
-               <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmModal(false)}>Batal</button>
-               <button className="modal-btn modal-btn-danger" onClick={handleDelete} disabled={saving}>
-                 {saving ? 'Menghapus...' : 'Hapus Jadwal'}
-               </button>
-             </div>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus Sesi Jadwal?</h3>
+              </div>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus jadwal pada <span className="modal-confirm-item">{new Date(confirmData.mulai).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan. Seluruh record ujian siswa di jadwal ini akan ikut terhapus.
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmModal(false)} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleDelete} disabled={saving}>
+                  {saving ? 'Menghapus...' : <><FiTrash2 /> Ya, Hapus</>}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -448,21 +542,31 @@ export default function JadwalUjianAdmin() {
       {/* Conform Delete Periode */}
       {showConfirmPeriodeModal && confirmPeriodeData && (
         <div className="modal-overlay">
-          <div className="modal-container modal-confirm">
-             <div className="modal-header">
-               <h3 className="modal-title">Hapus Periode Ujian?</h3>
-               <button className="modal-close" onClick={() => setShowConfirmPeriodeModal(false)}><FiX /></button>
-             </div>
-             <div className="modal-body">
-               <strong>Perhatian Lengkap:</strong><br/>
-               Apakah Anda yakin menghapus seluruh periode <strong>"{confirmPeriodeData.nama}"</strong>? Aksi ini dijamin akan menghapus seluruh data jadwal sesi di dalamnya beserta hasil ujian siswa di dalam periode tersebut secara permanen.
-             </div>
-             <div className="modal-footer">
-               <button className="modal-btn modal-btn-cancel" onClick={() => setShowConfirmPeriodeModal(false)}>Batal</button>
-               <button className="modal-btn modal-btn-danger" onClick={handleDeletePeriode} disabled={saving}>
-                 {saving ? 'Menghapus...' : 'Ya, Hapus Semua'}
-               </button>
-             </div>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-confirm">
+              <div className="modal-confirm-header">
+                <div className="modal-confirm-icon-box danger">
+                  <FiAlertCircle className="modal-icon" />
+                </div>
+                <h3 className="modal-confirm-title">Hapus Periode Ujian?</h3>
+              </div>
+              <div className="modal-confirm-body">
+                <div className="modal-confirm-text">
+                  Yakin ingin menghapus periode <span className="modal-confirm-item">{confirmPeriodeData.nama}</span>?
+                </div>
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> PERHATIAN: Seluruh data jadwal sesi dan hasil ujian siswa dalam periode ini akan terhapus permanen!
+                </div>
+              </div>
+              <div className="modal-confirm-footer">
+                <button className="btn btn-secondary" onClick={() => setShowConfirmPeriodeModal(false)} disabled={saving}>
+                  <FiX /> Batal
+                </button>
+                <button className="btn btn-danger" onClick={handleDeletePeriode} disabled={saving}>
+                  {saving ? 'Menghapus...' : <><FiTrash2 /> Ya, Hapus Semua</>}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

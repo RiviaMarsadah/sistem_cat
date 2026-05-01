@@ -21,7 +21,19 @@ const createSiswaSchema = Joi.object({
     'number.base': 'Kelas harus dipilih',
     'any.required': 'Kelas wajib diisi'
   }),
-  status: Joi.string().valid('aktif', 'nonaktif').default('aktif')
+  status: Joi.string().valid('aktif', 'nonaktif').default('aktif'),
+  id_angkatan: Joi.number().integer().allow(null).optional(),
+  jk: Joi.string().valid('L', 'P').allow(null, '').optional(),
+  foto: Joi.string().trim().max(255).allow(null, '').optional(),
+  tempat_lahir: Joi.string().trim().max(100).allow(null, '').optional(),
+  tgl_lahir: Joi.string().trim().max(20).allow(null, '').optional(),
+  agama: Joi.string().trim().max(50).allow(null, '').optional(),
+  nohp: Joi.string().trim().max(20).allow(null, '').optional(),
+  provinsi: Joi.string().trim().max(100).allow(null, '').optional(),
+  kabupaten: Joi.string().trim().max(100).allow(null, '').optional(),
+  kecamatan: Joi.string().trim().max(100).allow(null, '').optional(),
+  desa: Joi.string().trim().max(100).allow(null, '').optional(),
+  alamat: Joi.string().trim().allow(null, '').optional()
 });
 
 const updateSiswaSchema = Joi.object({
@@ -31,7 +43,19 @@ const updateSiswaSchema = Joi.object({
   nis: Joi.string().trim().max(20).allow(null, '').optional(),
   nisn: Joi.string().trim().max(20).allow(null, '').optional(),
   kelasId: Joi.number().integer().optional(),
-  status: Joi.string().valid('aktif', 'nonaktif').optional()
+  status: Joi.string().valid('aktif', 'nonaktif').optional(),
+  id_angkatan: Joi.number().integer().allow(null).optional(),
+  jk: Joi.string().valid('L', 'P').allow(null, '').optional(),
+  foto: Joi.string().trim().max(255).allow(null, '').optional(),
+  tempat_lahir: Joi.string().trim().max(100).allow(null, '').optional(),
+  tgl_lahir: Joi.string().trim().max(20).allow(null, '').optional(),
+  agama: Joi.string().trim().max(50).allow(null, '').optional(),
+  nohp: Joi.string().trim().max(20).allow(null, '').optional(),
+  provinsi: Joi.string().trim().max(100).allow(null, '').optional(),
+  kabupaten: Joi.string().trim().max(100).allow(null, '').optional(),
+  kecamatan: Joi.string().trim().max(100).allow(null, '').optional(),
+  desa: Joi.string().trim().max(100).allow(null, '').optional(),
+  alamat: Joi.string().trim().allow(null, '').optional()
 });
 
 exports.list = async (req, res) => {
@@ -48,7 +72,8 @@ exports.list = async (req, res) => {
             createdAt: true
           }
         },
-        kelas: true
+        kelas: true,
+        angkatan: true
       },
       orderBy: {
         id: 'desc'
@@ -104,7 +129,19 @@ exports.create = async (req, res) => {
           userId: user.id,
           nis: value.nis,
           nisn: value.nisn,
-          kelasId: value.kelasId
+          kelasId: value.kelasId,
+          idAngkatan: value.id_angkatan,
+          jk: value.jk,
+          foto: value.foto,
+          tempatLahir: value.tempat_lahir,
+          tglLahir: value.tgl_lahir,
+          agama: value.agama,
+          noHp: value.nohp,
+          provinsi: value.provinsi,
+          kabupaten: value.kabupaten,
+          kecamatan: value.kecamatan,
+          desa: value.desa,
+          alamat: value.alamat
         },
         include: {
           user: true,
@@ -167,6 +204,18 @@ exports.update = async (req, res) => {
       if (value.nis !== undefined) siswaData.nis = value.nis;
       if (value.nisn !== undefined) siswaData.nisn = value.nisn;
       if (value.kelasId !== undefined) siswaData.kelasId = value.kelasId;
+      if (value.id_angkatan !== undefined) siswaData.idAngkatan = value.id_angkatan;
+      if (value.jk !== undefined) siswaData.jk = value.jk;
+      if (value.foto !== undefined) siswaData.foto = value.foto;
+      if (value.tempat_lahir !== undefined) siswaData.tempatLahir = value.tempat_lahir;
+      if (value.tgl_lahir !== undefined) siswaData.tglLahir = value.tgl_lahir;
+      if (value.agama !== undefined) siswaData.agama = value.agama;
+      if (value.nohp !== undefined) siswaData.noHp = value.nohp;
+      if (value.provinsi !== undefined) siswaData.provinsi = value.provinsi;
+      if (value.kabupaten !== undefined) siswaData.kabupaten = value.kabupaten;
+      if (value.kecamatan !== undefined) siswaData.kecamatan = value.kecamatan;
+      if (value.desa !== undefined) siswaData.desa = value.desa;
+      if (value.alamat !== undefined) siswaData.alamat = value.alamat;
 
       const updatedSiswa = await tx.siswa.update({
         where: { id },
