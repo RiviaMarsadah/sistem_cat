@@ -116,7 +116,17 @@
   text-align: center;
 }
 
+.kelas-badge {
+  white-space: nowrap;
+  min-width: 160px;
+  text-align: center;
+  padding: 6px 12px !important;
+  display: inline-block;
+  line-height: 1.2;
+}
+
 @media (max-width: 1024px) {
+
   .siswa-table-grid .user-row {
     grid-template-columns: 1fr 1fr;
     gap: 1rem;

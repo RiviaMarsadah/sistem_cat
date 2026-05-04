@@ -1,0 +1,157 @@
+/* ─── Analisis Soal Styles ─── */
+
+/* Summary Cards */
+.analisis-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1.25rem 1rem;
+  border-radius: 14px;
+  text-align: center;
+  border: 1px solid transparent;
+}
+
+.summary-box .s-val {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.summary-box .s-lbl {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.summary-box .s-lbl small {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.summary-box.mudah  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.summary-box.sedang { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.summary-box.sulit  { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+.summary-box.info   { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+
+/* Analisis Table — CSS Grid */
+.analisis-table {
+  width: 100%;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.analisis-row {
+  display: grid;
+  /* No | Pertanyaan | Penjawab | Benar | % Benar | Evaluasi */
+  grid-template-columns: 48px 1fr 100px 90px 130px 120px;
+  align-items: center;
+  padding: 0.875rem 1.25rem;
+  gap: 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
+  transition: background 0.15s;
+}
+
+.analisis-row:last-child { border-bottom: none; }
+.analisis-row:hover:not(.analisis-head) { background: #f8fafc; }
+
+.analisis-head {
+  background: #f8fafc;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.analisis-head > div { text-align: center; }
+.analisis-head > div:nth-child(1),
+.analisis-head > div:nth-child(2) { text-align: left; }
+
+/* Cells */
+.soal-num {
+  font-weight: 800;
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.soal-text-cell {
+  font-size: 0.9rem;
+  color: #1e293b;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.stat-cell {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stat-val {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #334155;
+}
+
+.stat-val.green { color: #16a34a; }
+
+.stat-lbl {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
+.eval-cell { text-align: center; }
+
+/* Ratio bar */
+.ratio-bar {
+  width: 70px;
+  height: 5px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.ratio-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+/* Difficulty badges */
+.diff-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.diff-badge.mudah  { background: #dcfce7; color: #15803d; }
+.diff-badge.sedang { background: #dbeafe; color: #1d4ed8; }
+.diff-badge.sulit  { background: #fee2e2; color: #b91c1c; }
+
+@media (max-width: 1024px) {
+  .analisis-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

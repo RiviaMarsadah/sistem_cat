@@ -364,12 +364,13 @@ const AdminSiswa = () => {
               <thead>
                 <tr>
                   <th>Foto</th>
-                  <th>Nama</th>
+                  <th style={{ minWidth: '250px' }}>Nama</th>
                   <th>Email</th>
                   <th>NISN</th>
                   <th>NIS</th>
-                  <th>Kelas</th>
-                  <th>Angkatan</th>
+                  <th style={{ minWidth: '220px' }}>Kelas</th>
+                  <th style={{ minWidth: '150px' }}>Angkatan</th>
+
                   <th>JK</th>
                   <th>Tempat Lahir</th>
                   <th>Tgl Lahir</th>
@@ -408,10 +409,11 @@ const AdminSiswa = () => {
                     <td style={{ fontFamily: 'monospace' }}>{item.nisn || '-'}</td>
                     <td style={{ fontFamily: 'monospace' }}>{item.nis || '-'}</td>
                     <td>
-                      <div className="kelas-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', display: 'inline-block' }}>
-                        {item.kelas?.namaKelas || 'N/A'}
+                      <div className="kelas-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: '700', display: 'inline-block' }}>
+                        {item.kelas?.tingkat} {item.kelas?.jurusan?.namaProdi || 'N/A'}
                       </div>
                     </td>
+
                     <td>{item.angkatan?.namaAngkatan || '-'}</td>
                     <td>{item.jk === 'L' ? 'L' : item.jk === 'P' ? 'P' : '-'}</td>
                     <td>{item.tempat_lahir || '-'}</td>

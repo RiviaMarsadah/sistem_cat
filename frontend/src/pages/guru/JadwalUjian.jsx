@@ -448,8 +448,7 @@ export default function JadwalUjianGuru() {
                 {(() => {
                   const jadwalAktif = officialJadwal.find(j => j.id === activeJadwalId) || customJadwal.find(j => j.id === activeJadwalId);
                   const filteredPakets = myPakets.filter(p => 
-                    !p.draft && 
-                    (jadwalAktif ? p.mataPelajaran?.id === jadwalAktif.mataPelajaranId : true) &&
+                    (jadwalAktif ? String(p.mataPelajaran?.id) === String(jadwalAktif.mataPelajaranId) : true) &&
                     p.nama.toLowerCase().includes(searchPaket.toLowerCase())
                   );
 
@@ -522,7 +521,7 @@ export default function JadwalUjianGuru() {
                       <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Pilih Paket Ujian Anda <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <select className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={paketUjianId} onChange={(e) => setPaketUjianId(e.target.value)} required>
                          <option value="">Pilih Paket...</option>
-                         {myPakets.filter(p => p.mataPelajaranId === Number(mataPelajaranId)).map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
+                          {myPakets.filter(p => String(p.mataPelajaranId) === String(mataPelajaranId)).map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
                       </select>
                       <p className="field-hint" style={{fontSize: '0.75rem', color: '#64748b'}}>Hanya paket dengan mapel terkait yang muncul.</p>
                     </div>
@@ -560,7 +559,7 @@ export default function JadwalUjianGuru() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: '#f8fafc', padding: '1.25rem', border: '1px solid #e2e8f0', borderRadius: '12px', maxHeight: '200px', overflowY: 'auto' }}>
                          {kelasList.map(k => {
                            const tLabel = k.tingkat === 'X' ? '10' : k.tingkat === 'XI' ? '11' : '12';
-                           const kName = `${tLabel} ${k.jurusan?.idJurusan || ''} ${k.inisial}`;
+                           const kName = `${tLabel} ${k.jurusan?.kodeProdi || ''} ${k.inisial}`;
                            return (
                              <label key={k.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'all 0.2s' }}>
                                <input type="checkbox" checked={selectedKelas.includes(String(k.id))} onChange={() => toggleKelas(String(k.id))} style={{transform: 'scale(1.2)'}}/>

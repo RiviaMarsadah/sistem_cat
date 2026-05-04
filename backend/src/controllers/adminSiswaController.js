@@ -72,7 +72,10 @@ exports.list = async (req, res) => {
             createdAt: true
           }
         },
-        kelas: true,
+        kelas: {
+          include: { jurusan: true }
+        },
+
         angkatan: true
       },
       orderBy: {
@@ -145,7 +148,10 @@ exports.create = async (req, res) => {
         },
         include: {
           user: true,
-          kelas: true
+          kelas: {
+            include: { jurusan: true }
+          }
+
         }
       });
 
@@ -222,7 +228,10 @@ exports.update = async (req, res) => {
         data: siswaData,
         include: {
           user: true,
-          kelas: true
+          kelas: {
+            include: { jurusan: true }
+          }
+
         }
       });
 

@@ -22,6 +22,7 @@ router.put('/ujian/:ujianSiswaId/save', siswaUjianController.saveProgress);
 router.post('/ujian/:ujianSiswaId/submit', siswaUjianController.submitUjian);
 router.get('/ujian/riwayat', siswaUjianController.getRiwayatUjian);
 router.get('/ujian/:ujianSiswaId/hasil', siswaUjianController.getHasilUjian);
+router.delete('/ujian/:ujianSiswaId/cancel-waiting', siswaUjianController.cancelWaitingUjian);
 
 module.exports = router;
 

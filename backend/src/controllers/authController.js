@@ -130,7 +130,11 @@ exports.mobileGoogleLogin = async (req, res) => {
       guru: true,
       siswa: {
         include: {
-          kelas: true
+          kelas: {
+            include: {
+              jurusan: true
+            }
+          }
         }
       }
     }
@@ -169,7 +173,11 @@ exports.mobileGoogleLogin = async (req, res) => {
       guru: true,
       siswa: {
         include: {
-          kelas: true
+          kelas: {
+            include: {
+              jurusan: true
+            }
+          }
         }
       }
     }
@@ -195,16 +203,26 @@ exports.mobileGoogleLogin = async (req, res) => {
     googleLinked: updatedUser.googleLinked,
     googlePicture: updatedUser.googlePicture,
     siswa: updatedUser.siswa
-      ? {
-          id: updatedUser.siswa.id,
-          kelas: updatedUser.siswa.kelas
-            ? {
-                id: updatedUser.siswa.kelas.id,
-                namaKelas: updatedUser.siswa.kelas.namaKelas,
-                tingkat: updatedUser.siswa.kelas.tingkat
-              }
-            : null
-        }
+        ? {
+            id: updatedUser.siswa.id,
+            nis: updatedUser.siswa.nis,
+            nisn: updatedUser.siswa.nisn,
+            kelas: updatedUser.siswa.kelas
+              ? {
+                  id: updatedUser.siswa.kelas.id,
+                  namaKelas: updatedUser.siswa.kelas.namaKelas,
+                  tingkat: updatedUser.siswa.kelas.tingkat,
+                  inisial: updatedUser.siswa.kelas.inisial,
+                  jurusan: updatedUser.siswa.kelas.jurusan 
+                    ? {
+                        id: updatedUser.siswa.kelas.jurusan.id,
+                        kodeProdi: updatedUser.siswa.kelas.jurusan.kodeProdi,
+                        namaProdi: updatedUser.siswa.kelas.jurusan.namaProdi
+                      }
+                    : null
+                }
+              : null
+          }
       : null
   };
 

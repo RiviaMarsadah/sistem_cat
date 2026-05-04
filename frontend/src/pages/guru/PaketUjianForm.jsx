@@ -277,7 +277,7 @@ export default function PaketUjianForm() {
               <select value={filterJurusan} onChange={(e) => setFilterJurusan(e.target.value)}>
                 <option value="">Semua Prodi</option>
                 {jurusanList.map((j) => (
-                  <option key={j.id} value={j.id}>{j.nama}</option>
+                  <option key={j.id} value={j.id}>{j.namaProdi}</option>
                 ))}
               </select>
             </div>
@@ -343,7 +343,7 @@ export default function PaketUjianForm() {
                       <td>{idx + 1}</td>
                       <td>{soal.mataPelajaran?.namaMapel}</td>
                       <td>{tingkatToDisplay(soal.tingkat)}</td>
-                      <td>{soal.jurusan ? soal.jurusan.nama : 'Semua Prodi'}</td>
+                      <td>{soal.jurusan ? soal.jurusan.namaProdi : 'Semua Prodi'}</td>
                       <td>
                         <span className={`badge badge-${soal.kategoriSoal}`}>
                           {KATEGORI_OPTIONS.find((k) => k.value === soal.kategoriSoal)?.label || soal.kategoriSoal}

@@ -79,8 +79,8 @@ const Sidebar = ({ role, user }) => {
         { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: false },
         { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: false },
         { path: '/guru/jadwal-ujian', label: 'Jadwal Ujian', icon: FiCalendar, disabled: false },
-        { path: '/guru/detail-ujian', label: 'Detail Ujian', icon: FiEye, disabled: true },
-        { path: '/guru/evaluasi', label: 'Evaluasi Soal', icon: FiBarChart2, disabled: true },
+        { path: '/guru/rekap-ujian', label: 'Rekap Hasil', icon: FiEye, disabled: false },
+        { path: '/guru/analisis-soal', label: 'Analisis Soal', icon: FiBarChart2, disabled: false },
       ]
     }
   ];

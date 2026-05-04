@@ -154,6 +154,7 @@ enum KategoriSoal {
 }
 
 enum StatusUjianSiswa {
+  waiting
   berlangsung
   selesai
 }

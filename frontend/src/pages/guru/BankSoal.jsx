@@ -386,7 +386,7 @@ export default function BankSoal() {
                     <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
                       <option value="">Semua Prodi</option>
                       {jurusanList.map((j) => (
-                        <option key={j.id} value={j.id}>{j.nama}</option>
+                        <option key={j.id} value={j.id}>{j.namaProdi}</option>
                       ))}
                     </select>
                   </div>

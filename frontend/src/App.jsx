@@ -20,6 +20,10 @@ import GuruPaketUjianForm from './pages/guru/PaketUjianForm';
 import AdminJadwalUjian from './pages/admin/JadwalUjian';
 import AdminJadwalWizard from './pages/admin/JadwalWizard';
 import GuruJadwalUjian from './pages/guru/JadwalUjian';
+import GuruRekapUjian from './pages/guru/RekapUjian';
+import GuruAnalisisSoal from './pages/guru/AnalisisSoal';
+import ReviewHasilGuru from './pages/guru/ReviewHasil';
+
 
 function App() {
   return (
@@ -57,6 +61,10 @@ function App() {
             <Route path="paket-ujian/tambah" element={<GuruPaketUjianForm />} />
             <Route path="paket-ujian/edit/:id" element={<GuruPaketUjianForm />} />
             <Route path="jadwal-ujian" element={<GuruJadwalUjian />} />
+            <Route path="rekap-ujian" element={<GuruRekapUjian />} />
+            <Route path="rekap-ujian/review/:id" element={<ReviewHasilGuru />} />
+            <Route path="analisis-soal" element={<GuruAnalisisSoal />} />
+
             <Route path="*" element={<Navigate to="/guru/dashboard" replace />} />
           </Route>
         </Routes>

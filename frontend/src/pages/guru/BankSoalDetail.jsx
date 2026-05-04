@@ -312,7 +312,7 @@ export default function BankSoalDetail() {
                     <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
                       <option value="">Semua Prodi</option>
                       {jurusanList.map((j) => (
-                        <option key={j.id} value={j.id}>{j.nama}</option>
+                        <option key={j.id} value={j.id}>{j.namaProdi}</option>
                       ))}
                     </select>
                   </div>
@@ -423,7 +423,7 @@ export default function BankSoalDetail() {
                     <td>{startIndex + idx + 1}</td>
                     <td>{row.mataPelajaran?.namaMapel}</td>
                     <td>{tingkatToDisplay(row.tingkat)}</td>
-                    <td>{row.jurusan ? row.jurusan.nama : 'Semua Prodi'}</td>
+                    <td>{row.jurusan ? row.jurusan.namaProdi : 'Semua Prodi'}</td>
                     <td>
                       <span className={`badge badge-${row.kategoriSoal}`}>
                         {KATEGORI_OPTIONS.find((o) => o.value === row.kategoriSoal)?.label || row.kategoriSoal}

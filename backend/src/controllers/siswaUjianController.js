@@ -15,6 +15,16 @@ function normalizeMulti(v) {
   return uniq.join(',');
 }
 
+function normalizeCategory(v) {
+  // Untuk kategori (B/S), urutan sangat penting dan duplikat (B,B,S) adalah sah.
+  // Jadi JANGAN di-sort atau di-uniq.
+  return normalizeAnswer(v)
+    .split(',')
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .join(',');
+}
+
 function getStatusFromAnswer(raw, fallbackStatus) {
   if (fallbackStatus && ['dijawab', 'kosong', 'ragu_ragu'].includes(fallbackStatus)) return fallbackStatus;
   const n = normalizeAnswer(raw);
@@ -38,10 +48,13 @@ function scoreByType(tipeSoal, kunci, jawaban) {
     return { isBenar: kk === jj, skorItem: kk === jj ? 1 : 0 };
   }
 
-  // pilgan_kategori (B/S comma separated)
-  const kk = normalizeMulti(k);
-  const jj = normalizeMulti(j);
-  return { isBenar: kk === jj, skorItem: kk === jj ? 1 : 0 };
+  if (tipeSoal === 'pilgan_kategori') {
+    const kk = normalizeCategory(k);
+    const jj = normalizeCategory(j);
+    return { isBenar: kk === jj, skorItem: kk === jj ? 1 : 0 };
+  }
+
+  return { isBenar: false, skorItem: 0 };
 }
 
 function seededShuffle(items, seed) {
@@ -130,11 +143,14 @@ exports.getJadwalByToken = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Soal untuk ujian ini belum disiapkan oleh guru.'});
     }
 
-    // 3. Cek Rentang Waktu (opsional jika mobile mengatur ketat)
+    // 3. Cek Rentang Waktu
     const now = new Date();
+    let isWaiting = false;
+
     if (now < jadwal.mulai) {
-       return res.status(400).json({ success: false, message: 'Ujian belum dimulai.' });
+      isWaiting = true;
     }
+    
     if (now > jadwal.selesai) {
        return res.status(400).json({ success: false, message: 'Ujian telah berakhir.' });
     }
@@ -150,7 +166,8 @@ exports.getJadwalByToken = async (req, res) => {
           opsiKeamanan: jadwal.opsiKeamanan,
           mataPelajaran: jadwal.mataPelajaran.namaMapel,
           paketUjian: jadwal.paketUjian.nama,
-          tipeUjian: jadwal.paketUjian.tipeUjian
+          tipeUjian: jadwal.paketUjian.tipeUjian,
+          isWaiting
        }
     });
 
@@ -202,11 +219,14 @@ exports.mulaiUjian = async (req, res) => {
       const seed = Math.floor(Math.random() * 1000000000);
       const shuffled = seededShuffle(jadwal.paketUjian.soalPaket, seed);
 
+      const now = new Date();
+      const status = now < jadwal.mulai ? 'waiting' : 'berlangsung';
+
       ujian = await prisma.ujianSiswa.create({
         data: {
           siswaId,
           jadwalUjianId: jadwal.id,
-          status: 'berlangsung',
+          status: status,
           randomSeed: seed,
           totalSoal: shuffled.length,
           jawabanSiswa: {
@@ -255,7 +275,10 @@ exports.getUjianAktif = async (req, res) => {
 
   try {
     const ujian = await prisma.ujianSiswa.findFirst({
-      where: { siswaId, status: 'berlangsung' },
+      where: { 
+        siswaId, 
+        status: { in: ['berlangsung', 'waiting'] } 
+      },
       include: {
         jadwalUjian: { include: { mataPelajaran: true } },
         jawabanSiswa: {
@@ -527,5 +550,38 @@ exports.getHasilUjian = async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Gagal memuat hasil ujian' });
+  }
+};
+
+exports.cancelWaitingUjian = async (req, res) => {
+  const siswaId = req.siswaId;
+  const ujianSiswaId = Number(req.params.ujianSiswaId);
+
+  try {
+    const ujian = await prisma.ujianSiswa.findUnique({
+      where: { id: ujianSiswaId }
+    });
+
+    if (!ujian || ujian.siswaId !== siswaId) {
+      return res.status(404).json({ success: false, message: 'Data ujian tidak ditemukan.' });
+    }
+
+    if (ujian.status !== 'waiting') {
+      return res.status(400).json({ success: false, message: 'Hanya ujian berstatus waiting yang bisa dibatalkan.' });
+    }
+
+    // Hapus jawabanSiswa dulu (cascading manual jika tidak di set di prisma)
+    await prisma.jawabanSiswa.deleteMany({
+      where: { ujianSiswaId: ujianSiswaId }
+    });
+
+    await prisma.ujianSiswa.delete({
+      where: { id: ujianSiswaId }
+    });
+
+    return res.json({ success: true, message: 'Antrian ujian berhasil dibatalkan.' });
+  } catch (err) {
+    console.error('cancelWaitingUjian error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal membatalkan antrian ujian.' });
   }
 };

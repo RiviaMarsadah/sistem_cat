@@ -10,6 +10,8 @@ const bankSoalImportController = require('../controllers/bankSoalImportControlle
 const bankSoalKoleksiController = require('../controllers/bankSoalKoleksiController');
 const paketUjianController = require('../controllers/paketUjianController');
 const guruJadwalController = require('../controllers/guruJadwalController');
+const guruRekapController = require('../controllers/guruRekapController');
+const guruAnalisisController = require('../controllers/guruAnalisisController');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
@@ -88,5 +90,16 @@ router.get('/jadwal-ujian/custom', guruJadwalController.listCustom);
 router.post('/jadwal-ujian/custom', guruJadwalController.createCustom);
 router.put('/jadwal-ujian/custom/:id', guruJadwalController.updateCustom);
 router.delete('/jadwal-ujian/custom/:id', guruJadwalController.removeCustom);
+
+// Rekap Ujian
+router.get('/rekap/jadwal', guruRekapController.getExams);
+router.get('/rekap/results', guruRekapController.getResults);
+router.get('/rekap/detail/:id', guruRekapController.getDetail);
+router.delete('/rekap/results/:id', guruRekapController.removeResult);
+
+
+// Analisis Soal
+router.get('/analisis/paket', guruAnalisisController.getAnalyzablePackages);
+router.get('/analisis/paket/:id', guruAnalisisController.getQuestionAnalysis);
 
 module.exports = router;
