@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FiFileText, FiPackage, FiCalendar, FiLayers } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './Dashboard.css';
 
 const GuruDashboard = () => {
@@ -66,14 +67,20 @@ const GuruDashboard = () => {
   ];
 
   return (
-    <div className="guru-dashboard">
-      <div className="page-header">
+    <div className="guru-page dashboard-page">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="page-title guru-title">
-            <span className="title-text">Dashboard</span>
-            <span className="title-badge guru-badge">Guru</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Dashboard</span>
+            <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="page-subtitle">Ringkasan data ujian dan akses cepat menu utama</p>
+          <p className="guru-subtitle">Ringkasan data ujian dan akses cepat menu utama</p>
+        </div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Bank Soal</div>
+            <div className="guru-meta-value">{loading ? '...' : ringkasan.totalNamaBankSoal}</div>
+          </div>
         </div>
       </div>
 

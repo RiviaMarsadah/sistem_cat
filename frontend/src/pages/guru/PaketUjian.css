@@ -9,6 +9,10 @@
   box-sizing: border-box;
 }
 
+.paket-ujian-page .guru-card {
+  margin-top: 0;
+}
+
 
 /* ===== TABLE ===== */
 
@@ -46,15 +50,15 @@
 }
 
 .paket-ujian-table th {
-  background: #f8fafc;
+  background: var(--guru-bg-table-head);
   font-weight: 700;
   font-size: 0.95rem;
-  color: #1e293b;
+  color: var(--guru-text-body);
   text-align: left !important;
 }
 
 .paket-ujian-table tbody tr:hover {
-  background: #f8fafc;
+  background: var(--guru-bg-table-head);
 }
 
 .paket-ujian-table .empty-row {
@@ -76,19 +80,37 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: none;
+  background: #ffffff;
+  border: 1px solid var(--guru-border-soft);
   padding: 0.4rem;
   cursor: pointer;
   border-radius: 6px;
   margin-right: 0.25rem;
-  color: inherit;
+  color: var(--guru-text-muted);
   text-decoration: none;
 }
 
-.btn-icon.view:hover { background: #e0f2fe; color: #0369a1; }
-.btn-icon.edit:hover { background: #dbeafe; color: #1e40af; }
-.btn-icon.delete:hover { background: #fee2e2; color: #b91c1c; }
+.btn-icon.view,
+.btn-icon.edit {
+  border-color: #c9d6eb;
+  color: var(--guru-primary);
+}
+
+.btn-icon.delete {
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.btn-icon.view:hover,
+.btn-icon.edit:hover {
+  background: var(--guru-primary);
+  color: #ffffff;
+}
+
+.btn-icon.delete:hover {
+  background: #b91c1c;
+  color: #ffffff;
+}
 
 /* Form page */
 .paket-ujian-form-page .paket-ujian-form-header {

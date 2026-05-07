@@ -34,14 +34,14 @@ const Sidebar = ({ role, user }) => {
   // Menu items untuk Admin
   const adminMenu = [
     {
-      category: 'Utama',
+      category: 'UTAMA',
       items: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
         { path: '/admin/api-sync', label: 'Sinkronisasi API', icon: FiRefreshCw, disabled: false },
       ]
     },
     {
-      category: 'Data Master',
+      category: 'DATA MASTER',
       items: [
         { path: '/admin/jurusan', label: 'Jurusan', icon: FiLayers, disabled: false },
         { path: '/admin/mata-pelajaran', label: 'Mata Pelajaran', icon: FiBookOpen, disabled: false },
@@ -50,7 +50,7 @@ const Sidebar = ({ role, user }) => {
       ]
     },
     {
-      category: 'Manajemen User',
+      category: 'MANAJEMEN USER',
       items: [
         { path: '/admin/user', label: 'Manajemen Admin', icon: FiSettings, disabled: false },
         { path: '/admin/siswa', label: 'Siswa', icon: FiUser, disabled: false },
@@ -58,7 +58,7 @@ const Sidebar = ({ role, user }) => {
       ]
     },
     {
-      category: 'Ujian',
+      category: 'UJIAN',
       items: [
         { path: '/admin/jadwal-ujian', label: 'Jadwal Ujian', icon: FiCalendar, disabled: false },
       ]
@@ -68,13 +68,13 @@ const Sidebar = ({ role, user }) => {
   // Menu items untuk Guru
   const guruMenu = [
     {
-      category: 'Utama',
+      category: 'UTAMA',
       items: [
         { path: '/guru/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
       ]
     },
     {
-      category: 'Manajemen Ujian',
+      category: 'MANAJEMEN UJIAN',
       items: [
         { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: false },
         { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: false },
@@ -114,9 +114,8 @@ const Sidebar = ({ role, user }) => {
   return (
     <aside className={`sidebar ${role === 'admin' ? 'sidebar-admin' : 'sidebar-guru'}`}>
       <div className="sidebar-header">
-        <h2 className="sidebar-logo">CAT</h2>
-        <div className="sidebar-subtitle-wrapper">
-          <span className="sidebar-subtitle">Dashboard</span>
+        <div className="logo-container">
+          <h2 className="sidebar-logo">RIVIA CAT</h2>
           <span className={`sidebar-role-badge ${role === 'admin' ? 'role-badge-admin' : 'role-badge-guru'}`}>
             {role === 'admin' ? 'Admin' : 'Guru'}
           </span>
@@ -155,18 +154,7 @@ const Sidebar = ({ role, user }) => {
         </div>
       </div>
 
-      {/* Notifications */}
-      <div className="sidebar-notifications">
-        <NavLink
-          to={role === 'admin' ? '/admin/notifikasi' : '/guru/notifikasi'}
-          className={({ isActive }) =>
-            `sidebar-notification-btn ${isActive ? 'active' : ''}`
-          }
-        >
-          <FiBell className="notification-icon" />
-          <span className="notification-label">Notifikasi</span>
-        </NavLink>
-      </div>
+
 
       <nav className="sidebar-nav">
         {menuGroups.map((group) => {

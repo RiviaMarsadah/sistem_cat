@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiBook, FiInfo, FiPieChart, FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './AnalisisSoal.css';
 
 export default function AnalisisSoal() {
@@ -54,44 +55,43 @@ export default function AnalisisSoal() {
   const sulitCount  = analysisData?.analysis?.filter(a => a.difficulty === 'Sulit').length  || 0;
 
   return (
-    <div className="admin-user-page">
+    <div className="guru-page analisis-page">
 
       {/* ── Header ── */}
-      <div className="user-header">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="user-title">
-            <span className="title-text">Analisis Butir</span>
-            <span className="title-badge">Soal</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Analisis Butir</span>
+            <span className="guru-title-badge">Soal</span>
           </h1>
-          <p className="user-subtitle">Evaluasi tingkat kesulitan soal berdasarkan performa pengerjaan siswa.</p>
+          <p className="guru-subtitle">Evaluasi tingkat kesulitan soal berdasarkan performa pengerjaan siswa.</p>
         </div>
-        <div className="user-meta">
-          <div className="meta-card">
-            <div className="meta-label">Total Responden</div>
-            <div className="meta-value">{analysisData?.totalParticipants ?? 0}</div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Responden</div>
+            <div className="guru-meta-value">{analysisData?.totalParticipants ?? 0}</div>
           </div>
-          <div className="meta-card">
-            <div className="meta-label">Total Soal</div>
-            <div className="meta-value">{analysisData?.analysis?.length ?? 0}</div>
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Soal</div>
+            <div className="guru-meta-value">{analysisData?.analysis?.length ?? 0}</div>
           </div>
         </div>
       </div>
 
       {/* ── Pilih Paket ── */}
-      <div className="user-card" style={{ marginBottom: '1.5rem' }}>
-        <div className="user-card-header">
-          <h2 className="user-card-title">Pilih Paket Analisis</h2>
+      <div className="guru-card analisis-filter-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Pilih Paket Analisis</h2>
         </div>
-        <div style={{ padding: '1rem 1.5rem' }}>
-          <label style={{ fontSize: '0.875rem', fontWeight: '700', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <div>
+          <label className="guru-form-label">
             <FiBook /> Paket Ujian yang Telah Digunakan
           </label>
           <select
-            className="input"
+            className="guru-select"
             value={selectedPaket}
             onChange={(e) => setSelectedPaket(e.target.value)}
             disabled={loading}
-            style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
           >
             {packages.length === 0
               ? <option value="">Belum ada paket yang dikerjakan siswa</option>
@@ -128,18 +128,18 @@ export default function AnalisisSoal() {
       )}
 
       {/* ── Tabel Analisis ── */}
-      <div className="user-card">
-        <div className="user-card-header">
-          <h2 className="user-card-title">Statistik Per Soal</h2>
+      <div className="guru-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Statistik Per Soal</h2>
         </div>
 
         {analyzing ? (
-          <div style={{ padding: '4rem', textAlign: 'center', color: '#64748b' }}>
+          <div className="analisis-state">
             Menganalisis performa soal...
           </div>
         ) : !analysisData || analysisData.analysis.length === 0 ? (
-          <div style={{ padding: '5rem', textAlign: 'center', color: '#94a3b8' }}>
-            <FiPieChart size={48} style={{ marginBottom: '1rem', opacity: 0.4, display: 'block', margin: '0 auto 1rem' }} />
+          <div className="analisis-empty">
+            <FiPieChart size={48} className="analisis-empty-icon" />
             <p>{packages.length === 0
               ? 'Belum ada paket ujian yang dikerjakan siswa.'
               : 'Pilih paket ujian untuk melihat analisis butir soal.'
@@ -171,14 +171,11 @@ export default function AnalisisSoal() {
                   <span className="stat-lbl">siswa</span>
                 </div>
                 <div className="stat-cell">
-                  <span className="stat-val" style={{ color: item.ratio >= 70 ? '#16a34a' : item.ratio >= 30 ? '#2563eb' : '#dc2626' }}>
+                  <span className={`stat-val ratio-text ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`}>
                     {item.ratio}%
                   </span>
                   <div className="ratio-bar">
-                    <div className="ratio-fill" style={{
-                      width: `${item.ratio}%`,
-                      background: item.ratio >= 70 ? '#16a34a' : item.ratio >= 30 ? '#3b82f6' : '#dc2626'
-                    }} />
+                    <div className={`ratio-fill ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`} style={{ width: `${item.ratio}%` }} />
                   </div>
                 </div>
                 <div className="eval-cell">

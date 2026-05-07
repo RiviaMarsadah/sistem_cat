@@ -13,17 +13,17 @@
 
 .main-content {
   flex: 1;
-  margin-left: 260px; /* Sidebar width */
+  margin-left: 240px; /* Sidebar width */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   padding: 2rem;
-  max-width: calc(100vw - 260px);
-  width: calc(100vw - 260px);
+  max-width: calc(100vw - 240px);
+  width: calc(100vw - 240px);
   box-sizing: border-box;
   position: relative;
   z-index: 1;
-  background: #f5f7fa;
+  background: #F0F4F8;
   overflow-x: hidden;
 }
 

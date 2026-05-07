@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './JadwalUjian.css';
 import './BankSoal.css';
 
@@ -171,30 +172,30 @@ export default function BankSoal() {
   };
 
   return (
-    <div className="bank-soal-page">
-      <div className="user-header">
+    <div className="guru-page bank-soal-page">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="user-title">
-            <span className="title-text">Bank Soal</span>
-            <span className="title-badge">Guru</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Bank Soal</span>
+            <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="user-subtitle">Kelola kotak (koleksi) bank soal Anda, klik pada nama bank soal untuk mengelola butir soal.</p>
+          <p className="guru-subtitle">Kelola kotak (koleksi) bank soal Anda, klik pada nama bank soal untuk mengelola butir soal.</p>
         </div>
-        <div className="user-meta">
-          <div className="meta-card">
-             <div className="meta-label">Total Koleksi</div>
-             <div className="meta-value">{items.length}</div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+             <div className="guru-meta-label">Total Koleksi</div>
+             <div className="guru-meta-value">{items.length}</div>
           </div>
         </div>
       </div>
 
-      {error && <div className="user-alert" role="alert">{error}</div>}
+      {error && <div className="bank-soal-error" role="alert">{error}</div>}
 
-      <div className="user-card">
-         <div className="user-card-header" style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-           <h2 className="user-card-title">Daftar Bank Soal</h2>
+      <div className="bank-soal-table-wrap">
+         <div className="section-header-wrap" style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9' }}>
+           <h2 className="section-title" style={{ margin: 0, fontSize: '1.1rem', color: '#0F1F3D' }}>Daftar Bank Soal</h2>
            
-           <div className="header-actions" style={{ display: 'flex', gap: '12px' }}>
+           <div className="header-actions">
              <button
                type="button"
                className="btn-import-excel"
@@ -202,8 +203,8 @@ export default function BankSoal() {
              >
                <FiUpload /> Import Bank Soal
              </button>
-             <Link to="/guru/bank-soal/tambah" className="btn-add-user">
-               <FiPlus className="btn-plus" /> 
+             <Link to="/guru/bank-soal/tambah" className="btn-tambah">
+               <FiPlus /> 
                <span>Tambah Bank Soal</span>
              </Link>
            </div>
@@ -212,11 +213,8 @@ export default function BankSoal() {
         {loading ? (
           <div className="loading-state">Memuat...</div>
         ) : (
-          <div className="paket-ujian-table-wrap">
-            <style>{`
-               .clickable-row:hover { background-color: #f8fafc !important; }
-            `}</style>
-            <table className="paket-ujian-table">
+          <div className="bank-soal-table-container">
+            <table className="bank-soal-table">
               <thead>
                 <tr>
                   <th>No</th>
@@ -236,13 +234,13 @@ export default function BankSoal() {
                     <tr key={row.id} className="clickable-row" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)}>
                       <td>{idx + 1}</td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b', fontWeight: '700' }}>
-                          <FiFolder size={20} style={{ color: '#3b82f6' }} />
+                        <div className="folder-name-cell">
+                          <FiFolder className="folder-icon" />
                           {row.nama}
                         </div>
                       </td>
                       <td>
-                        <div style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: '#eff6ff', color: '#2563eb', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem'}}>
+                        <div className="soal-count-badge">
                           {row._count?.bankSoal || 0} Soal
                         </div>
                       </td>
@@ -251,19 +249,17 @@ export default function BankSoal() {
                            {new Date(row.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}
                          </div>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button type="button" className="btn-action" style={{ background: '#10b981', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
-                            <FiEye size={20} />
+                        <div className="action-buttons-cell">
+                          <button type="button" className="btn-icon view" onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
+                            <FiEye />
                           </button>
-                          <button type="button" className="btn-action primary" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
-                            <FiEdit2 size={20} />
+                          <button type="button" className="btn-icon edit" onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
+                            <FiEdit2 />
                           </button>
-                          <button type="button" className="btn-action" style={{ background: '#ef4444', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
-                            <FiTrash2 size={20} />
+                          <button type="button" className="btn-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
+                            <FiTrash2 />
                           </button>
                         </div>
-                      </td>
                     </tr>
                   ))
                 )}

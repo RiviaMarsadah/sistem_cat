@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FiCalendar, FiClock, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiPlus, FiLink, FiShield, FiTrash2, FiEdit2 } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './JadwalUjian.css';
 
 export default function JadwalUjianGuru() {
@@ -203,19 +204,19 @@ export default function JadwalUjianGuru() {
 
 
   return (
-    <div className="admin-user-page">
-      <div className="user-header">
+    <div className="guru-page jadwal-page">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="user-title">
-            <span className="title-text">Jadwal Ujian</span>
-            <span className="title-badge">Guru</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Jadwal Ujian</span>
+            <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="user-subtitle">Lihat jadwal resmi dari Admin dan kelola ulangan harian secara mandiri.</p>
+          <p className="guru-subtitle">Lihat jadwal resmi dari Admin dan kelola ulangan harian secara mandiri.</p>
         </div>
-        <div className="user-meta">
-          <div className="meta-card">
-            <div className="meta-label">Total Jadwal</div>
-            <div className="meta-value">{activeTab === 'official' ? officialJadwal.length : customJadwal.length}</div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Jadwal</div>
+            <div className="guru-meta-value">{activeTab === 'official' ? officialJadwal.length : customJadwal.length}</div>
           </div>
         </div>
       </div>
@@ -243,9 +244,9 @@ export default function JadwalUjianGuru() {
 
       {success && <div className="user-alert success" role="alert">{success}</div>}
 
-      <div className="user-card">
-         <div className="user-card-header">
-           <h2 className="user-card-title">
+      <div className="guru-card">
+         <div className="guru-card-header">
+           <h2 className="guru-card-title">
              {activeTab === 'official' ? 'Daftar Jadwal Resmi' : 'Daftar Ulangan Custom'}
            </h2>
            {activeTab === 'custom' && (
@@ -384,7 +385,7 @@ export default function JadwalUjianGuru() {
 
                       <div className="col-mapel-paket">
                          <div className="mapel-badge">
-                           <FiBook size={12} /> {j.mataPelajaran?.namaMapel}
+                           {j.mataPelajaran?.namaMapel}
                          </div>
                          <div className="paket-badge">
                            {j.paketUjian?.nama}

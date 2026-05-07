@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiEdit2, FiEye, FiPlus, FiTrash2, FiX, FiLock } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './JadwalUjian.css';
 import './PaketUjian.css';
 
@@ -84,19 +85,19 @@ export default function PaketUjian() {
   };
 
   return (
-    <div className="paket-ujian-page">
-      <div className="user-header">
+    <div className="paket-ujian-page guru-page">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="user-title">
-            <span className="title-text">Paket Ujian</span>
-            <span className="title-badge">Guru</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Paket Ujian</span>
+            <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="user-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
+          <p className="guru-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
         </div>
-        <div className="user-meta">
-          <div className="meta-card">
-            <div className="meta-label">Total Paket</div>
-            <div className="meta-value">{items.length}</div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Paket</div>
+            <div className="guru-meta-value">{items.length}</div>
           </div>
           <Link to="/guru/paket-ujian/tambah" className="btn-add-user">
             <FiPlus className="btn-plus" />
@@ -107,9 +108,9 @@ export default function PaketUjian() {
 
       {error && <div className="user-alert" role="alert">{error}</div>}
 
-      <div className="user-card">
-        <div className="user-card-header">
-          <h2 className="user-card-title">Daftar Paket Ujian</h2>
+      <div className="guru-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Daftar Paket Ujian</h2>
         </div>
 
         {loading ? (

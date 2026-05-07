@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle, FiX, FiFolder, FiArrowLeft } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './JadwalUjian.css';
 import './BankSoal.css';
 
@@ -201,36 +202,42 @@ export default function BankSoalDetail() {
   const koleksiName = currentKoleksi ? currentKoleksi.nama : loading ? 'Memuat...' : 'Koleksi Bank Soal';
 
   return (
-    <div className="periode-detail-view" style={{ animation: 'fadeIn 0.3s ease-in-out' }}>
-        <button onClick={() => navigate('/guru/bank-soal')} style={{ background: 'none', border: 'none', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', marginBottom: '1.5rem', padding: 0, fontSize: '0.95rem' }}>
-          <FiArrowLeft /> Kembali ke Daftar Koleksi
-        </button>
-
-        <div style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: '700', marginBottom: '0.75rem', letterSpacing: '-0.5px', color: '#1e293b' }}>{koleksiName}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.9rem' }}>
-                <FiFolder /> Terdapat {items.length} Soal
-            </div>
-          </div>
-          
-          <div className="header-actions" style={{ zIndex: 1, display: 'flex', gap: '12px' }}>
-            <button
-              type="button"
-              className="btn-import-excel"
-              onClick={() => setShowImportModal(true)}
-            >
-              <FiUpload /> Import Bank Soal
-            </button>
-            <Link to="/guru/bank-soal/tambah" className="btn-add-user">
-              <FiPlus className="btn-plus" /> 
-              <span>Tambah Bank Soal</span>
-            </Link>
-          </div>
-
-          {/* Decorative Background */}
-          <FiFolder style={{ position: 'absolute', right: '150px', top: '-40px', fontSize: '180px', opacity: '0.03', transform: 'rotate(15deg)', color: '#3b82f6' }} />
+    <div className="guru-page bank-soal-page">
+      <div className="guru-header guru-header-card">
+        <div className="header-info">
+          <button onClick={() => navigate('/guru/bank-soal')} className="btn-back">
+            <FiArrowLeft /> Kembali ke Daftar Koleksi
+          </button>
+          <h1 className="guru-title">
+            <span className="guru-title-text">{koleksiName}</span>
+            <span className="guru-title-badge">Guru</span>
+          </h1>
+          <p className="guru-subtitle">
+            <FiFolder /> Terdapat {items.length} Soal dalam koleksi ini
+          </p>
         </div>
+
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Butir Soal</div>
+            <div className="guru-meta-value">{items.length}</div>
+          </div>
+        </div>
+        
+        <div className="header-actions">
+          <button
+            type="button"
+            className="btn-import-excel"
+            onClick={() => setShowImportModal(true)}
+          >
+            <FiUpload /> Import Soal
+          </button>
+          <Link to="/guru/bank-soal/tambah" className="btn-tambah">
+            <FiPlus /> 
+            <span>Tambah Soal</span>
+          </Link>
+        </div>
+      </div>
 
       {importNotice && (
         <div className={`bank-soal-notice ${importNotice.type}`}>
@@ -432,9 +439,13 @@ export default function BankSoalDetail() {
                     <td className="soal-preview">{row.soal ? row.soal.slice(0, 80) + (row.soal.length > 80 ? '…' : '') : '(Pernyataan di kolom A-F)'}</td>
                     <td>{row.jawaban}</td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <Link to={`/guru/bank-soal/edit/${row.id}`} className="btn-action primary" style={{ background: '#3b82f6', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', padding: 0 }} title="Edit"><FiEdit2 size={20} /></Link>
-                        <button type="button" className="btn-action" style={{ background: '#ef4444', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }} onClick={() => handleDelete(row.id)} title="Hapus"><FiTrash2 size={20} /></button>
+                      <div className="action-buttons-cell">
+                        <Link to={`/guru/bank-soal/edit/${row.id}`} className="btn-icon edit" title="Edit">
+                          <FiEdit2 />
+                        </Link>
+                        <button type="button" className="btn-icon delete" onClick={() => handleDelete(row.id)} title="Hapus">
+                          <FiTrash2 />
+                        </button>
                       </div>
                     </td>
                   </tr>

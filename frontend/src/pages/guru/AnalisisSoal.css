@@ -1,4 +1,28 @@
 /* ─── Analisis Soal Styles ─── */
+.analisis-page .guru-card {
+  margin-top: 0;
+}
+
+.analisis-filter-card {
+  margin-bottom: 1.5rem;
+}
+
+.analisis-state {
+  padding: 4rem;
+  text-align: center;
+  color: var(--guru-text-muted);
+}
+
+.analisis-empty {
+  padding: 5rem;
+  text-align: center;
+  color: var(--guru-text-soft);
+}
+
+.analisis-empty-icon {
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
 
 /* Summary Cards */
 .analisis-summary-grid {
@@ -39,10 +63,10 @@
   margin-top: 2px;
 }
 
-.summary-box.mudah  { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
-.summary-box.sedang { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.summary-box.mudah  { background: var(--guru-success-soft); border-color: #bbf7d0; color: #15803d; }
+.summary-box.sedang { background: var(--guru-primary-soft); border-color: #bfdbfe; color: #1d4ed8; }
 .summary-box.sulit  { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
-.summary-box.info   { background: #f8fafc; border-color: #e2e8f0; color: #334155; }
+.summary-box.info   { background: var(--guru-bg-table-head); border-color: var(--guru-border-soft); color: #334155; }
 
 /* Analisis Table — CSS Grid */
 .analisis-table {
@@ -58,23 +82,23 @@
   align-items: center;
   padding: 0.875rem 1.25rem;
   gap: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  background: white;
+  border-bottom: 1px solid var(--guru-bg-row-separator);
+  background: var(--guru-bg-card);
   transition: background 0.15s;
 }
 
 .analisis-row:last-child { border-bottom: none; }
-.analisis-row:hover:not(.analisis-head) { background: #f8fafc; }
+.analisis-row:hover:not(.analisis-head) { background: var(--guru-bg-table-head); }
 
 .analisis-head {
-  background: #f8fafc;
+  background: var(--guru-bg-table-head);
   font-size: 0.72rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--guru-text-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 0.7rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--guru-border-soft);
 }
 
 .analisis-head > div { text-align: center; }
@@ -90,7 +114,7 @@
 
 .soal-text-cell {
   font-size: 0.9rem;
-  color: #1e293b;
+  color: var(--guru-text-body);
   font-weight: 500;
   line-height: 1.5;
 }
@@ -122,7 +146,7 @@
 .ratio-bar {
   width: 70px;
   height: 5px;
-  background: #e2e8f0;
+  background: var(--guru-border-soft);
   border-radius: 3px;
   overflow: hidden;
   margin-top: 4px;
@@ -133,6 +157,14 @@
   border-radius: 3px;
   transition: width 0.4s ease;
 }
+
+.stat-val.ratio-high { color: var(--guru-success); }
+.stat-val.ratio-mid { color: #1d4ed8; } /* Matching Sedang badge color */
+.stat-val.ratio-low { color: var(--guru-danger); }
+
+.ratio-fill.ratio-high { background: var(--guru-success); }
+.ratio-fill.ratio-mid { background: #1d4ed8; } /* Matching Sedang badge color */
+.ratio-fill.ratio-low { background: var(--guru-danger); }
 
 /* Difficulty badges */
 .diff-badge {

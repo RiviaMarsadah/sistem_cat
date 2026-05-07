@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiCheckCircle, FiXCircle, FiInfo, FiAlertCircle } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './ReviewHasil.css';
 
 export default function ReviewHasilGuru() {

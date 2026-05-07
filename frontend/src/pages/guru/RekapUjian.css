@@ -1,180 +1,162 @@
-/* Menggunakan base styles dari guru dashboard */
+.rekap-page .guru-card {
+  margin-top: 0;
+}
+
+.rekap-filter-card {
+  margin-bottom: 1rem;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.rekap-state {
+  text-align: center;
+  color: var(--guru-text-muted);
+  padding: 3.5rem 1rem;
+}
 
 .student-info {
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .student-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--guru-primary-soft);
+  color: var(--guru-primary);
+  font-weight: 800;
+  margin-right: 12px;
+  flex-shrink: 0;
 }
 
 .student-names {
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
-.academic-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+.student-name,
+.student-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.score-display.high { color: #16a34a; }
-.score-display.med { color: #d97706; }
-.score-display.low { color: #dc2626; }
-
-/* Modal Detail Customizations */
-.detail-modal {
-  max-width: 900px !important;
-  width: 90% !important;
+.student-name {
+  color: var(--guru-text-title);
+  font-weight: 700;
 }
 
-.detail-profile-strip {
-  background: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 16px;
-  display: flex;
-  justify-content: space-between;
+.student-email {
+  color: var(--guru-text-soft);
+  font-size: 0.8rem;
+}
+
+.kelas-pill {
+  font-size: 0.84rem;
+  line-height: 1.3;
+  font-weight: 700;
+  color: var(--guru-primary);
+  background: var(--guru-primary-soft);
+  border-radius: 999px;
+  padding: 0.3rem 0.62rem;
+  display: inline-block;
+}
+
+.status-badge {
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e2e8f0;
+  gap: 0.35rem;
+  padding: 0.34rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
 }
 
-.p-name { font-size: 1.25rem; font-weight: 800; color: #0f172a; }
-.p-sub { font-size: 0.875rem; color: #64748b; font-weight: 600; margin-top: 0.25rem; }
-
-.p-score { text-align: right; }
-.s-label { font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase; }
-.s-value { font-size: 2.5rem; font-weight: 900; color: #2563eb; line-height: 1; }
-
-.detail-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 2rem;
+.status-badge.aktif {
+  color: var(--guru-success);
+  background: var(--guru-success-soft);
 }
 
-.d-stat-box {
-  padding: 1.25rem;
-  border-radius: 16px;
+.status-badge.progress {
+  color: var(--guru-primary);
+  background: var(--guru-primary-soft);
+}
+
+.nilai-col {
   text-align: center;
 }
 
-.d-stat-box.green { background: #f0fdf4; color: #16a34a; }
-.d-stat-box.red { background: #fef2f2; color: #dc2626; }
-.d-stat-box.gray { background: #f8fafc; color: #64748b; }
-.d-stat-box.yellow { background: #fffbeb; color: #d97706; }
-
-.d-stat-box .v { font-size: 1.5rem; font-weight: 900; }
-.d-stat-box .l { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-top: 0.25rem; }
-
-.section-title {
-  font-size: 1.125rem;
+.score-display {
+  font-size: 1.08rem;
   font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 1.25rem;
 }
 
-.answers-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-}
+.score-display.high { color: var(--guru-success); }
+.score-display.med { color: var(--guru-warning); }
 
-.answer-item-card {
-  background: white;
-  border: 1px solid #f1f5f9;
-  border-radius: 12px;
-  padding: 1rem;
-}
-
-.a-header {
+.aksi-col {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.a-num { font-weight: 800; font-size: 0.75rem; color: #94a3b8; }
-.a-status { font-size: 0.625rem; font-weight: 900; padding: 2px 6px; border-radius: 4px; }
-.a-status.correct { background: #dcfce7; color: #166534; }
-.a-status.wrong { background: #fee2e2; color: #991b1b; }
-
-.a-question {
-  font-size: 0.875rem;
-  color: #1e293b;
-  font-weight: 600;
-  margin-bottom: 1rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.a-comparison {
-  display: flex;
-  flex-direction: column;
   gap: 0.5rem;
+  justify-content: center;
 }
 
-.comp-box {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.75rem;
-  padding: 0.5rem;
-  background: #f8fafc;
-  border-radius: 6px;
+.btn-action {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  padding: 0.52rem 0.88rem;
+  border: 1px solid var(--guru-border-soft);
+  transition: all 0.18s ease;
 }
 
-.comp-l { color: #64748b; font-weight: 600; }
-.comp-v { color: #0f172a; font-weight: 800; }
-.comp-v.highlight { color: #2563eb; }
-
-/* Action Buttons */
 .btn-action.primary {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #dbeafe;
+  border-color: var(--guru-success);
+  color: var(--guru-success);
+  background: #fff;
 }
 
 .btn-action.primary:hover {
-  background: #2563eb;
-  color: white;
+  background: var(--guru-success);
+  color: #fff;
 }
 
 .btn-action.danger {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fee2e2;
+  border-color: var(--guru-danger);
+  color: var(--guru-danger);
+  background: #fff;
 }
 
 .btn-action.danger:hover {
-  background: #dc2626;
-  color: white;
+  background: var(--guru-danger);
+  color: #fff;
 }
 
-/* Rekap Table — CSS Grid for precise column control */
 .rekap-table {
   width: 100%;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--guru-border-soft);
 }
 
 .rekap-row {
   display: grid;
-  /* Siswa | Nama Kelas | Status | Nilai Akhir | Aksi */
   grid-template-columns: 2fr 2fr 160px 130px 230px;
-
-
   align-items: center;
-  padding: 0.875rem 1.25rem;
+  padding: 0.86rem 1.12rem;
   gap: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  background: white;
+  border-bottom: 1px solid var(--guru-bg-row-separator);
+  background: var(--guru-bg-card);
   transition: background 0.15s;
 }
 
@@ -183,7 +165,7 @@
 }
 
 .rekap-row:hover:not(.rekap-head) {
-  background: #f8fafc;
+  background: var(--guru-bg-table-head);
 }
 
 .rekap-head > div {
@@ -197,12 +179,39 @@
 
 
 .rekap-head {
-  background: #f8fafc !important;
-  font-size: 0.75rem;
+  background: var(--guru-bg-table-head) !important;
+  font-size: 0.73rem;
   font-weight: 700;
-  color: #64748b;
+  color: var(--guru-text-soft);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.75rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0.74rem 1.12rem;
+  border-bottom: 1px solid var(--guru-border-soft);
+}
+
+@media (max-width: 1024px) {
+  .rekap-row {
+    grid-template-columns: minmax(220px, 1.6fr) minmax(170px, 1.2fr) 150px 120px 190px;
+    gap: 0.7rem;
+    padding: 0.76rem 0.84rem;
+  }
+
+  .btn-action {
+    font-size: 0.78rem;
+    padding: 0.45rem 0.65rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .guru-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rekap-table {
+    overflow-x: auto;
+  }
+
+  .rekap-row {
+    min-width: 820px;
+  }
 }

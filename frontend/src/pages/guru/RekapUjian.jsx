@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBook, FiClock, FiCheckCircle, FiFileText, FiFilter, FiEye, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
+import './GuruTheme.css';
 import './RekapUjian.css';
 
 export default function RekapUjianGuru() {
@@ -83,46 +84,45 @@ export default function RekapUjianGuru() {
 
 
   return (
-    <div className="admin-user-page">
-      <div className="user-header">
+    <div className="guru-page rekap-page">
+      <div className="guru-header guru-header-card">
         <div>
-          <h1 className="user-title">
-            <span className="title-text">Rekap Hasil</span>
-            <span className="title-badge">Ujian</span>
+          <h1 className="guru-title">
+            <span className="guru-title-text">Rekap Hasil</span>
+            <span className="guru-title-badge">Ujian</span>
           </h1>
-          <p className="user-subtitle">Pantau perkembangan dan hasil ujian siswa Anda secara mendalam.</p>
+          <p className="guru-subtitle">Pantau perkembangan dan hasil ujian siswa Anda secara mendalam.</p>
         </div>
-        <div className="user-meta">
-          <div className="meta-card">
-            <div className="meta-label">Total Peserta</div>
-            <div className="meta-value">{stats.total}</div>
+        <div className="guru-meta">
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Total Peserta</div>
+            <div className="guru-meta-value">{stats.total}</div>
           </div>
-          <div className="meta-card">
-            <div className="meta-label">Rata-rata</div>
-            <div className="meta-value">{stats.average}</div>
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Rata-rata</div>
+            <div className="guru-meta-value">{stats.average}</div>
           </div>
-          <div className="meta-card">
-            <div className="meta-label">Tertinggi</div>
-            <div className="meta-value">{stats.highest}</div>
+          <div className="guru-meta-card">
+            <div className="guru-meta-label">Tertinggi</div>
+            <div className="guru-meta-value">{stats.highest}</div>
           </div>
         </div>
       </div>
 
-      <div className="user-card" style={{ marginBottom: '2rem' }}>
-        <div className="user-card-header">
-          <h2 className="user-card-title">Filter Pencarian</h2>
+      <div className="guru-card rekap-filter-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Filter Pencarian</h2>
         </div>
-        <div style={{ padding: '1.5rem 2rem', display: 'flex', gap: '1.5rem' }}>
-          <div className="filter-item" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '700', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="guru-form-grid">
+          <div className="filter-item">
+            <label className="guru-form-label">
               <FiBook /> Pilih Ujian
             </label>
             <select 
-              className="input"
+              className="guru-select"
               value={selectedExam} 
               onChange={(e) => { setSelectedExam(e.target.value); setSelectedKelas('all'); }}
               disabled={loading}
-              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
             >
               {exams.length === 0 ? <option>Tidak ada ujian</option> : null}
               {exams.map(e => (
@@ -130,16 +130,15 @@ export default function RekapUjianGuru() {
               ))}
             </select>
           </div>
-          <div className="filter-item" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', fontWeight: '700', color: '#475569', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="filter-item">
+            <label className="guru-form-label">
               <FiFilter /> Pilih Kelas
             </label>
             <select 
-              className="input"
+              className="guru-select"
               value={selectedKelas} 
               onChange={(e) => setSelectedKelas(e.target.value)}
               disabled={loading}
-              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
             >
               <option value="all">Semua Kelas</option>
               {availableClasses.map(k => (
@@ -155,18 +154,18 @@ export default function RekapUjianGuru() {
         </div>
       </div>
 
-      <div className="user-card">
-        <div className="user-card-header">
-          <h2 className="user-card-title">Daftar Hasil Peserta</h2>
-          <div className="results-count" style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>
+      <div className="guru-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Daftar Hasil Peserta</h2>
+          <div className="results-count guru-count-text">
             Total: {results.length} Siswa
           </div>
         </div>
 
         {fetchingResults ? (
-          <div className="loading-state" style={{ padding: '4rem', textAlign: 'center' }}>Memuat hasil ujian...</div>
+          <div className="loading-state rekap-state">Memuat hasil ujian...</div>
         ) : results.length === 0 ? (
-          <div className="empty-state" style={{ padding: '5rem', textAlign: 'center' }}>Belum ada data hasil ujian untuk filter ini.</div>
+          <div className="empty-state rekap-state">Belum ada data hasil ujian untuk filter ini.</div>
         ) : (
           <div className="rekap-table">
             <div className="rekap-row rekap-head">
@@ -181,17 +180,17 @@ export default function RekapUjianGuru() {
               <div key={r.id} className="rekap-row">
                 <div>
                   <div className="student-info">
-                    <div className="student-avatar" style={{ width: '36px', height: '36px', background: '#eff6ff', color: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '800', marginRight: '12px', flexShrink: 0 }}>
+                    <div className="student-avatar">
                       {r.siswa?.user?.namaLengkap?.charAt(0)}
                     </div>
-                    <div className="student-names" style={{ minWidth: 0 }}>
-                      <div style={{ fontWeight: '700', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.siswa?.user?.namaLengkap}</div>
-                      <div style={{ fontSize: '0.8rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.siswa?.user?.email}</div>
+                    <div className="student-names">
+                      <div className="student-name">{r.siswa?.user?.namaLengkap}</div>
+                      <div className="student-email">{r.siswa?.user?.email}</div>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '0.85rem', background: '#eff6ff', padding: '5px 10px', borderRadius: '8px', color: '#1e40af', fontWeight: '700', display: 'inline-block', lineHeight: '1.3' }}>
+                  <div className="kelas-pill">
                     {r.siswa?.kelas?.tingkat} {r.siswa?.kelas?.jurusan?.namaProdi || 'N/A'}
                   </div>
                 </div>
@@ -199,26 +198,24 @@ export default function RekapUjianGuru() {
                   {r.status === 'selesai' ? (
                     <span className="status-badge aktif"><FiCheckCircle /> Selesai</span>
                   ) : (
-                    <span className="status-badge progress" style={{ background: '#eff6ff', color: '#3b82f6' }}><FiClock /> Aktif</span>
+                    <span className="status-badge progress"><FiClock /> Aktif</span>
                   )}
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <span className={`score-display ${Number(r.nilaiAkhir) >= 75 ? 'high' : Number(r.nilaiAkhir) >= 50 ? 'med' : 'low'}`} style={{ fontWeight: '800', fontSize: '1.1rem' }}>
+                <div className="nilai-col">
+                  <span className={`score-display ${Number(r.nilaiAkhir) >= 80 ? 'high' : 'med'}`}>
                     {r.status === 'selesai' ? Number(r.nilaiAkhir).toFixed(1) : '-'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                <div className="aksi-col">
                   <button 
                     className="btn-action primary" 
                     onClick={() => handleReview(r.id)} 
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.875rem', width: 'auto' }}
                   >
                     <FiEye /> Review
                   </button>
                   <button 
                     className="btn-action danger" 
                     onClick={() => handleDeleteResult(r.id, r.siswa?.user?.namaLengkap)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.875rem', width: 'auto', background: '#fee2e2', color: '#ef4444' }}
                   >
                     <FiTrash2 /> Hapus
                   </button>

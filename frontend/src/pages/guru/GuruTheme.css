@@ -1,0 +1,208 @@
+:root {
+  --guru-sidebar-bg: #0f1f3d;
+  --guru-sidebar-active: #1b3a6b;
+  --guru-sidebar-text: #ffffff;
+  --guru-sidebar-muted: #8a9bbe;
+  --guru-online-dot: #22c55e;
+
+  --guru-bg-page: #f0f4f8;
+  --guru-bg-card: #ffffff;
+  --guru-bg-table-head: #f8fafc;
+  --guru-bg-row-separator: #f1f5f9;
+
+  --guru-text-title: #0f1f3d;
+  --guru-text-body: #1e293b;
+  --guru-text-muted: #64748b;
+  --guru-text-soft: #94a3b8;
+
+  --guru-primary: #1b3a6b;
+  --guru-primary-soft: #eef3fb;
+  --guru-success: #22c55e;
+  --guru-success-soft: #f0fdf4;
+  --guru-warning: #f97316;
+  --guru-danger: #ef4444;
+  --guru-danger-soft: #fee2e2;
+
+  --guru-border-soft: #e2e8f0;
+  --guru-border-subtle: #f1f5f9;
+}
+
+.guru-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  animation: guruFadeIn 0.35s ease-out;
+}
+
+.guru-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.guru-header-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+}
+
+.guru-title {
+  margin: 0 0 0.45rem;
+  color: var(--guru-text-title);
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.guru-title-text {
+  color: var(--guru-text-title);
+}
+
+.guru-title-badge {
+  background: var(--guru-primary);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.34rem 0.86rem;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.guru-subtitle {
+  margin: 0;
+  color: var(--guru-text-muted);
+  font-size: 0.94rem;
+}
+
+.guru-meta {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.guru-meta-card {
+  background: #ffffff;
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  min-width: 110px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.guru-meta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.12);
+  border-color: #3B82F6;
+}
+
+/* Brighter light blue for meta-cards in header */
+.guru-header-card .guru-meta-card {
+  background: #E0F2FE; /* Brighter Sky Blue */
+  border: 1px solid #BAE6FD;
+}
+
+.guru-meta-label {
+  color: #0369A1; /* Muted vibrant blue */
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.guru-meta-value {
+  color: #0284C7; /* Brighter blue value */
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.guru-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 14px;
+  padding: 1.1rem;
+}
+
+.guru-card + .guru-card {
+  margin-top: 1rem;
+}
+
+.guru-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.guru-card-title {
+  margin: 0;
+  color: var(--guru-text-title);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.guru-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.guru-form-label {
+  color: var(--guru-text-body);
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-bottom: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.guru-select {
+  width: 100%;
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 10px;
+  padding: 0.72rem 0.92rem;
+  color: var(--guru-text-body);
+  background: var(--guru-bg-card);
+}
+
+.guru-select:focus {
+  outline: 0;
+  border-color: var(--guru-primary);
+  box-shadow: 0 0 0 3px rgba(27, 58, 107, 0.12);
+}
+
+.guru-count-text {
+  color: var(--guru-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+@keyframes guruFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .guru-header-card {
+    padding: 0.9rem 1rem;
+  }
+}
