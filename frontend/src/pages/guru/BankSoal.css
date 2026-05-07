@@ -33,9 +33,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: #1B3A6B;
-  color: #fff;
-  border: none;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -44,9 +44,10 @@
 }
 
 .btn-tambah:hover {
-  opacity: 0.95;
+  background: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+  color: var(--btn-primary-hover-text);
   transform: translateY(-1px);
-  color: #fff;
 }
 
 .header-actions {
@@ -69,9 +70,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: #fff;
-  color: #3B82F6;
-  border: 1px solid #3B82F6;
+  background: var(--btn-outline-bg);
+  color: var(--btn-outline-text);
+  border: 1px solid var(--btn-outline-border);
   border-radius: 10px;
   font-weight: 600;
   cursor: pointer;
@@ -79,7 +80,7 @@
 }
 
 .btn-import-excel:hover {
-  background: #eff6ff;
+  background: var(--btn-outline-hover-bg);
 }
 
 .import-section-title {
@@ -113,16 +114,16 @@
   border-radius: 8px;
   font-weight: 500;
   cursor: pointer;
-  border: 2px solid #cbd5e1;
-  background: #fff;
-  color: #475569;
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
+  transition: all 0.15s ease;
 }
 
 .btn-download-template:hover,
 .btn-guide:hover {
-  background: #f1f5f9;
-  border-color: #3b82f6;
-  color: #1e40af;
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
 }
 
 .import-form { margin-top: 0.5rem; }
@@ -152,9 +153,9 @@
 
 .btn-submit-import {
   padding: 0.85rem 1.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: #fff;
-  border: none;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
   border-radius: 10px;
   font-weight: 700;
   font-size: 1rem;
@@ -164,7 +165,7 @@
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
 }
 
 .upload-zone-wrapper {
@@ -229,11 +230,13 @@
 }
 
 .btn-submit-import:hover:not(:disabled) {
-  opacity: 0.95;
+  background: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+  color: var(--btn-primary-hover-text);
 }
 
 .btn-submit-import:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -387,13 +390,13 @@
   color: #64748b;
 }
 
-/* Table - kartu sama seperti Paket Ujian */
+/* Table - Model unified rounded, header+body menyatu */
 .bank-soal-table-wrap {
   overflow-x: auto;
   background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .bank-soal-table {
@@ -405,18 +408,27 @@
 .bank-soal-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid #e2e8f0;
+  border: none;
+  border-bottom: 1px solid var(--guru-bg-row-separator);
 }
 
-.bank-soal-table th {
-  background: #F8FAFC;
+.bank-soal-table tr:last-child td {
+  border-bottom: none;
+}
+
+.bank-soal-table tr:hover td {
+  background: var(--guru-bg-table-head);
+}
+
+.bank-soal-table thead tr th {
+  background: rgba(27, 58, 107, 0.85);
   font-weight: 700;
   font-size: 0.75rem;
-  color: #94A3B8;
+  color: #FFFFFF;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #F1F5F9;
+  padding: 0.75rem 1rem;
+  border-bottom: none;
 }
 
 .bank-soal-table td.soal-preview {
@@ -537,8 +549,8 @@
 }
 
 .pagination-page.active {
-  background: #1B3A6B;
-  border-color: #1B3A6B;
+  background: #3B82F6;
+  border-color: #3B82F6;
   color: #fff;
 }
 
@@ -558,25 +570,50 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: none;
+  width: 36px;
+  height: 36px;
+  border: 1px solid;
   cursor: pointer;
-  border-radius: 10px;
-  margin-right: 0.5rem;
-  color: #FFFFFF;
+  border-radius: 8px;
+  margin-right: 0.35rem;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.btn-icon.view { background: #22C55E; }
-.btn-icon.view:hover { background: #16a34a; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(34, 197, 94, 0.2); }
+.btn-icon.view {
+  background: var(--btn-success-bg);
+  border-color: var(--btn-success-border);
+  color: var(--btn-success-text);
+}
+.btn-icon.view:hover {
+  background: var(--btn-success-hover-bg);
+  border-color: var(--btn-success-hover-border);
+  color: var(--btn-success-hover-text);
+  transform: translateY(-1px);
+}
 
-.btn-icon.edit { background: #3B82F6; }
-.btn-icon.edit:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2); }
+.btn-icon.edit {
+  background: var(--btn-edit-bg);
+  border-color: var(--btn-edit-border);
+  color: var(--btn-edit-text);
+}
+.btn-icon.edit:hover {
+  background: var(--btn-edit-hover-bg);
+  border-color: var(--btn-edit-hover-border);
+  color: var(--btn-edit-hover-text);
+  transform: translateY(-1px);
+}
 
-.btn-icon.delete { background: #EF4444; }
-.btn-icon.delete:hover { background: #dc2626; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2); }
+.btn-icon.delete {
+  background: var(--btn-danger-bg);
+  border-color: var(--btn-danger-border);
+  color: var(--btn-danger-text);
+}
+.btn-icon.delete:hover {
+  background: var(--btn-danger-hover-bg);
+  border-color: var(--btn-danger-hover-border);
+  color: var(--btn-danger-hover-text);
+  transform: translateY(-1px);
+}
 
 .btn-icon svg {
   font-size: 1.15rem;
@@ -743,17 +780,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #e2e8f0;
-  background: #fff;
+  border: 2px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
   border-radius: 8px;
   cursor: pointer;
-  color: #94a3b8;
+  color: var(--btn-secondary-text);
+  transition: all 0.15s ease;
 }
 
 .btn-check.active {
-  background: #3B82F6;
-  border-color: #3B82F6;
-  color: #fff;
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
+  color: var(--btn-primary-text);
 }
 
 .benar-salah-btns {
@@ -764,16 +802,18 @@
 .benar-salah-btns button {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border: 1px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
   border-radius: 6px;
   cursor: pointer;
+  transition: all 0.15s ease;
 }
 
 .benar-salah-btns button.active {
-  background: #3B82F6;
-  border-color: #3B82F6;
-  color: #fff;
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
+  color: var(--btn-primary-text);
 }
 
 .modal-actions {
@@ -782,30 +822,54 @@
   gap: 0.75rem;
   margin-top: 1.5rem;
   padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--btn-secondary-border);
 }
 
 .btn-secondary {
   padding: 0.6rem 1.25rem;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  background: var(--btn-secondary-bg);
+  border: 1px solid var(--btn-secondary-border);
+  color: var(--btn-secondary-text);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
 }
 
 .btn-primary {
   padding: 0.6rem 1.25rem;
-  background: #1B3A6B;
-  color: #fff;
-  border: none;
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-border);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+  color: var(--btn-primary-hover-text);
 }
 
 .btn-primary:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563EB;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.35);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 

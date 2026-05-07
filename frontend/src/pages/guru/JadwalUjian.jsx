@@ -25,7 +25,51 @@ export default function JadwalUjianGuru() {
   const [searchPaket, setSearchPaket] = useState('');
   
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
-  const [editingId, setEditingId] = useState(null); // null for create mode
+  const [editingId, setEditingId] = useState(null);
+
+  // Pagination per tab
+  const ITEMS_PER_PAGE = 10;
+  const [currentPageOfficial, setCurrentPageOfficial] = useState(1);
+  const [currentPageCustom, setCurrentPageCustom] = useState(1);
+
+  const getPaginated = (data, page) => {
+    const tp = Math.max(1, Math.ceil(data.length / ITEMS_PER_PAGE));
+    const dp = Math.min(Math.max(1, page), tp);
+    const si = (dp - 1) * ITEMS_PER_PAGE;
+    return { data: data.slice(si, si + ITEMS_PER_PAGE), tp, dp, si };
+  };
+  const { data: paginatedOfficial, tp: tpOfficial, dp: dpOfficial, si: siOfficial } = getPaginated(officialJadwal, currentPageOfficial);
+  const { data: paginatedCustom, tp: tpCustom, dp: dpCustom, si: siCustom } = getPaginated(customJadwal, currentPageCustom);
+
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
+
+  const renderPagination = (total, tp, dp, setPage, page) => (
+    total > 0 && (
+      <div className="table-pagination">
+        <span className="table-pagination-info">Menampilkan {(page === 1 ? 0 : (page - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(page * ITEMS_PER_PAGE, total)} dari {total} jadwal</span>
+        <div className="table-pagination-controls">
+          <button type="button" className="table-pagination-btn" disabled={dp <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+          <div className="table-pagination-pages">
+            {getPaginationPages(tp, dp).map((item) =>
+              item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
+              <button key={item.value} type="button" className={`table-pagination-page ${item.value === dp ? 'active' : ''}`} onClick={() => setPage(item.value)}>{item.value}</button>
+            )}
+          </div>
+          <button type="button" className="table-pagination-btn" disabled={dp >= tp} onClick={() => setPage(p => Math.min(tp, p + 1))}>Berikutnya</button>
+          <button type="button" className="table-pagination-btn show-all" onClick={() => setPage(9999)}>Tampilkan Semua</button>
+        </div>
+      </div>
+    )
+  );
   
   // Custom Form fields
   const [nama, setNama] = useState('');
@@ -274,7 +318,7 @@ export default function JadwalUjianGuru() {
                   <div>Aksi</div>
                 </div>
 
-                {officialJadwal.map((j) => (
+                {paginatedOfficial.map((j) => (
                   <div key={j.id} className="jadwal-row">
                     <div className="col-main">
                       <div className="jadwal-nama">
@@ -298,7 +342,7 @@ export default function JadwalUjianGuru() {
 
                     <div className="col-mapel-paket">
                       <div className="mapel-badge">
-                        <FiBook size={12} /> {j.mataPelajaran?.namaMapel}
+                        {j.mataPelajaran?.namaMapel}
                       </div>
                       <div className="paket-badge">
                         {j.paketUjianId ? (
@@ -346,6 +390,7 @@ export default function JadwalUjianGuru() {
                 ))}
               </>
             )}
+            {renderPagination(officialJadwal.length, tpOfficial, dpOfficial, setCurrentPageOfficial, currentPageOfficial)}
           </div>
         ) : (
           /* CUSTOM TAB */
@@ -363,7 +408,7 @@ export default function JadwalUjianGuru() {
                     <div>Aksi</div>
                  </div>
 
-                 {customJadwal.map((j) => (
+                 {paginatedCustom.map((j) => (
                    <div key={j.id} className="jadwal-row">
                       <div className="col-main">
                         <div className="jadwal-nama">{j.nama}</div>
@@ -422,6 +467,7 @@ export default function JadwalUjianGuru() {
                  ))}
                </>
              )}
+             {renderPagination(customJadwal.length, tpCustom, dpCustom, setCurrentPageCustom, currentPageCustom)}
           </div>
         )}
       </div>

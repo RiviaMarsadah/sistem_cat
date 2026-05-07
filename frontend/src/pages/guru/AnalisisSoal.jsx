@@ -11,6 +11,31 @@ export default function AnalisisSoal() {
   const [selectedPaket, setSelectedPaket] = useState('');
   const [analysisData, setAnalysisData]   = useState(null);
 
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const rawData = analysisData?.analysis || [];
+  const totalItems = rawData.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = rawData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
+
+  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+  useEffect(() => { setCurrentPage(1); }, [selectedPaket]);
+
   const fetchPackages = async () => {
     setLoading(true);
     try {
@@ -158,9 +183,9 @@ export default function AnalisisSoal() {
             </div>
 
             {/* Rows */}
-            {analysisData.analysis.map((item, index) => (
+            {paginatedItems.map((item, index) => (
               <div key={item.bankSoalId} className="analisis-row">
-                <div className="soal-num">#{index + 1}</div>
+                <div className="soal-num">#{startIndex + index + 1}</div>
                 <div className="soal-text-cell" dangerouslySetInnerHTML={{ __html: item.soal }} />
                 <div className="stat-cell">
                   <span className="stat-val">{item.respondents}</span>
@@ -183,6 +208,26 @@ export default function AnalisisSoal() {
                 </div>
               </div>
             ))}
+
+            {/* Pagination */}
+            {!analyzing && totalItems > 0 && (
+              <div className="table-pagination">
+                <span className="table-pagination-info">
+                  Menampilkan {startIndex + 1}{' – '}{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} soal
+                </span>
+                <div className="table-pagination-controls">
+                  <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+                  <div className="table-pagination-pages">
+                    {getPaginationPages(totalPages, displayPage).map((pg) =>
+                      pg.type === 'ellipsis' ? <span key={`ellipsis-${pg.key}`} className="table-pagination-ellipsis">…</span> :
+                      <button key={pg.value} type="button" className={`table-pagination-page ${pg.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(pg.value)}>{pg.value}</button>
+                    )}
+                  </div>
+                  <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+                  <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

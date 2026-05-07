@@ -39,9 +39,9 @@
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  color: #64748b;
+  border: 1px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
@@ -49,8 +49,8 @@
 }
 
 .btn-back-minimal:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
 }
 
 .student-info-main {
@@ -62,8 +62,9 @@
 .avatar-small {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: white;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1D4ED8;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -128,9 +129,9 @@
   font-weight: 700;
 }
 
-.stat-item-mini.green { background: #f0fdf4; color: #16a34a; }
-.stat-item-mini.red { background: #fef2f2; color: #dc2626; }
-.stat-item-mini.gray { background: #f8fafc; color: #64748b; }
+.stat-item-mini.green { background: var(--btn-success-bg); color: var(--btn-success-text); border: 1px solid var(--btn-success-border); }
+.stat-item-mini.red { background: var(--btn-danger-bg); color: var(--btn-danger-text); border: 1px solid var(--btn-danger-border); }
+.stat-item-mini.gray { background: var(--btn-secondary-bg); color: var(--btn-secondary-text); border: 1px solid var(--btn-secondary-border); }
 
 .exam-info-strip {
   display: flex;
@@ -276,8 +277,8 @@
 .loader {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #2563eb;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #93C5FD;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;

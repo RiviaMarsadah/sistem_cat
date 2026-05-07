@@ -42,6 +42,31 @@ export default function BankSoal() {
   const [mapelList, setMapelList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
 
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
+
+  const handleShowAll = () => { setCurrentPage(9999); };
+
+  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+
   const loadOptions = async () => {
     try {
       const [mapelRes, jurusanRes] = await Promise.all([
@@ -191,82 +216,106 @@ export default function BankSoal() {
 
       {error && <div className="bank-soal-error" role="alert">{error}</div>}
 
-      <div className="bank-soal-table-wrap">
-         <div className="section-header-wrap" style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9' }}>
-           <h2 className="section-title" style={{ margin: 0, fontSize: '1.1rem', color: '#0F1F3D' }}>Daftar Bank Soal</h2>
-           
-           <div className="header-actions">
-             <button
-               type="button"
-               className="btn-import-excel"
-               onClick={() => setShowImportModal(true)}
-             >
-               <FiUpload /> Import Bank Soal
-             </button>
-             <Link to="/guru/bank-soal/tambah" className="btn-tambah">
-               <FiPlus /> 
-               <span>Tambah Bank Soal</span>
-             </Link>
-           </div>
-         </div>
+      <div className="guru-card">
+        <div className="guru-card-header">
+          <h2 className="guru-card-title">Daftar Bank Soal</h2>
+          <div className="header-actions">
+            <button
+              type="button"
+              className="btn-import-excel"
+              onClick={() => setShowImportModal(true)}
+            >
+              <FiUpload /> Import Bank Soal
+            </button>
+            <Link to="/guru/bank-soal/tambah" className="btn-tambah">
+              <FiPlus />
+              <span>Tambah Bank Soal</span>
+            </Link>
+          </div>
+        </div>
 
+      <div className="bank-soal-table-wrap">
         {loading ? (
           <div className="loading-state">Memuat...</div>
         ) : (
-          <div className="bank-soal-table-container">
-            <table className="bank-soal-table">
-              <thead>
+          <table className="bank-soal-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama Bank Soal</th>
+                <th>Jumlah Soal</th>
+                <th>Dibuat Pada</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.length === 0 ? (
                 <tr>
-                  <th>No</th>
-                  <th>Nama Bank Soal</th>
-                  <th>Jumlah Soal</th>
-                  <th>Dibuat Pada</th>
-                  <th>Aksi</th>
+                  <td colSpan={5} className="empty-row">Belum ada bank soal. Silakan buat yang baru.</td>
                 </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="empty-row">Belum ada bank soal. Silakan buat yang baru.</td>
+              ) : (
+                paginatedItems.map((row, idx) => (
+                  <tr key={row.id} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)}>
+                    <td>{idx + 1}</td>
+                    <td>
+                      <div className="folder-name-cell">
+                        <FiFolder className="folder-icon" />
+                        {row.nama}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="soal-count-badge">
+                        {row._count?.bankSoal || 0} Soal
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>
+                        {new Date(row.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="action-buttons-cell">
+                        <button type="button" className="btn-icon view" onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
+                          <FiEye />
+                        </button>
+                        <button type="button" className="btn-icon edit" onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
+                          <FiEdit2 />
+                        </button>
+                        <button type="button" className="btn-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
+                          <FiTrash2 />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                ) : (
-                  items.map((row, idx) => (
-                    <tr key={row.id} className="clickable-row" style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)}>
-                      <td>{idx + 1}</td>
-                      <td>
-                        <div className="folder-name-cell">
-                          <FiFolder className="folder-icon" />
-                          {row.nama}
-                        </div>
-                      </td>
-                      <td>
-                        <div className="soal-count-badge">
-                          {row._count?.bankSoal || 0} Soal
-                        </div>
-                      </td>
-                      <td>
-                         <div style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>
-                           {new Date(row.createdAt).toLocaleDateString('id-ID', { dateStyle: 'long' })}
-                         </div>
-                      </td>
-                        <div className="action-buttons-cell">
-                          <button type="button" className="btn-icon view" onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
-                            <FiEye />
-                          </button>
-                          <button type="button" className="btn-icon edit" onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
-                            <FiEdit2 />
-                          </button>
-                          <button type="button" className="btn-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
-                            <FiTrash2 />
-                          </button>
-                        </div>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         )}
+      </div>
+
+      {/* Pagination */}
+      {!loading && totalItems > 0 && (
+        <div className="table-pagination">
+          <span className="table-pagination-info">
+            Menampilkan {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} bank soal
+          </span>
+          <div className="table-pagination-controls">
+            <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+            <div className="table-pagination-pages">
+              {getPaginationPages(totalPages, displayPage).map((item, idx) =>
+                item.type === 'ellipsis' ? (
+                  <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span>
+                ) : (
+                  <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                )
+              )}
+            </div>
+            <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+            <button type="button" className="table-pagination-btn show-all" onClick={handleShowAll}>Tampilkan Semua</button>
+          </div>
+        </div>
+      )}
       </div>
 
       {importNotice && (

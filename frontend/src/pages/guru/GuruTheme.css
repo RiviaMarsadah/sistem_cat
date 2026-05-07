@@ -15,16 +15,69 @@
   --guru-text-muted: #64748b;
   --guru-text-soft: #94a3b8;
 
-  --guru-primary: #1b3a6b;
-  --guru-primary-soft: #eef3fb;
-  --guru-success: #22c55e;
-  --guru-success-soft: #f0fdf4;
-  --guru-warning: #f97316;
-  --guru-danger: #ef4444;
-  --guru-danger-soft: #fee2e2;
+  --guru-primary: #3B82F6;
+  --guru-primary-soft: #EFF6FF;
+  --guru-primary-hover: #2563EB;
+  --guru-success: #22C55E;
+  --guru-success-soft: #F0FDF4;
+  --guru-warning: #F97316;
+  --guru-warning-soft: #FFF7ED;
+  --guru-danger: #EF4444;
+  --guru-danger-soft: #FEE2E2;
 
-  --guru-border-soft: #e2e8f0;
-  --guru-border-subtle: #f1f5f9;
+  --guru-border-soft: #E2E8F0;
+  --guru-border-medium: #CBD5E1;
+  --guru-border-subtle: #F1F5F9;
+
+  /* ===== LAYOUT & SURFACE ===== */
+  --guru-surface-bg: #FFFFFF;
+  --guru-surface-hover: #F8FAFC;
+
+  /* ===== SOFT BUTTON SYSTEM ===== */
+  /* Primary (Tambah, Submit, Import) */
+  --btn-primary-bg:           #1B3A6B;
+  --btn-primary-border:       #1B3A6B;
+  --btn-primary-text:         #FFFFFF;
+  --btn-primary-hover-bg:     #163160;
+  --btn-primary-hover-border: #163160;
+  --btn-primary-hover-text:   #FFFFFF;
+
+  /* Success (View/Detail) */
+  --btn-success-bg:       #ECFDF5;
+  --btn-success-border:   #86EFAC;
+  --btn-success-text:     #15803D;
+  --btn-success-hover-bg: #BBF7D0;
+  --btn-success-hover-border: #22C55E;
+  --btn-success-hover-text: #166534;
+
+  /* Edit (Ubah) */
+  --btn-edit-bg:          #EEF2FF;
+  --btn-edit-border:      #C7D2FE;
+  --btn-edit-text:        #4338CA;
+  --btn-edit-hover-bg:    #C7D2FE;
+  --btn-edit-hover-border: #6366F1;
+  --btn-edit-hover-text:  #3730A3;
+
+  /* Danger (Hapus) */
+  --btn-danger-bg:        #FEF2F2;
+  --btn-danger-border:    #FECACA;
+  --btn-danger-text:      #B91C1C;
+  --btn-danger-hover-bg:  #FEE2E2;
+  --btn-danger-hover-border: #EF4444;
+  --btn-danger-hover-text: #991B1B;
+
+  /* Secondary (Batal, Kembali) */
+  --btn-secondary-bg:     #F8FAFC;
+  --btn-secondary-border: #E2E8F0;
+  --btn-secondary-text:   #475569;
+  --btn-secondary-hover-bg: #F1F5F9;
+  --btn-secondary-hover-border: #CBD5E1;
+
+  /* Outline (Import Excel, dll) */
+  --btn-outline-bg:       #FFFFFF;
+  --btn-outline-border:  #93C5FD;
+  --btn-outline-text:    #3B82F6;
+  --btn-outline-hover-bg: #EEF4FF;
 }
 
 .guru-page {
@@ -66,14 +119,15 @@
 }
 
 .guru-title-badge {
-  background: var(--guru-primary);
-  color: #fff;
+  background: #1B3A6B;
+  color: #FFFFFF;
   border-radius: 999px;
   padding: 0.34rem 0.86rem;
   font-size: 0.78rem;
   line-height: 1;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  border: 1px solid rgba(27, 58, 107, 0.3);
 }
 
 .guru-subtitle {
@@ -101,18 +155,17 @@
 
 .guru-meta-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.12);
-  border-color: #3B82F6;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
+  border-color: var(--guru-primary);
 }
 
-/* Brighter light blue for meta-cards in header */
 .guru-header-card .guru-meta-card {
-  background: #E0F2FE; /* Brighter Sky Blue */
-  border: 1px solid #BAE6FD;
+  background: var(--guru-primary-soft);
+  border: 1px solid #BFDBFE;
 }
 
 .guru-meta-label {
-  color: #0369A1; /* Muted vibrant blue */
+  color: var(--guru-primary);
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -121,7 +174,7 @@
 }
 
 .guru-meta-value {
-  color: #0284C7; /* Brighter blue value */
+  color: var(--guru-text-title);
   font-size: 1.4rem;
   font-weight: 800;
   line-height: 1;
@@ -181,7 +234,7 @@
 .guru-select:focus {
   outline: 0;
   border-color: var(--guru-primary);
-  box-shadow: 0 0 0 3px rgba(27, 58, 107, 0.12);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
 .guru-count-text {

@@ -15,6 +15,30 @@ export default function RekapUjianGuru() {
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState({ total: 0, finished: 0, average: 0, highest: 0 });
 
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalItems = results.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
+
+  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+  useEffect(() => { setCurrentPage(1); }, [selectedExam, selectedKelas]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -157,9 +181,6 @@ export default function RekapUjianGuru() {
       <div className="guru-card">
         <div className="guru-card-header">
           <h2 className="guru-card-title">Daftar Hasil Peserta</h2>
-          <div className="results-count guru-count-text">
-            Total: {results.length} Siswa
-          </div>
         </div>
 
         {fetchingResults ? (
@@ -176,7 +197,7 @@ export default function RekapUjianGuru() {
               <div style={{ textAlign: 'center' }}>Aksi</div>
             </div>
 
-            {results.map((r) => (
+            {paginatedResults.map((r, idx) => (
               <div key={r.id} className="rekap-row">
                 <div>
                   <div className="student-info">
@@ -224,6 +245,26 @@ export default function RekapUjianGuru() {
             ))}
           </div>
 
+        )}
+
+        {/* Pagination */}
+        {!fetchingResults && totalItems > 0 && (
+          <div className="table-pagination">
+            <span className="table-pagination-info">
+              Menampilkan {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} hasil
+            </span>
+            <div className="table-pagination-controls">
+              <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+              <div className="table-pagination-pages">
+                {getPaginationPages(totalPages, displayPage).map((item) =>
+                  item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
+                  <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                )}
+              </div>
+              <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+              <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+            </div>
+          </div>
         )}
       </div>
     </div>

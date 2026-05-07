@@ -37,6 +37,31 @@ export default function PaketUjian() {
   const [soalModalLoading, setSoalModalLoading] = useState(false);
   const [soalModalData, setSoalModalData] = useState(null);
 
+  // Pagination
+  const ITEMS_PER_PAGE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
+  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
+
+  const handleShowAll = () => { setCurrentPage(9999); };
+
+  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -137,9 +162,9 @@ export default function PaketUjian() {
                   </td>
                 </tr>
               ) : (
-                items.map((row, idx) => (
+                paginatedItems.map((row, idx) => (
                   <tr key={row.id}>
-                    <td>{idx + 1}</td>
+                    <td>{startIndex + idx + 1}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
                         <span>{row.nama}</span>
@@ -189,6 +214,29 @@ export default function PaketUjian() {
             </tbody>
           </table>
         </div>
+        )}
+
+        {/* Pagination */}
+        {!loading && totalItems > 0 && (
+          <div className="table-pagination">
+            <span className="table-pagination-info">
+              Menampilkan {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} paket
+            </span>
+            <div className="table-pagination-controls">
+              <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+              <div className="table-pagination-pages">
+                {getPaginationPages(totalPages, displayPage).map((item) =>
+                  item.type === 'ellipsis' ? (
+                    <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span>
+                  ) : (
+                    <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                  )
+                )}
+              </div>
+              <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+              <button type="button" className="table-pagination-btn show-all" onClick={handleShowAll}>Tampilkan Semua</button>
+            </div>
+          </div>
         )}
       </div>
 

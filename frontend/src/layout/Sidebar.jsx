@@ -1,10 +1,10 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { 
-  FiHome, 
-  FiBookOpen, 
-  FiUsers, 
-  FiUser, 
+import {
+  FiHome,
+  FiBookOpen,
+  FiUsers,
+  FiUser,
   FiCalendar,
   FiLayers,
   FiFileText,
@@ -95,7 +95,7 @@ const Sidebar = ({ role, user }) => {
       if (hasActive) {
         newExpanded[group.category] = true;
       } else if (newExpanded[group.category] === undefined) {
-        newExpanded[group.category] = true; // Default open
+        newExpanded[group.category] = true;
       }
     });
     setExpandedCategories(newExpanded);
@@ -113,27 +113,27 @@ const Sidebar = ({ role, user }) => {
 
   return (
     <aside className={`sidebar ${role === 'admin' ? 'sidebar-admin' : 'sidebar-guru'}`}>
+      {/* ── Brand Header ── */}
       <div className="sidebar-header">
-        <div className="logo-container">
-          <h2 className="sidebar-logo">RIVIA CAT</h2>
-          <span className={`sidebar-role-badge ${role === 'admin' ? 'role-badge-admin' : 'role-badge-guru'}`}>
-            {role === 'admin' ? 'Admin' : 'Guru'}
-          </span>
+        {/* Logo besar di tengah */}
+        <div className="sidebar-logo-wrapper">
+          <img src="/gambar/logo.png" alt="RIVIA" onError={(e) => { e.target.style.display='none'; }} />
         </div>
+        {/* Subtitle */}
+        <span className="sidebar-logo-sub">Dashboard <br />Sistem Assisted Test</span>
       </div>
 
       {/* User Profile Section */}
       <div className="sidebar-profile">
         <div className="profile-avatar">
           {user?.googlePicture ? (
-            <img 
-              src={user.googlePicture} 
+            <img
+              src={user.googlePicture}
               alt={userName}
               className="profile-avatar-img"
               referrerPolicy="no-referrer"
               onError={(e) => {
                 e.target.onerror = null;
-                // If image fails to load, replace it with initials dynamically
                 e.target.style.display = 'none';
                 if (e.target.nextElementSibling) {
                   e.target.nextElementSibling.style.display = 'flex';
@@ -141,10 +141,7 @@ const Sidebar = ({ role, user }) => {
               }}
             />
           ) : null}
-          <span 
-            className="profile-avatar-initial" 
-            style={{ display: user?.googlePicture ? 'none' : 'flex' }}
-          >
+          <span className="profile-avatar-initial" style={{ display: user?.googlePicture ? 'none' : 'flex' }}>
             {userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
           </span>
         </div>
@@ -154,14 +151,12 @@ const Sidebar = ({ role, user }) => {
         </div>
       </div>
 
-
-
       <nav className="sidebar-nav">
         {menuGroups.map((group) => {
           const isExpanded = expandedCategories[group.category];
           return (
             <div key={group.category} className={`sidebar-category ${isExpanded ? 'expanded' : 'collapsed'}`}>
-              <div 
+              <div
                 className="sidebar-category-header"
                 onClick={() => toggleCategory(group.category)}
               >
@@ -213,4 +208,3 @@ const Sidebar = ({ role, user }) => {
 };
 
 export default Sidebar;
-

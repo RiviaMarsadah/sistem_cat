@@ -32,14 +32,14 @@
 }
 
 .guru-stat-card {
-  border: 1px solid #1B3A6B;
-  background: #0F1F3D;
+  border: 1px solid var(--guru-border-soft);
+  background: var(--guru-bg-card);
 }
 
 .guru-stat-card:hover {
   transform: translateY(-3px);
-  background: #1B3A6B;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.12);
+  border-color: var(--guru-primary);
 }
 
 .stat-icon-wrapper {
@@ -49,14 +49,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #1B3A6B;
+  background: var(--guru-primary-soft);
   flex-shrink: 0;
 }
 
+.stat-icon-wrapper.total { background: #EFF6FF; }
+.stat-icon-wrapper.rata  { background: #FFF7ED; }
+.stat-icon-wrapper.tinggi { background: #F0FDF4; }
+
 .guru-stat-card .stat-icon {
   font-size: 1.25rem;
-  color: #FFFFFF;
 }
+
+.guru-stat-card .stat-icon.total-icon { color: #3B82F6; }
+.guru-stat-card .stat-icon.rata-icon  { color: #F97316; }
+.guru-stat-card .stat-icon.tinggi-icon { color: #22C55E; }
 
 .stat-content {
   flex: 1;
@@ -66,14 +73,14 @@
 .stat-value {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffffff;
+  color: #1E293B;
   margin: 0 0 0.25rem 0;
   line-height: 1.2;
 }
 
 .stat-title {
   font-size: 0.84rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #64748B;
   margin: 0;
 }
 
@@ -120,13 +127,15 @@
 }
 
 .guru-action-card {
-  border-left: 3px solid #1b3a6b;
+  border: 1px solid var(--guru-border-soft);
+  border-left: 3px solid var(--guru-primary);
 }
 
 .guru-action-card:hover {
   transform: translateY(-2px);
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  background: var(--guru-primary-soft);
+  border-color: var(--guru-primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
 }
 
 .action-icon-wrapper {
@@ -136,12 +145,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #eef3fb;
+  background: var(--guru-primary-soft);
 }
 
 .guru-action-card .action-icon {
   font-size: 1.05rem;
-  color: #1b3a6b;
+  color: var(--guru-primary);
 }
 
 .action-label {
