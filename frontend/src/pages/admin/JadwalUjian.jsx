@@ -171,7 +171,7 @@ export default function JadwalUjianAdmin() {
             </div>
           </div>
           <button className="btn-add-user" onClick={handleBuatWizard} disabled={saving}>
-            <FiPlus className="btn-icon" />
+            <FiPlus />
             <span>Jadwal Ujian</span>
           </button>
         </div>

@@ -1,0 +1,853 @@
+/* ===== Admin Theme — aligned with GuruTheme.css =====
+   Import GuruTheme.css untuk mendapat semua CSS custom properties
+   lalu tambahkan shared admin layout classes di bawahnya.
+*/
+@import '../guru/GuruTheme.css';
+
+/* ================================================
+   SHARED ADMIN LAYOUT CLASSES
+   Kelas-kelas ini bisa dipakai di semua halaman Admin
+   sebagai standar layout yang konsisten.
+   ================================================ */
+
+/* Page container */
+.admin-page {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  animation: guruFadeIn 0.35s ease-out;
+}
+
+/* Header Card — konsisten dengan guru-header-card */
+.admin-header-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+/* Admin Title — solid navy seperti Guru */
+.admin-title {
+  margin: 0 0 0.45rem;
+  color: var(--guru-text-title);
+  font-size: 2rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.admin-title-text {
+  color: var(--guru-text-title);
+}
+
+/* Badge — solid navy pill, tidak ada gradient */
+.admin-badge {
+  background: #1B3A6B;
+  color: #FFFFFF;
+  border-radius: 999px;
+  padding: 0.34rem 0.86rem;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid rgba(27, 58, 107, 0.3);
+}
+
+/* Subtitle */
+.admin-subtitle {
+  margin: 0;
+  color: var(--guru-text-muted);
+  font-size: 0.94rem;
+}
+
+/* Meta Cards — di header pojok kanan */
+.admin-meta {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.admin-meta-card {
+  background: #ffffff;
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  min-width: 110px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.admin-meta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.15);
+  border-color: var(--guru-primary);
+}
+
+.admin-meta-card.blue-accent {
+  background: var(--guru-primary-soft);
+  border: 1px solid #BFDBFE;
+}
+
+.admin-meta-label {
+  color: var(--guru-primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.admin-meta-value {
+  color: var(--guru-text-title);
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Card */
+.admin-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 14px;
+  padding: 1.1rem;
+}
+
+.admin-card + .admin-card {
+  margin-top: 1rem;
+}
+
+.admin-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-card-title {
+  margin: 0;
+  color: var(--guru-text-title);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+/* Alert / Error */
+.admin-alert {
+  background: #FEF2F2;
+  border: 1px solid #FEE2E2;
+  color: #991B1B;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+.admin-success {
+  background: var(--guru-success-soft);
+  border: 1px solid #86EFAC;
+  color: #15803D;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+
+/* Stat Card — putih, bukan gradient */
+.admin-stat-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  animation: slideUp 0.5s ease-out backwards;
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.12);
+  border-color: var(--guru-primary);
+}
+
+.admin-stat-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--guru-primary-soft);
+  flex-shrink: 0;
+}
+
+.admin-stat-icon {
+  font-size: 1.25rem;
+  color: var(--guru-primary);
+}
+
+.admin-stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1E293B;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+}
+
+.admin-stat-title {
+  font-size: 0.84rem;
+  color: #64748B;
+  margin: 0;
+}
+
+/* Action Card — border-left accent seperti Guru */
+.admin-action-card {
+  background: var(--guru-bg-card);
+  border: 1px solid var(--guru-border-soft);
+  border-left: 3px solid var(--guru-primary);
+  border-radius: 12px;
+  padding: 1.25rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: slideUp 0.5s ease-out backwards;
+}
+
+.admin-action-card:hover {
+  transform: translateY(-2px);
+  background: var(--guru-primary-soft);
+  border-color: var(--guru-primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.admin-action-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--guru-primary-soft);
+}
+
+.admin-action-icon {
+  font-size: 1.05rem;
+  color: var(--guru-primary);
+}
+
+.admin-action-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0F1F3D;
+}
+
+/* Section Header */
+.section-header {
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F1F3D;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.01em;
+}
+
+.section-subtitle {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ===== SHARED BUTTON SYSTEM =====
+   Menggunakan CSS variables dari GuruTheme.css
+   Solid color, tidak ada gradient
+*/
+
+/* Primary Button (Tambah, Submit, Simpan) */
+.btn-primary-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--btn-primary-border);
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-primary-admin:hover:not(:disabled) {
+  background: var(--btn-primary-hover-bg);
+  border-color: var(--btn-primary-hover-border);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+}
+
+.btn-primary-admin:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary Button (Batal, Kembali) */
+.btn-secondary-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--btn-secondary-border);
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary-admin:hover:not(:disabled) {
+  background: var(--btn-secondary-hover-bg);
+  border-color: var(--btn-secondary-hover-border);
+  transform: translateY(-1px);
+}
+
+.btn-secondary-admin:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Danger Button (Hapus, Tidak) */
+.btn-danger-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--btn-danger-border);
+  background: var(--btn-danger-bg);
+  color: var(--btn-danger-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger-admin:hover:not(:disabled) {
+  background: var(--btn-danger-hover-bg);
+  border-color: var(--btn-danger-hover-border);
+  color: var(--btn-danger-hover-text);
+  transform: translateY(-2px);
+}
+
+.btn-danger-admin:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Ghost Button */
+.btn-ghost-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--guru-text-body);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+/* Success Button (View, Detail) */
+.btn-success-admin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--btn-success-border);
+  background: var(--btn-success-bg);
+  color: var(--btn-success-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-success-admin:hover:not(:disabled) {
+  background: var(--btn-success-hover-bg);
+  border-color: var(--btn-success-hover-border);
+  color: var(--btn-success-hover-text);
+  transform: translateY(-1px);
+}
+
+/* ===== TABLE WRAPPER — konsisten antar halaman =====
+   Setiap halaman punya .xxx-table-wrap + .xxx-table
+   Classe ini dipakai di User.css sebagai .user-table-wrap
+   Tapi kita juga sediakan .admin-table-wrap sebagai pattern.
+*/
+.admin-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--guru-border-soft);
+  background: var(--guru-bg-card);
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.8rem 1rem;
+  text-align: left !important;
+  border-bottom: 1px solid var(--guru-border-soft);
+  font-size: 0.9375rem;
+  color: var(--guru-text-body);
+  vertical-align: middle;
+}
+
+.admin-table th {
+  background: var(--guru-bg-table-head);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--guru-text-title);
+}
+
+.admin-table tbody tr:hover {
+  background: var(--guru-surface-hover);
+}
+
+/* Action Button — kecil, square */
+.btn-action-admin {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--guru-border-soft);
+  background: var(--guru-bg-card);
+  color: var(--guru-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-action-admin:hover:not(:disabled) {
+  background: var(--guru-surface-hover);
+  border-color: var(--guru-border-medium);
+  color: var(--guru-text-body);
+  transform: translateY(-1px);
+}
+
+.btn-action-admin.primary {
+  background: var(--guru-primary);
+  color: #ffffff;
+  border-color: var(--guru-primary-hover);
+}
+
+.btn-action-admin.primary:hover:not(:disabled) {
+  background: var(--guru-primary-hover);
+}
+
+.btn-action-admin.danger {
+  background: var(--guru-danger);
+  color: white;
+  border-color: #dc2626;
+}
+
+.btn-action-admin.danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Status Badge */
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.admin-status-badge.aktif {
+  background: var(--guru-success-soft);
+  color: #16a34a;
+}
+
+.admin-status-badge.nonaktif {
+  background: var(--guru-danger-soft);
+  color: #ef4444;
+}
+
+/* ===== FORM ELEMENTS — shared =====
+   Input fields, select, labels
+*/
+.admin-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--guru-text-body);
+}
+
+.admin-label-required {
+  color: var(--guru-danger);
+  font-weight: 700;
+}
+
+.admin-label-optional {
+  color: var(--guru-text-muted);
+  font-weight: 400;
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 2px solid var(--guru-border-soft);
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.3s ease;
+  background: var(--guru-bg-card);
+  color: var(--guru-text-body);
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.admin-input::placeholder {
+  color: var(--guru-text-soft);
+  font-weight: 400;
+}
+
+.admin-input:focus {
+  border-color: var(--guru-primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.admin-input:disabled {
+  background: var(--guru-bg-row-separator);
+  color: var(--guru-text-soft);
+  cursor: not-allowed;
+}
+
+.admin-input.small {
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+}
+
+select.admin-input {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+/* Field hint */
+.admin-field-hint {
+  font-size: 0.8125rem;
+  color: var(--guru-text-muted);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Empty state */
+.admin-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--guru-text-muted);
+  font-size: 0.9375rem;
+}
+
+/* ===== PAGINATION — konsisten =====
+   Pattern yang sama di semua halaman
+*/
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--guru-bg-card);
+  border-radius: 14px;
+  border: 1px solid var(--guru-border-soft);
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: var(--guru-text-muted);
+  font-weight: 500;
+}
+
+.pagination-info strong {
+  color: var(--guru-text-title);
+  font-weight: 700;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--guru-border-soft);
+  background: var(--guru-bg-card);
+  color: var(--guru-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.btn-pagination:hover:not(:disabled) {
+  border-color: var(--guru-primary);
+  color: var(--guru-primary);
+  background: var(--guru-primary-soft);
+  transform: translateY(-1px);
+}
+
+.btn-pagination.active {
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
+  color: var(--btn-primary-text);
+}
+
+.btn-pagination:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== SEARCH BOX — konsisten =====
+   Pattern yang sama di semua halaman
+*/
+.search-box {
+  position: relative;
+  width: 250px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  padding-left: 2.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--guru-border-soft);
+  background: var(--guru-bg-page);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--guru-text-body);
+  transition: all 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--guru-primary);
+  background: var(--guru-bg-card);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.search-input::placeholder {
+  color: var(--guru-text-soft);
+}
+
+/* ===== MODAL — konsisten =====
+   Shared modal styles
+*/
+.modal-overlay-admin {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: guruFadeIn 0.2s ease-out;
+}
+
+.modal-container-admin {
+  background: var(--guru-bg-card);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.modal-container-admin.modal-form {
+  max-width: 680px;
+}
+
+@keyframes slideUpModal {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.modal-header-admin {
+  padding: 1.5rem 2rem 1rem;
+  border-bottom: 1px solid var(--guru-border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title-admin {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--guru-text-title);
+  margin: 0;
+}
+
+.modal-close-admin {
+  background: none;
+  border: none;
+  color: var(--guru-text-muted);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 1.25rem;
+}
+
+.modal-close-admin:hover {
+  background: var(--guru-surface-hover);
+  color: var(--guru-text-title);
+}
+
+.modal-body-admin {
+  padding: 1.5rem 2rem;
+}
+
+.modal-container-admin.modal-form .modal-body-admin {
+  padding: 0 2rem 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.modal-footer-admin {
+  padding: 1.25rem 2rem 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* ===== SPINNER =====
+   Loading indicator
+*/
+.spinner-admin {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== SLIDE-UP ANIMATION =====
+   Dipakai di stat-card, action-card
+*/
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVE =====
+   Breakpoint sama dengan GuruTheme.css
+*/
+@media (max-width: 768px) {
+  .admin-title {
+    font-size: 1.75rem;
+  }
+
+  .admin-header-card {
+    padding: 0.9rem 1rem;
+  }
+
+  .modal-container-admin {
+    max-width: 100%;
+    margin: 1rem;
+  }
+
+  .pagination-container {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}

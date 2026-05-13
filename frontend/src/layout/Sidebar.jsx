@@ -25,10 +25,19 @@ const Sidebar = ({ role, user }) => {
   const location = useLocation();
   const { logout } = useAuth();
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   // Menu items untuk Admin
@@ -203,6 +212,24 @@ const Sidebar = ({ role, user }) => {
           <span className="sidebar-label">Logout</span>
         </button>
       </div>
+
+      {/* Modal Konfirmasi Logout */}
+      {showLogoutModal && (
+        <div className="sidebar-modal-overlay" onClick={cancelLogout}>
+          <div className="sidebar-modal-container" onClick={(e) => e.stopPropagation()}>
+            <h3 className="sidebar-modal-title">Konfirmasi Logout</h3>
+            <p className="sidebar-modal-message">Apakah Anda yakin ingin keluar dari sistem?</p>
+            <div className="sidebar-modal-actions">
+              <button className="sidebar-modal-btn sidebar-modal-btn-cancel" onClick={cancelLogout}>
+                Batal
+              </button>
+              <button className="sidebar-modal-btn sidebar-modal-btn-confirm" onClick={confirmLogout}>
+                Ya, Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 };

@@ -213,7 +213,7 @@ const AdminJurusan = () => {
             </div>
           </div>
           <button className="btn-add-jurusan" onClick={handleOpenAddModal} disabled={saving}>
-            <FiPlus className="btn-icon" />
+            <FiPlus />
             <span>Tambah Jurusan</span>
           </button>
         </div>

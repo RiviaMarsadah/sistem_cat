@@ -605,8 +605,10 @@ export default function JadwalUjianGuru() {
                       <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Pilih Kelas <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: '#f8fafc', padding: '1.25rem', border: '1px solid #e2e8f0', borderRadius: '12px', maxHeight: '200px', overflowY: 'auto' }}>
                          {kelasList.map(k => {
-                           const tLabel = k.tingkat === 'X' ? '10' : k.tingkat === 'XI' ? '11' : '12';
-                           const kName = `${tLabel} ${k.jurusan?.kodeProdi || ''} ${k.inisial}`;
+                           // Prioritas: namaKelas (dari DB) > build manual
+                           const tingkatLabel = { X: '10', XI: '11', XII: '12', ALUMNI: 'Alumni', KI: 'KI' }[k.tingkat] || k.tingkat;
+                           const kName = k.namaKelas
+                             || `${tingkatLabel} ${k.jurusan?.kodeProdi || ''} ${k.inisial || ''}`.replace(/\s+$/, '');
                            return (
                              <label key={k.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px', transition: 'all 0.2s' }}>
                                <input type="checkbox" checked={selectedKelas.includes(String(k.id))} onChange={() => toggleKelas(String(k.id))} style={{transform: 'scale(1.2)'}}/>

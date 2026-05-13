@@ -2,6 +2,33 @@ const prisma = require('../config/prisma');
 const sijuwanApi = require('../utils/sijuwanApi');
 const bcrypt = require('bcryptjs');
 
+// ---- SSE Progress Emitter & Polling Snapshot ----
+const progressEmitters = new Map();   // userId -> SSE response
+const progressSnapshots = new Map();  // userId -> { processed, total, batch, module }
+
+exports.registerEmitter = (userId, res) => {
+  progressEmitters.set(userId, res);
+};
+
+exports.unregisterEmitter = (userId) => {
+  progressEmitters.delete(userId);
+};
+
+const emitProgress = (userId, data) => {
+  // Keep polling snapshot up-to-date
+  if (data.type === 'progress' || data.type === 'batch_start') {
+    progressSnapshots.set(userId, data);
+  } else if (data.type === 'complete') {
+    progressSnapshots.delete(userId);
+  }
+
+  // Emit to SSE clients
+  const res = progressEmitters.get(userId);
+  if (res && !res.writableEnded) {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  }
+};
+
 /**
  * Helper to check differences
  */
@@ -170,10 +197,12 @@ exports.analyze = async (req, res) => {
 
       apiList.forEach(apiItem => {
         const localItemByNisn = localList.find(l => l.nisn === apiItem.nisn);
-        const localItemByEmail = localList.find(l => l.user.email === apiItem.email);
-        const emailConflict = allUsers.find(u => u.email === apiItem.email && u.role !== 'siswa');
+        const localItemByEmailLower = localList.find(l => l.user?.email?.toLowerCase() === (apiItem.email || '').toLowerCase());
+        const emailConflict = allUsers.find(u =>
+          u.email.toLowerCase() === (apiItem.email || '').toLowerCase() && u.role !== 'siswa'
+        );
 
-        if (!localItemByNisn && !localItemByEmail) {
+        if (!localItemByNisn && !localItemByEmailLower) {
           if (emailConflict) {
             report.conflicts.push({
               anchor: apiItem.email,
@@ -183,11 +212,13 @@ exports.analyze = async (req, res) => {
             report.new.push({ ...apiItem, _anchor: apiItem.nisn || apiItem.email });
           }
         } else {
-          const localItem = localItemByNisn || localItemByEmail;
+          const localItem = localItemByNisn || localItemByEmailLower;
           let changes = {};
           if (isDifferent(apiItem.nama, localItem.user.namaLengkap)) changes.nama = { old: localItem.user.namaLengkap, new: apiItem.nama };
           if (isDifferent(apiItem.nis, localItem.nis)) changes.nis = { old: localItem.nis, new: apiItem.nis };
-          
+          // Jika siswa sudah ada tapi belum punya kelas, jadwalkan untuk di-link
+          if (localItem.kelasId === null && apiItem.id_kelas) changes.linkKelas = apiItem.id_kelas;
+
           if (Object.keys(changes).length > 0) {
             report.updates.push({ id: localItem.id, anchor: apiItem.nisn || apiItem.email, changes });
           } else {
@@ -205,74 +236,192 @@ exports.analyze = async (req, res) => {
 };
 
 /**
+ * Yield to event loop to avoid blocking (for batched processing)
+ */
+const yieldToEventLoop = () => new Promise(resolve => setTimeout(resolve, 0));
+
+/**
+ * Find local kelas by matching API data with multiple strategies
+ * Returns { kelas, matchedBy } or null
+ */
+const findLocalKelas = (apiKelasItem, apiKelasList, localKelasList) => {
+  if (!apiKelasItem) return null;
+
+  const apiNamaKelas = apiKelasItem.nama_kelas?.trim();
+
+  // Strategy 1: Exact match by namaKelas
+  let match = localKelasList.find(k => k.namaKelas === apiNamaKelas);
+  if (match) return { kelas: match, matchedBy: 'exact_name' };
+
+  // Strategy 2: Match by parsed components (tingkat + kode prodi + inisial)
+  const parts = apiNamaKelas.split(' ');
+  const tingkatRaw = parts[0];
+  const inisial = parts[parts.length - 1] || '1';
+
+  let tingkat = tingkatRaw;
+  if (tingkatRaw === 'Alumni') tingkat = 'ALUMNI';
+  else if (tingkatRaw === 'KI') tingkat = 'KI';
+
+  const kodeProdi = apiKelasItem.kode_prodi;
+  match = localKelasList.find(k =>
+    k.tingkat === tingkat &&
+    k.jurusanId === apiKelasItem.localJurusanId &&
+    k.inisial === inisial
+  );
+  if (match) return { kelas: match, matchedBy: 'parsed_components' };
+
+  // Strategy 3: Fuzzy match - case-insensitive namaKelas
+  match = localKelasList.find(k =>
+    k.namaKelas.toLowerCase() === apiNamaKelas.toLowerCase()
+  );
+  if (match) return { kelas: match, matchedBy: 'case_insensitive' };
+
+  return null;
+};
+
+/**
+ * JSON polling endpoint — GET /admin/sync/progress
+ * Returns current sync progress snapshot for polling
+ */
+exports.progress = async (req, res) => {
+  const userId = String(req.user?.id || 'default');
+  const snapshot = progressSnapshots.get(userId);
+  return res.json({ success: true, progress: snapshot || null });
+};
+
+/**
+ * Progress stream endpoint — SSE (keep-alive) mode
+ * GET /admin/sync/progress-stream
+ */
+exports.progressStream = (req, res) => {
+  let userId = 'default';
+
+  // Support token query param for SSE (EventSource can't send headers)
+  if (req.query.token) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const env = require('../config/env');
+      const decoded = jwt.verify(req.query.token, env.jwt.secret);
+      userId = String(decoded.id);
+    } catch {
+      // token invalid — still use 'default'
+    }
+  } else if (req.user?.id) {
+    userId = String(req.user.id);
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  progressEmitters.set(userId, res);
+  res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+
+  req.on('close', () => { progressEmitters.delete(userId); });
+};
+
+/**
  * Sync Execution Logic
  */
 exports.execute = async (req, res) => {
-  const { module, items } = req.body; 
-  
+  const { module, items } = req.body;
+  const userId = String(req.user?.id || 'default');
+
   try {
-    let result = { created: 0, updated: 0 };
+    let result = { created: 0, updated: 0, skipped: 0, errors: [] };
     const salt = await bcrypt.genSalt(10);
     const defaultPassword = await bcrypt.hash('password123', salt);
 
-    if (module === 'prodi') {
-      for (const item of items) {
-        try {
-          if (item.id) {
-            await prisma.jurusan.update({ where: { id: item.id }, data: { namaProdi: item.changes.namaProdi.new } });
-            result.updated++;
-          } else {
+    // ---- Batch config: process in chunks of 100 ----
+    const BATCH_SIZE = 100;
+    const shouldBatch = Array.isArray(items) && items.length > 100;
+    const totalBatches = shouldBatch ? Math.ceil(items.length / BATCH_SIZE) : 1;
+    if (shouldBatch) {
+      console.log(`[Sync] ${items.length} items for "${module}" — will process in batches of ${BATCH_SIZE}`);
+    }
 
-            await prisma.jurusan.upsert({
-              where: { kodeProdi: item.kode_prodi },
-              update: { namaProdi: item.nama_prodi },
-              create: { kodeProdi: item.kode_prodi, namaProdi: item.nama_prodi }
-            });
-            result.created++;
+    if (module === 'prodi') {
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(items.length / BATCH_SIZE) }, (_, i) => items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
+
+      for (const batch of batches) {
+        for (const item of batch) {
+          try {
+            if (item.id) {
+              await prisma.jurusan.update({ where: { id: item.id }, data: { namaProdi: item.changes.namaProdi.new } });
+              result.updated++;
+            } else {
+              await prisma.jurusan.upsert({
+                where: { kodeProdi: item.kode_prodi },
+                update: { namaProdi: item.nama_prodi },
+                create: { kodeProdi: item.kode_prodi, namaProdi: item.nama_prodi }
+              });
+              result.created++;
+            }
+          } catch (itemErr) {
+            console.error(`❌ Error syncing prodi ${item.kode_prodi || item.anchor}:`, itemErr.message);
+            result.errors.push({ item: item.kode_prodi || item.anchor, reason: itemErr.message });
           }
-        } catch (itemErr) {
-          console.error(`❌ Error syncing prodi ${item.kode_prodi || item.anchor}:`, itemErr.message);
         }
+        if (shouldBatch) await yieldToEventLoop();
       }
     }
 
     else if (module === 'angkatan') {
-      for (const item of items) {
-        try {
-          if (item.id) {
-            await prisma.angkatan.update({ where: { id: item.id }, data: { namaAngkatan: item.changes.namaAngkatan.new } });
-            result.updated++;
-          } else {
-            await prisma.angkatan.upsert({
-              where: { tahunAngkatan: Number(item.tahun_angkatan) },
-              update: { namaAngkatan: item.nama_angkatan },
-              create: { namaAngkatan: item.nama_angkatan, tahunAngkatan: Number(item.tahun_angkatan) }
-            });
-            result.created++;
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(items.length / BATCH_SIZE) }, (_, i) => items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
+
+      for (const batch of batches) {
+        for (const item of batch) {
+          try {
+            if (item.id) {
+              await prisma.angkatan.update({ where: { id: item.id }, data: { namaAngkatan: item.changes.namaAngkatan.new } });
+              result.updated++;
+            } else {
+              await prisma.angkatan.upsert({
+                where: { tahunAngkatan: Number(item.tahun_angkatan) },
+                update: { namaAngkatan: item.nama_angkatan },
+                create: { namaAngkatan: item.nama_angkatan, tahunAngkatan: Number(item.tahun_angkatan) }
+              });
+              result.created++;
+            }
+          } catch (err) {
+            console.error(`❌ Error syncing angkatan ${item.tahun_angkatan}:`, err.message);
+            result.errors.push({ item: item.tahun_angkatan, reason: err.message });
           }
-        } catch (err) {
-          console.error(`❌ Error syncing angkatan ${item.tahun_angkatan}:`, err.message);
         }
+        if (shouldBatch) await yieldToEventLoop();
       }
     }
 
     else if (module === 'mapel') {
-      for (const item of items) {
-        try {
-          if (item.id) {
-            await prisma.mataPelajaran.update({ where: { id: item.id }, data: { namaMapel: item.changes.namaMapel.new } });
-            result.updated++;
-          } else {
-            await prisma.mataPelajaran.upsert({
-              where: { kodeMapel: item.kode_mapel },
-              update: { namaMapel: item.nama_mapel },
-              create: { kodeMapel: item.kode_mapel, namaMapel: item.nama_mapel }
-            });
-            result.created++;
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(items.length / BATCH_SIZE) }, (_, i) => items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
+
+      for (const batch of batches) {
+        for (const item of batch) {
+          try {
+            if (item.id) {
+              await prisma.mataPelajaran.update({ where: { id: item.id }, data: { namaMapel: item.changes.namaMapel.new } });
+              result.updated++;
+            } else {
+              await prisma.mataPelajaran.upsert({
+                where: { kodeMapel: item.kode_mapel },
+                update: { namaMapel: item.nama_mapel },
+                create: { kodeMapel: item.kode_mapel, namaMapel: item.nama_mapel }
+              });
+              result.created++;
+            }
+          } catch (err) {
+            console.error(`❌ Error syncing mapel ${item.kode_mapel}:`, err.message);
+            result.errors.push({ item: item.kode_mapel, reason: err.message });
           }
-        } catch (err) {
-          console.error(`❌ Error syncing mapel ${item.kode_mapel}:`, err.message);
         }
+        if (shouldBatch) await yieldToEventLoop();
       }
     }
 
@@ -280,160 +429,283 @@ exports.execute = async (req, res) => {
       const jurusans = await prisma.jurusan.findMany();
       const validTingkat = ['X', 'XI', 'XII', 'Alumni', 'KI'];
 
-      for (const item of items) {
-        if (!item || !item.nama_kelas) continue;
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(items.length / BATCH_SIZE) }, (_, i) => items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
 
-        try {
-          const jur = jurusans.find(j => j.kodeProdi === item.kode_prodi);
-          if (!jur) {
-            console.warn(`⚠️ Skipping Kelas ${item.nama_kelas}: Prodi ${item.kode_prodi} not found locally.`);
-            continue;
+      for (const batch of batches) {
+        for (const item of batch) {
+          if (!item || !item.nama_kelas) continue;
+
+          try {
+            const jur = jurusans.find(j => j.kodeProdi === item.kode_prodi);
+            if (!jur) {
+              console.warn(`⚠️ Skipping Kelas ${item.nama_kelas}: Prodi ${item.kode_prodi} not found locally.`);
+              result.skipped++;
+              continue;
+            }
+
+            // Parse nama_kelas (e.g., "X TKRO 1", "Alumni TKRO", "KI 24")
+            const parts = item.nama_kelas.split(' ');
+            const tingkatRaw = parts[0];
+
+            // Skip if tingkat is not in Enum
+            if (!validTingkat.includes(tingkatRaw)) {
+              console.warn(`Skipping kelas ${item.nama_kelas} - invalid tingkat: ${tingkatRaw}`);
+              result.skipped++;
+              continue;
+            }
+
+            let tingkat;
+            if (tingkatRaw === 'Alumni') tingkat = 'ALUMNI';
+            else if (tingkatRaw === 'KI') tingkat = 'KI';
+            else tingkat = tingkatRaw;
+
+            const inisial = parts[parts.length - 1] || '1';
+
+            if (item.id) {
+              await prisma.kelas.update({ where: { id: item.id }, data: { jurusanId: jur.id } });
+              result.updated++;
+            } else {
+              await prisma.kelas.upsert({
+                where: { tingkat_jurusanId_inisial: { tingkat, jurusanId: jur.id, inisial } },
+                update: { namaKelas: item.nama_kelas },
+                create: {
+                  namaKelas: item.nama_kelas,
+                  tingkat,
+                  inisial,
+                  jurusanId: jur.id
+                }
+              });
+              result.created++;
+            }
+          } catch (err) {
+            console.error(`❌ Error syncing kelas ${item.nama_kelas}:`, err.message);
+            result.errors.push({ item: item.nama_kelas, reason: err.message });
           }
-
-          // Parse nama_kelas (e.g., "X TKRO 1", "Alumni TKRO", "KI 24")
-          const parts = item.nama_kelas.split(' ');
-          const tingkatRaw = parts[0];
-          
-          // Skip if tingkat is not in Enum
-          if (!validTingkat.includes(tingkatRaw)) {
-            console.warn(`Skipping kelas ${item.nama_kelas} - invalid tingkat: ${tingkatRaw}`);
-            continue;
-          }
-
-          let tingkat;
-          if (tingkatRaw === 'Alumni') tingkat = 'ALUMNI';
-          else if (tingkatRaw === 'KI') tingkat = 'KI';
-          else tingkat = tingkatRaw;
-
-          const inisial = parts[parts.length - 1] || '1';
-
-          if (item.id) {
-            await prisma.kelas.update({ where: { id: item.id }, data: { jurusanId: jur.id } });
-            result.updated++;
-          } else {
-            await prisma.kelas.upsert({
-              where: { tingkat_jurusanId_inisial: { tingkat, jurusanId: jur.id, inisial } },
-              update: { namaKelas: item.nama_kelas },
-              create: { 
-                namaKelas: item.nama_kelas, 
-                tingkat, 
-                inisial, 
-                jurusanId: jur.id 
-              } 
-            });
-            result.created++;
-          }
-        } catch (err) {
-          console.error(`❌ Error syncing kelas ${item.nama_kelas}:`, err.message);
         }
+        if (shouldBatch) await yieldToEventLoop();
       }
     }
 
     else if (module === 'guru') {
-      for (const item of items) {
-        try {
-          if (item.id) {
-            const guru = await prisma.guru.findUnique({ where: { id: item.id }, include: { user: true } });
-            await prisma.user.update({
-              where: { id: guru.userId },
-              data: { namaLengkap: item.changes.nama?.new || guru.user.namaLengkap }
-            });
-            await prisma.guru.update({
-              where: { id: item.id },
-              data: { 
-                noHp: item.changes.nohp?.new || guru.noHp,
-                alamat: item.changes.alamat?.new || guru.alamat
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(items.length / BATCH_SIZE) }, (_, i) => items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
+
+      for (const batch of batches) {
+        for (const item of batch) {
+          try {
+            if (item.id) {
+              const guru = await prisma.guru.findUnique({ where: { id: item.id }, include: { user: true } });
+              await prisma.user.update({
+                where: { id: guru.userId },
+                data: { namaLengkap: item.changes.nama?.new || guru.user.namaLengkap }
+              });
+              await prisma.guru.update({
+                where: { id: item.id },
+                data: {
+                  noHp: item.changes.nohp?.new || guru.noHp,
+                  alamat: item.changes.alamat?.new || guru.alamat
+                }
+              });
+              result.updated++;
+            } else {
+              // Cek apakah email sudah ada dengan role berbeda
+              const existingUser = await prisma.user.findUnique({
+                where: { email: item.email.toLowerCase() }
+              });
+              if (existingUser && existingUser.role !== 'guru') {
+                console.warn(`⚠️ Skipping Guru "${item.nama}": email sudah digunakan oleh role "${existingUser.role}"`);
+                result.skipped++;
+                continue;
               }
-            });
-            result.updated++;
-          } else {
-            const user = await prisma.user.create({
-              data: {
-                email: item.email,
-                namaLengkap: item.nama,
-                password: defaultPassword,
-                role: 'guru',
-                status: 'aktif'
+
+              const user = await prisma.user.upsert({
+                where: { email: item.email.toLowerCase() },
+                update: { namaLengkap: item.nama },
+                create: {
+                  email: item.email.toLowerCase(),
+                  namaLengkap: item.nama,
+                  password: defaultPassword,
+                  role: 'guru',
+                  status: 'aktif'
+                }
+              });
+              // Cek apakah guru record sudah ada
+              const existingGuru = await prisma.guru.findUnique({ where: { userId: user.id } });
+              if (!existingGuru) {
+                await prisma.guru.create({
+                  data: {
+                    userId: user.id,
+                    nip: item.nip,
+                    jk: item.jk,
+                    agama: item.agama,
+                    noHp: item.nohp,
+                    alamat: item.alamat
+                  }
+                });
               }
-            });
-            await prisma.guru.create({
-              data: {
-                userId: user.id,
-                nip: item.nip,
-                jk: item.jk,
-                agama: item.agama,
-                noHp: item.nohp,
-                alamat: item.alamat
-              }
-            });
-            result.created++;
+              result.created++;
+            }
+          } catch (err) {
+            console.error(`❌ Error syncing guru ${item.email}:`, err.message);
+            result.errors.push({ email: item.email, reason: err.message });
           }
-        } catch (err) {
-          console.error(`❌ Error syncing guru ${item.email}:`, err.message);
         }
+        if (shouldBatch) await yieldToEventLoop();
       }
     }
 
     else if (module === 'siswa') {
-      const kelasList = await prisma.kelas.findMany();
+      // Build O(1) lookup maps
+      const kelasList = await prisma.kelas.findMany({ include: { jurusan: true } });
       const angkatanList = await prisma.angkatan.findMany();
-      
-      // We also need to map API's id_kelas and id_angkatan to NAMES
-      const apiKelasRes = await sijuwanApi.getKelas({ per_page: 1000 });
-      const apiKelasList = apiKelasRes.data.data || apiKelasRes.data || [];
-      
-      const apiAngkatanRes = await sijuwanApi.getAngkatan({ per_page: 1000 }).catch(() => ({ data: [] }));
-      const apiAngkatanList = apiAngkatanRes.data.data || apiAngkatanRes.data || [];
+      const jurusanList = await prisma.jurusan.findMany();
 
-      for (const item of items) {
-        try {
-          if (item.id) {
-            const siswa = await prisma.siswa.findUnique({ where: { id: item.id }, include: { user: true } });
-            await prisma.user.update({
-              where: { id: siswa.userId },
-              data: { namaLengkap: item.changes.nama?.new || siswa.user.namaLengkap }
-            });
-            result.updated++;
-          } else {
-            // Resolve relation IDs from API names to Local IDs
-            const apiK = apiKelasList.find(k => k.id_kelas === item.id_kelas);
-            const apiA = apiAngkatanList.find(a => a.id_angkatan === item.id_angkatan);
-            
-            const localK = kelasList.find(k => k.namaKelas === apiK?.nama_kelas);
-            const localA = angkatanList.find(a => a.tahunAngkatan === Number(apiA?.tahun_angkatan));
+      const localKelasByNama = new Map(kelasList.map(k => [k.namaKelas, k]));
+      const localKelasByNorm  = new Map(kelasList.map(k => [`${k.tingkat}_${k.jurusanId}_${k.inisial}`, k]));
+      const localAngkatanByTahun = new Map(angkatanList.map(a => [a.tahunAngkatan, a]));
+      const localJurusanByKode   = new Map(jurusanList.map(j => [j.kodeProdi, j]));
 
-            if (!localK || !localA) {
-              console.warn(`⚠️ Skipping Siswa ${item.nama}: Kelas (${apiK?.nama_kelas || 'Not found in API'}) or Angkatan (${apiA?.tahun_angkatan || 'Not found in API'}) not found in local database.`);
-              continue;
-            }
+      // Pre-link API kelas → localJurusanId for faster lookup
+      const apiKelasList = [];
+      try {
+        const apiKelasRes = await sijuwanApi.getKelas({ per_page: 1000 });
+        (apiKelasRes.data.data || apiKelasRes.data || []).forEach(k => {
+          apiKelasList.push({
+            ...k,
+            localJurusanId: localJurusanByKode.get(k.kode_prodi)?.id
+          });
+        });
+      } catch (e) {
+        console.warn('[Sync] Could not fetch API kelas list:', e.message);
+      }
 
-            const user = await prisma.user.create({
-              data: {
-                email: item.email,
-                namaLengkap: item.nama,
-                password: defaultPassword,
-                role: 'siswa',
-                status: 'aktif'
-              }
-            });
-            await prisma.siswa.create({
-              data: {
-                userId: user.id,
-                nis: item.nis,
-                nisn: item.nisn,
-                jk: item.jk,
-                agama: item.agama,
-                noHp: item.nohp,
-                alamat: item.alamat,
-                kelasId: localK.id,
-                idAngkatan: localA.id
-              }
-            });
-            result.created++;
-          }
-        } catch (err) {
-          console.error(`❌ Error syncing siswa ${item.email}:`, err.message);
+      const apiKelasById = new Map(apiKelasList.map(k => [k.id_kelas, k]));
+
+      const apiAngkatanList = [];
+      try {
+        const apiAngRes = await sijuwanApi.getAngkatan({ per_page: 1000 });
+        (apiAngRes.data.data || apiAngRes.data || []).forEach(a => apiAngkatanList.push(a));
+      } catch (e) {
+        console.warn('[Sync] Could not fetch API angkatan list:', e.message);
+      }
+      const apiAngkatanById = new Map(apiAngkatanList.map(a => [a.id_angkatan, a]));
+
+      // ---- Process items (batched if > 100) ----
+      const totalItems = items.length;
+      const batches = shouldBatch
+        ? Array.from({ length: Math.ceil(totalItems / BATCH_SIZE) }, (_, i) =>
+            items.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE))
+        : [items];
+
+      for (let [batchIdx, batch] of batches.entries()) {
+        let itemIdx = 0;
+        if (shouldBatch) {
+          console.log(`[Sync] Processing batch ${batchIdx + 1}/${batches.length} for "${module}"`);
+          emitProgress(userId, {
+            type: 'batch_start',
+            batch: batchIdx + 1,
+            totalBatches,
+            module,
+            processed: batchIdx * BATCH_SIZE,
+            total: totalItems,
+          });
         }
+
+        for (const item of batch) {
+          try {
+            if (item.id) {
+              const siswa = await prisma.siswa.findUnique({ where: { id: item.id }, include: { user: true } });
+              await prisma.user.update({
+                where: { id: siswa.userId },
+                data: { namaLengkap: item.changes.nama?.new || siswa.user.namaLengkap }
+              });
+              result.updated++;
+            } else {
+              // O(1) lookup using pre-built maps
+              const apiK = apiKelasById.get(item.id_kelas);
+              const apiA = apiAngkatanById.get(item.id_angkatan);
+
+              let localK = apiK
+                ? (localKelasByNama.get(apiK.nama_kelas?.trim()) ||
+                   localKelasByNorm.get(`${apiK.tingkat}_${apiK.localJurusanId}_${apiK.inisial}`))
+                : null;
+              const localA = localAngkatanByTahun.get(Number(apiA?.tahun_angkatan));
+
+              if (!localK || !localA) {
+                const reason = [];
+                if (!localK) reason.push(`kelas "${apiK?.nama_kelas || item.id_kelas || '?'}" belum ada di DB`);
+                if (!localA) reason.push(`angkatan "${apiA?.tahun_angkatan || item.id_angkatan || '?'}" belum ada di DB`);
+                console.warn(`⚠️ Skipping "${item.nama}": ${reason.join(' & ')}`);
+                result.skipped++;
+                continue;
+              }
+
+              const user = await prisma.user.upsert({
+                where: { email: item.email.toLowerCase() },
+                update: { namaLengkap: item.nama },
+                create: {
+                  email: item.email.toLowerCase(),
+                  namaLengkap: item.nama,
+                  password: defaultPassword,
+                  role: 'siswa',
+                  status: 'aktif'
+                }
+              });
+
+              await prisma.siswa.upsert({
+                where: { userId: user.id },
+                update: {
+                  nis: item.nis,
+                  nisn: item.nisn,
+                  jk: item.jk,
+                  agama: item.agama,
+                  noHp: item.nohp,
+                  alamat: item.alamat,
+                  kelasId: localK.id,
+                  idAngkatan: localA.id
+                },
+                create: {
+                  userId: user.id,
+                  nis: item.nis,
+                  nisn: item.nisn,
+                  jk: item.jk,
+                  agama: item.agama,
+                  noHp: item.nohp,
+                  alamat: item.alamat,
+                  kelasId: localK.id,
+                  idAngkatan: localA.id
+                }
+              });
+              result.created++;
+            }
+          } catch (err) {
+            console.error(`❌ Error syncing siswa ${item.email}:`, err.message);
+            result.errors.push({ email: item.email, reason: err.message });
+          }
+
+          // Emit progress update every item
+          const processed = batchIdx * BATCH_SIZE + itemIdx + 1;
+          emitProgress(userId, {
+            type: 'progress',
+            batch: batchIdx + 1,
+            totalBatches,
+            processed,
+            total: totalItems,
+            module,
+          });
+          itemIdx++;
+        }
+
+        // Yield between batches to avoid blocking the event loop
+        if (shouldBatch) await yieldToEventLoop();
+      }
+
+      if (shouldBatch) {
+        console.log(`[Sync] "${module}" complete: created=${result.created}, updated=${result.updated}, skipped=${result.skipped}`);
+        emitProgress(userId, { type: 'complete', result });
       }
     }
 

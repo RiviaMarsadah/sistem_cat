@@ -5,11 +5,13 @@ const tingkatMap = {
   X: '10',
   XI: '11',
   XII: '12',
+  ALUMNI: 'Alumni',
+  KI: 'KI',
 };
 
 const kelasSchema = Joi.object({
-  tingkat: Joi.string().valid('X', 'XI', 'XII').required().messages({
-    'any.only': 'Tingkat harus 10/11/12',
+  tingkat: Joi.string().valid('X', 'XI', 'XII', 'ALUMNI', 'KI').required().messages({
+    'any.only': 'Tingkat harus 10/11/12/Alumni/KI',
     'any.required': 'Tingkat wajib diisi',
   }),
   jurusanId: Joi.number().integer().positive().required().messages({
@@ -41,9 +43,14 @@ async function buildNamaKelas({ tingkat, jurusanId, inisial }) {
     throw e;
   }
 
-  const tingkatLabel = tingkatMap[tingkat] || tingkat;
+  const tingkatLabel = tingkatMap[tingkat] || tingkat; // "10"/"11"/"12"/"Alumni"/"KI"
   const inisialUp = String(inisial).trim().toUpperCase();
-  const namaKelas = `${tingkatLabel} ${jurusan.kodeProdi} ${inisialUp}`.trim();
+
+  // ALUMNI & KI tidak pakai inisial angka → namaKelas = "Alumni TKRO" / "KI 24"
+  const isAlumniKi = tingkat === 'ALUMNI' || tingkat === 'KI';
+  const namaKelas = isAlumniKi
+    ? `${tingkatLabel} ${jurusan.kodeProdi}`.trim()
+    : `${tingkatLabel} ${jurusan.kodeProdi} ${inisialUp}`.trim();
 
   return { jurusan, inisialUp, namaKelas };
 }
@@ -134,7 +141,7 @@ exports.update = async (req, res) => {
         inisial: inisialUp,
         namaKelas,
       },
-      include: { jurusan: { select: { id: true, idJurusan: true, nama: true } } },
+      include: { jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } } },
     });
 
     return res.json({
@@ -166,13 +173,36 @@ exports.remove = async (req, res) => {
   }
 
   try {
+    // Cek relasi sebelum hapus
+    const [siswaCount, kelasJadwalCount] = await Promise.all([
+      prisma.siswa.count({ where: { kelasId: id } }),
+      prisma.kelasJadwal.count({ where: { kelasId: id } }),
+    ]);
+
+    const reasons = [];
+    if (siswaCount > 0) reasons.push(`${siswaCount} siswa`);
+    if (kelasJadwalCount > 0) reasons.push(`${kelasJadwalCount} jadwal ujian`);
+
+    if (reasons.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Tidak dapat menghapus kelas. Masih ada ${reasons.join(', ')} yang terhubung dengan kelas ini. Hapus atau pindahkan data terkait terlebih dahulu.`
+      });
+    }
+
     await prisma.kelas.delete({ where: { id } });
     return res.json({ success: true, message: 'Kelas deleted' });
   } catch (err) {
     if (err && err.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Kelas not found' });
     }
-    // FK constraints (e.g., siswa masih terkait) can be handled here if needed
+    // P2003 = Foreign key constraint failed
+    if (err && err.code === 'P2003') {
+      return res.status(409).json({
+        success: false,
+        message: 'Tidak dapat menghapus kelas. Masih ada data lain yang terhubung. Hapus data terkait terlebih dahulu.'
+      });
+    }
     throw err;
   }
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
-import { 
-  FiRefreshCw, FiCheckCircle, FiAlertCircle, FiDatabase, 
+import {
+  FiRefreshCw, FiCheckCircle, FiAlertCircle, FiDatabase,
   FiArrowRight, FiActivity, FiSearch, FiSave, FiList,
   FiBookOpen, FiUsers, FiUser, FiPlus
 } from 'react-icons/fi';
@@ -17,16 +17,18 @@ const MODULES = [
 ];
 
 const ApiSync = () => {
-  const [selectedModules, setSelectedModules] = useState(['prodi', 'angkatan']);
+  const [selectedModules, setSelectedModules] = useState(MODULES.map(m => m.id));
   const [analyzing, setAnalyzing] = useState(false);
   const [executing, setExecuting] = useState(false);
+  const [executingModule, setExecutingModule] = useState('');
   const [reports, setReports] = useState({});
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('summary');
   const [showAll, setShowAll] = useState({}); // { modId_type: boolean }
 
   const toggleModule = (id) => {
-    setSelectedModules(prev => 
+    setSelectedModules(prev =>
       prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
     );
   };
@@ -35,6 +37,7 @@ const ApiSync = () => {
     if (selectedModules.length === 0) return;
     setAnalyzing(true);
     setError('');
+    setSuccess('');
     const newReports = {};
 
     try {
@@ -55,6 +58,10 @@ const ApiSync = () => {
 
   const handleExecute = async (module, type) => {
     setExecuting(true);
+    setExecutingModule(module);
+    setError('');
+    setSuccess('');
+
     try {
       const report = reports[module];
       let items = [];
@@ -69,14 +76,24 @@ const ApiSync = () => {
       });
 
       if (res.data.success) {
-        // Re-analyze after success
         const reRes = await api.get(`/admin/sync/analyze?module=${module}`);
         setReports(prev => ({ ...prev, [module]: reRes.data.report }));
+
+        const { result } = res.data;
+        const skipped = result.skipped || 0;
+        const errors = result.errors?.length || 0;
+        setSuccess(
+          `Sinkron "${MODULES.find(m => m.id === module)?.label}" selesai — ` +
+          `${result.created} dibuat, ${result.updated} diperbarui` +
+          (skipped > 0 ? `, ${skipped} dilewati` : '') +
+          (errors > 0 ? `, ${errors} error` : '')
+        );
       }
     } catch (err) {
       setError(`Gagal sinkronisasi ${module}: ` + (err.response?.data?.message || err.message));
     } finally {
       setExecuting(false);
+      setExecutingModule('');
     }
   };
 
@@ -89,8 +106,8 @@ const ApiSync = () => {
           </h1>
           <p className="user-subtitle">Sinkronkan data lokal dengan server eksternal secara otomatis</p>
         </div>
-        <button 
-          className={`btn-add-user ${analyzing ? 'btn-loading' : ''}`} 
+        <button
+          className={`btn-add-user ${analyzing ? 'btn-loading' : ''}`}
           onClick={startAnalysis}
           disabled={analyzing || executing || selectedModules.length === 0}
         >
@@ -104,14 +121,20 @@ const ApiSync = () => {
         </div>
       )}
 
+      {success && (
+        <div className="user-success">
+          <FiCheckCircle /> {success}
+        </div>
+      )}
+
       <div className="sync-layout">
         <aside className="sync-sidebar">
           <div className="user-card">
             <h3 className="user-card-title" style={{ fontSize: '1rem', marginBottom: '1rem' }}>Pilih Tabel</h3>
             <div className="module-selector">
               {MODULES.map(mod => (
-                <div 
-                  key={mod.id} 
+                <div
+                  key={mod.id}
                   className={`module-item ${selectedModules.includes(mod.id) ? 'selected' : ''}`}
                   onClick={() => !analyzing && !executing && toggleModule(mod.id)}
                 >
@@ -157,25 +180,30 @@ const ApiSync = () => {
                             !{report.conflicts.length} Konflik
                           </div>
                         )}
+                        {report.skippedCount > 0 && (
+                          <div className="stat-pill" style={{ background: '#fef3c7', color: '#b45309' }}>
+                            ⚠{report.skippedCount} Dilewati
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="report-actions">
-                      <button 
+                      <button
                         className="btn btn-outline btn-small"
                         disabled={executing || report.new.length === 0}
                         onClick={() => handleExecute(modId, 'new')}
                       >
                         <FiPlus /> Impor Data Baru
                       </button>
-                      <button 
+                      <button
                         className="btn btn-outline btn-small"
                         disabled={executing || report.updates.length === 0}
                         onClick={() => handleExecute(modId, 'update')}
                       >
                         <FiSave /> Perbarui Data Lama
                       </button>
-                      <button 
+                      <button
                         className="btn primary btn-small"
                         disabled={executing || (report.new.length === 0 && report.updates.length === 0)}
                         onClick={() => handleExecute(modId, 'all')}
@@ -191,8 +219,8 @@ const ApiSync = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                               <h4 style={{ margin: 0 }}>Data Baru ({report.new.length}):</h4>
                               {report.new.length > 10 && (
-                                <button 
-                                  className="btn btn-outline btn-small" 
+                                <button
+                                  className="btn btn-outline btn-small"
                                   onClick={() => setShowAll(prev => ({ ...prev, [`${modId}_new`]: !prev[`${modId}_new`] }))}
                                 >
                                   {showAll[`${modId}_new`] ? 'Sembunyikan' : 'Tampilkan Semua'}
@@ -233,8 +261,8 @@ const ApiSync = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                               <h4 style={{ margin: 0 }}>Perubahan Data ({report.updates.length}):</h4>
                               {report.updates.length > 10 && (
-                                <button 
-                                  className="btn btn-outline btn-small" 
+                                <button
+                                  className="btn btn-outline btn-small"
                                   onClick={() => setShowAll(prev => ({ ...prev, [`${modId}_update`]: !prev[`${modId}_update`] }))}
                                 >
                                   {showAll[`${modId}_update`] ? 'Sembunyikan' : 'Tampilkan Semua'}
@@ -320,8 +348,12 @@ const ApiSync = () => {
             <div className="loader-circles">
               <div></div><div></div><div></div>
             </div>
-            <h3>Sedang Menyelaraskan Database...</h3>
-            <p>Mohon jangan tutup halaman ini agar integritas data tetap terjaga.</p>
+            <h3>
+              {executingModule
+                ? `Menyelaraskan ${MODULES.find(m => m.id === executingModule)?.label}...`
+                : 'Sedang Menyelaraskan Database...'}
+            </h3>
+            <p style={{ marginTop: '1.2rem', color: '#94a3b8', fontSize: '0.85rem' }}>Mohon jangan tutup halaman ini agar integritas data tetap terjaga.</p>
           </div>
         </div>
       )}

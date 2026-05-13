@@ -41,6 +41,7 @@ router.get('/kelas', async (req, res) => {
         jurusan: { select: { id: true, kodeProdi: true, namaProdi: true } },
       },
     });
+    // Selalu kirim namaKelas, tingkat, inisial agar frontend bisa tampilkan nama lengkap
     return res.json({ success: true, data: items });
   } catch (err) {
     console.error('kelas list error:', err);

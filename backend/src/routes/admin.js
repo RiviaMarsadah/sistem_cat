@@ -15,6 +15,7 @@ const adminJadwalController = require('../controllers/adminJadwalController');
 const adminPeriodeController = require('../controllers/adminPeriodeController');
 const adminAngkatanController = require('../controllers/adminAngkatanController');
 const adminSyncController = require('../controllers/adminSyncController');
+const adminStatsController = require('../controllers/adminStatsController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -80,9 +81,16 @@ router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official 
 router.post('/jadwal-ujian/bulk-generate', adminJadwalController.bulkGenerate);
 router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
 
+// Stats
+router.get('/stats', adminStatsController.getDashboardStats);
+router.get('/stats/charts', adminStatsController.getChartData);
+
 // API Sync
 router.get('/sync/analyze', adminSyncController.analyze);
 router.post('/sync/execute', adminSyncController.execute);
+router.get('/sync/progress', adminSyncController.progress);       // JSON polling
+// SSE stream — authenticate via query param ?token=xxx since EventSource can't send headers
+router.get('/sync/progress-stream', authenticate, requireRole('admin'), adminSyncController.progressStream);
 
 module.exports = router;
 

@@ -329,7 +329,7 @@ const AdminGuru = () => {
               <FiUpload /> <span>Import Excel</span>
             </button>
             <button className="btn-add-user" onClick={handleOpenAddModal} disabled={saving}>
-              <FiPlus className="btn-icon" />
+              <FiPlus />
               <span>Tambah Guru</span>
             </button>
           </div>
@@ -403,10 +403,10 @@ const AdminGuru = () => {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-action primary" onClick={() => startEdit(item)} disabled={saving} title="Edit">
+                        <button className="btn-action-admin primary" onClick={() => startEdit(item)} disabled={saving} title="Edit">
                           <FiEdit2 />
                         </button>
-                        <button className="btn-action btn-delete" onClick={() => remove(item)} disabled={saving} title="Hapus">
+                        <button className="btn-action-admin danger" onClick={() => remove(item)} disabled={saving} title="Hapus">
                           <FiTrash2 />
                         </button>
                       </div>

@@ -25,7 +25,7 @@
 
 .sidebar {
   width: 240px;
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -34,6 +34,7 @@
   z-index: var(--z-fixed);
   border-right: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  overflow: hidden; /* prevent sidebar from growing beyond viewport */
 }
 
 .sidebar-admin {
@@ -56,6 +57,7 @@
   align-items: center;
   text-align: center;
   gap: 0.5rem;
+  flex-shrink: 0; /* tidak ikut scroll */
 }
 
 .sidebar-logo-wrapper {
@@ -132,6 +134,7 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  flex-shrink: 0; /* tidak ikut scroll */
 }
 
 .profile-avatar {
@@ -271,6 +274,8 @@
   padding: var(--spacing-md);
   overflow-y: auto;
   overflow-x: hidden;
+  /* Pastikan nav bisa scroll independent */
+  min-height: 0;
 }
 
 .sidebar-category {
@@ -416,10 +421,15 @@
   color: var(--sidebar-text-muted);
 }
 
-/* Footer */
+/* Footer - FIXED di bawah, tidak ikut scroll */
 .sidebar-footer {
   padding: var(--spacing-md);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0; /* tidak ikut scroll */
+  background: #0F1F3D; /* sama dengan sidebar background */
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
 }
 
 .logout-btn {
@@ -447,4 +457,91 @@
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+/* Logout Modal */
+.sidebar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; /* Higher than sidebar z-index */
+  animation: sidebarFadeIn 0.2s ease-out;
+}
+
+.sidebar-modal-container {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  text-align: center;
+  animation: sidebarSlideUp 0.3s ease-out;
+}
+
+.sidebar-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-modal-message {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.sidebar-modal-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.sidebar-modal-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.sidebar-modal-btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.sidebar-modal-btn-cancel:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.sidebar-modal-btn-confirm {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.sidebar-modal-btn-confirm:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+@keyframes sidebarFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sidebarSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

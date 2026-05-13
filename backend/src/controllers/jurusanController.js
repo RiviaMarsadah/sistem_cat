@@ -136,11 +136,37 @@ exports.remove = async (req, res) => {
   }
 
   try {
+    // Cek relasi sebelum hapus
+    const [kelasCount, bankSoalCount, jadwalCount] = await Promise.all([
+      prisma.kelas.count({ where: { jurusanId: id } }),
+      prisma.bankSoal.count({ where: { jurusanId: id } }),
+      prisma.jadwalUjian.count({ where: { jurusanId: id } }),
+    ]);
+
+    const reasons = [];
+    if (kelasCount > 0) reasons.push(`${kelasCount} kelas`);
+    if (bankSoalCount > 0) reasons.push(`${bankSoalCount} bank soal`);
+    if (jadwalCount > 0) reasons.push(`${jadwalCount} jadwal ujian`);
+
+    if (reasons.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Tidak dapat menghapus jurusan. Masih ada ${reasons.join(', ')} yang terhubung dengan jurusan ini. Hapus data terkait terlebih dahulu.`
+      });
+    }
+
     await prisma.jurusan.delete({ where: { id } });
     return res.json({ success: true, message: 'Jurusan deleted' });
   } catch (err) {
     if (err && err.code === 'P2025') {
       return res.status(404).json({ success: false, message: 'Jurusan not found' });
+    }
+    // P2003 = Foreign key constraint failed
+    if (err && err.code === 'P2003') {
+      return res.status(409).json({
+        success: false,
+        message: 'Tidak dapat menghapus jurusan. Masih ada data lain yang terhubung. Hapus data terkait terlebih dahulu.'
+      });
     }
     throw err;
   }

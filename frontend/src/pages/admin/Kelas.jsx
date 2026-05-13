@@ -11,8 +11,8 @@ const getTingkatLabel = (tingkat) => {
 
 const getNamaKelasDisplay = (item) => {
   if (!item.tingkat || !item.jurusan || !item.inisial) return '-';
-  const displayKode = item.jurusan.kodeProdi || item.jurusan.idJurusan || '';
-  return `${getTingkatLabel(item.tingkat)} ${displayKode} ${item.inisial}`;
+  const kode = item.jurusan.kodeProdi || '';
+  return `${getTingkatLabel(item.tingkat)} ${kode} ${item.inisial}`;
 };
 
 const AdminKelas = () => {
@@ -122,40 +122,25 @@ const AdminKelas = () => {
     e.preventDefault();
     if (!tingkat || !jurusanId || !inisial.trim()) return;
 
-    // Show confirmation modal
-    const selectedJurusan = jurusanList.find(j => j.id === parseInt(jurusanId));
-    setConfirmAction('create');
-    setConfirmData({ 
-      tingkat,
-      jurusanId: parseInt(jurusanId),
-      jurusanNama: selectedJurusan?.nama || '',
-      inisial: inisial.trim().toUpperCase()
-    });
-    setShowConfirmModal(true);
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/admin/kelas', {
+        tingkat,
+        jurusanId: parseInt(jurusanId),
+        inisial: inisial.trim().toUpperCase()
+      });
+      handleCloseAddModal();
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Gagal menambah kelas');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleConfirm = async () => {
-    if (confirmAction === 'create') {
-      setSaving(true);
-      setError('');
-      try {
-        await api.post('/admin/kelas', { 
-          tingkat: confirmData.tingkat,
-          jurusanId: confirmData.jurusanId,
-          inisial: confirmData.inisial
-        });
-        handleCloseAddModal();
-        await load();
-        setShowConfirmModal(false);
-        setConfirmAction(null);
-        setConfirmData(null);
-      } catch (err) {
-        setError(err?.response?.data?.message || 'Gagal menambah kelas');
-        setShowConfirmModal(false);
-      } finally {
-        setSaving(false);
-      }
-    } else if (confirmAction === 'delete') {
+    if (confirmAction === 'delete') {
       setSaving(true);
       setError('');
       try {
@@ -265,7 +250,7 @@ const AdminKelas = () => {
             </div>
           </div>
           <button className="btn-add-kelas" onClick={handleOpenAddModal} disabled={saving}>
-            <FiPlus className="btn-icon" />
+            <FiPlus />
             <span>Tambah Kelas</span>
           </button>
         </div>
@@ -324,6 +309,8 @@ const AdminKelas = () => {
                             <option value="X">10</option>
                             <option value="XI">11</option>
                             <option value="XII">12</option>
+                            <option value="ALUMNI">Alumni</option>
+                            <option value="KI">KI</option>
                           </select>
                         ) : (
                           <div className="tingkat-text">{getTingkatLabel(item.tingkat)}</div>
@@ -483,9 +470,11 @@ const AdminKelas = () => {
                         required
                       >
                         <option value="">Pilih Tingkat</option>
-                        <option value="X">10</option>
-                        <option value="XI">11</option>
-                        <option value="XII">12</option>
+                        <option value="X">10 (Kelas X)</option>
+                        <option value="XI">11 (Kelas XI)</option>
+                        <option value="XII">12 (Kelas XII)</option>
+                        <option value="ALUMNI">Alumni</option>
+                        <option value="KI">KI (Keterampilan)</option>
                       </select>
                       <div className="input-underline"></div>
                     </div>
@@ -580,46 +569,34 @@ const AdminKelas = () => {
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-confirm">
               <div className="modal-confirm-header">
-                <div className={`modal-confirm-icon-box ${confirmAction === 'create' ? 'success' : 'danger'}`}>
-                  {confirmAction === 'create' ? <FiCheckCircle className="modal-icon" /> : <FiAlertCircle className="modal-icon" />}
+                <div className={`modal-confirm-icon-box danger`}>
+                  <FiAlertCircle className="modal-icon" />
                 </div>
-                <h3 className="modal-confirm-title">
-                  {confirmAction === 'create' ? 'Tambah Kelas?' : 'Hapus Kelas?'}
-                </h3>
+                <h3 className="modal-confirm-title">Hapus Kelas?</h3>
               </div>
               <div className="modal-confirm-body">
                 <div className="modal-confirm-text">
-                  {confirmAction === 'create' ? (
-                    <>
-                      Yakin ingin menambah kelas <span className="modal-confirm-item">{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}</span>?
-                    </>
-                  ) : (
-                    <>
-                      Yakin ingin menghapus kelas <span className="modal-confirm-item">{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}</span>?
-                    </>
-                  )}
+                  Yakin ingin menghapus kelas <span className="modal-confirm-item">{getTingkatLabel(confirmData?.tingkat)} {confirmData?.jurusanNama} {confirmData?.inisial}</span>?
                 </div>
-                {confirmAction === 'delete' && (
-                  <div className="modal-confirm-warning">
-                    <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan.
-                  </div>
-                )}
+                <div className="modal-confirm-warning">
+                  <FiAlertCircle /> Tindakan ini tidak dapat dibatalkan.
+                </div>
               </div>
               <div className="modal-confirm-footer">
                 <button className="btn btn-secondary" onClick={handleCancelConfirm} disabled={saving}>
                   <FiX /> Batal
                 </button>
-                <button 
-                  className={`btn ${confirmAction === 'create' ? 'primary' : 'btn-danger'}`} 
-                  onClick={handleConfirm} 
+                <button
+                  className="btn btn-danger"
+                  onClick={handleConfirm}
                   disabled={saving}
                 >
                   {saving ? (
                     'Memproses...'
                   ) : (
                     <>
-                      {confirmAction === 'create' ? <FiCheckCircle /> : <FiTrash2 />} 
-                      {confirmAction === 'create' ? 'Ya, Tambahkan' : 'Ya, Hapus'}
+                      <FiTrash2 />
+                      Ya, Hapus
                     </>
                   )}
                 </button>

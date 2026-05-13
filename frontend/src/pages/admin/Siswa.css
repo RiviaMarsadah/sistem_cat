@@ -30,10 +30,14 @@
 }
 
 .siswa-table th {
-  background: #f8fafc;
+  background: rgba(27, 58, 107, 0.85);
   font-weight: 700;
-  font-size: 0.95rem;
-  color: #1e293b;
+  font-size: 0.75rem;
+  color: #FFFFFF;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1rem;
+  white-space: nowrap;
 }
 
 .siswa-table tbody tr:hover {
@@ -137,4 +141,22 @@
     grid-column: span 2;
     justify-content: flex-start;
   }
+}
+
+.siswa-table th:last-child,
+.siswa-table td:last-child {
+  position: sticky;
+  right: 0;
+  background: #ffffff;
+  z-index: 1;
+  box-shadow: -2px 0 5px rgba(0,0,0,0.05);
+}
+
+.siswa-table th:last-child {
+  background: rgba(27, 58, 107, 0.85);
+  z-index: 2;
+}
+
+.siswa-table tbody tr:hover td:last-child {
+  background: #f8fafc;
 }

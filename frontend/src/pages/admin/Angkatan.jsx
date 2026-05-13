@@ -136,8 +136,8 @@ const Angkatan = () => {
             <thead>
               <tr>
                 <th>Nama Angkatan</th>
-                <th>Tahun</th>
-                <th style={{ width: '120px' }}>Aksi</th>
+                <th className="text-center">Tahun</th>
+                <th style={{ width: '120px' }} className="text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -161,7 +161,7 @@ const Angkatan = () => {
                           <div className="name-text">{item.namaAngkatan}</div>
                         )}
                       </td>
-                      <td style={{ verticalAlign: 'middle' }}>
+                      <td style={{ verticalAlign: 'middle' }} className="text-center">
                         {isEditing ? (
                           <input 
                             type="number"
@@ -176,22 +176,22 @@ const Angkatan = () => {
                         )}
                       </td>
                       <td style={{ verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                           {isEditing ? (
                             <>
-                              <button className="btn-action primary" onClick={saveEdit} disabled={saving}>
+                              <button className="btn-action-admin primary" onClick={saveEdit} disabled={saving}>
                                 <FiSave />
                               </button>
-                              <button className="btn-action" onClick={cancelEdit} disabled={saving}>
+                              <button className="btn-action-admin" onClick={cancelEdit} disabled={saving}>
                                 <FiX />
                               </button>
                             </>
                           ) : (
                             <>
-                              <button className="btn-action primary" onClick={() => startEdit(item)} title="Edit">
+                              <button className="btn-action-admin primary" onClick={() => startEdit(item)} title="Edit">
                                 <FiEdit2 />
                               </button>
-                              <button className="btn-action btn-delete" onClick={() => openDeleteModal(item)} title="Hapus">
+                              <button className="btn-action-admin danger" onClick={() => openDeleteModal(item)} title="Hapus">
                                 <FiTrash2 />
                               </button>
                             </>

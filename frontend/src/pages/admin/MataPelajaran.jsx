@@ -196,7 +196,7 @@ export default function MataPelajaran() {
             </div>
           </div>
           <button type="button" className="btn-add-mapel" onClick={openAddModal} disabled={saving}>
-            <FiPlus className="btn-icon" />
+            <FiPlus />
             <span>Tambah Mata Pelajaran</span>
           </button>
         </div>
