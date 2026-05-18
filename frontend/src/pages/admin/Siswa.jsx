@@ -265,8 +265,7 @@ const AdminSiswa = () => {
       
       if (res.data.success) {
         setSuccess(res.data.message);
-        setShowImportModal(false);
-        setSelectedFile(null);
+        setImportResults(res.data);
         await loadData();
       }
     } catch (err) {
@@ -566,9 +565,13 @@ const AdminSiswa = () => {
                       <label className="label">Kelas *</label>
                       <select className="input" value={kelasId} onChange={(e) => setKelasId(e.target.value)} required disabled={saving}>
                         <option value="">Pilih Kelas</option>
-                        {kelasList.map(k => (
-                          <option key={k.id} value={k.id}>{k.namaKelas} ({k.tingkat})</option>
-                        ))}
+                        {kelasList.map(k => {
+                          const tingkatLabel = { X: '10', XI: '11', XII: '12', ALUMNI: 'ALUMNI', KI: 'KI' }[k.tingkat] || k.tingkat;
+                          const kName = `${tingkatLabel} ${k.jurusan?.kodeProdi || ''} ${k.inisial || ''}`.replace(/\s+$/, '');
+                          return (
+                            <option key={k.id} value={k.id}>{kName}</option>
+                          );
+                        })}
                       </select>
                     </div>
                     <div className="field-wrapper">

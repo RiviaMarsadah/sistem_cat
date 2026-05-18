@@ -16,6 +16,7 @@ router.use(resolveSiswa);
 // Mobile: Cek Jadwal Ujian beserta opsi keamanan dengan token
 // GET /api/siswa/jadwal-ujian?token=ABCDEF
 router.get('/jadwal-ujian', siswaUjianController.getJadwalByToken);
+router.get('/ujian/hari-ini', siswaUjianController.getJadwalHariIni);
 router.post('/ujian/mulai', siswaUjianController.mulaiUjian);
 router.get('/ujian/aktif', siswaUjianController.getUjianAktif);
 router.put('/ujian/:ujianSiswaId/save', siswaUjianController.saveProgress);

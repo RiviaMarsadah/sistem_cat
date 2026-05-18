@@ -177,14 +177,86 @@ exports.getJadwalByToken = async (req, res) => {
   }
 };
 
+exports.getJadwalHariIni = async (req, res) => {
+  const siswaId = req.siswaId;
+  
+  try {
+    const siswa = await prisma.siswa.findUnique({
+      where: { id: siswaId },
+      select: { kelasId: true }
+    });
+
+    if (!siswa || !siswa.kelasId) {
+      return res.status(400).json({ success: false, message: 'Data kelas siswa tidak ditemukan.' });
+    }
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const jadwalList = await prisma.jadwalUjian.findMany({
+      where: {
+        kelasJadwal: {
+          some: {
+            kelasId: siswa.kelasId
+          }
+        },
+        mulai: { lte: endOfToday },
+        selesai: { gte: startOfToday },
+        paketUjianId: { not: null }
+      },
+      include: {
+        mataPelajaran: true,
+        paketUjian: true
+      },
+      orderBy: { mulai: 'asc' }
+    });
+
+    const result = [];
+    for (const j of jadwalList) {
+      const existing = await prisma.ujianSiswa.findUnique({
+        where: { siswaId_jadwalUjianId: { siswaId, jadwalUjianId: j.id } },
+        select: { status: true }
+      });
+
+      result.push({
+        id: j.id,
+        nama: j.nama,
+        durasi: j.durasi,
+        mulai: j.mulai,
+        selesai: j.selesai,
+        opsiKeamanan: j.opsiKeamanan,
+        mataPelajaran: j.mataPelajaran.namaMapel,
+        paketUjian: j.paketUjian.nama,
+        tipeUjian: j.paketUjian.tipeUjian,
+        statusSiswa: existing ? existing.status : 'belum_mulai'
+      });
+    }
+
+    return res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('getJadwalHariIni error:', error);
+    return res.status(500).json({ success: false, message: 'Terjadi kesalahan sistem.' });
+  }
+};
+
 
 exports.mulaiUjian = async (req, res) => {
   const siswaId = req.siswaId;
   const token = String(req.body?.token || '').trim().toUpperCase();
+  const jadwalUjianId = req.body?.jadwalUjianId ? Number(req.body.jadwalUjianId) : undefined;
 
   try {
+    const whereClause = { token };
+    if (jadwalUjianId) {
+      whereClause.id = jadwalUjianId;
+    }
+
     const jadwal = await prisma.jadwalUjian.findFirst({
-      where: { token },
+      where: whereClause,
       include: {
          paketUjian: {
             include: {
@@ -249,6 +321,7 @@ exports.mulaiUjian = async (req, res) => {
     return res.json({
       success: true,
       data: {
+        serverTime: new Date(),
         ujianSiswaId: ujian.id,
         status: ujian.status,
         mulaiPada: ujian.mulaiPada, // Ditambahkan untuk timer

@@ -246,8 +246,7 @@ const AdminGuru = () => {
       
       if (res.data.success) {
         setSuccess(res.data.message);
-        setShowImportModal(false);
-        setSelectedFile(null);
+        setImportResults(res.data);
         await loadData();
       }
     } catch (err) {

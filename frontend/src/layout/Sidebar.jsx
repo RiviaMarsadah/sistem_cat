@@ -83,11 +83,21 @@ const Sidebar = ({ role, user }) => {
       ]
     },
     {
-      category: 'MANAJEMEN UJIAN',
+      category: 'MANAJEMEN ASET',
       items: [
         { path: '/guru/bank-soal', label: 'Bank Soal', icon: FiFileText, disabled: false },
         { path: '/guru/paket-ujian', label: 'Paket Ujian', icon: FiPackage, disabled: false },
+      ]
+    },
+    {
+      category: 'PELAKSANAAN',
+      items: [
         { path: '/guru/jadwal-ujian', label: 'Jadwal Ujian', icon: FiCalendar, disabled: false },
+      ]
+    },
+    {
+      category: 'LAPORAN & EVALUASI',
+      items: [
         { path: '/guru/rekap-ujian', label: 'Rekap Hasil', icon: FiEye, disabled: false },
         { path: '/guru/analisis-soal', label: 'Analisis Soal', icon: FiBarChart2, disabled: false },
       ]
@@ -162,15 +172,13 @@ const Sidebar = ({ role, user }) => {
 
       <nav className="sidebar-nav">
         {menuGroups.map((group) => {
-          const isExpanded = expandedCategories[group.category];
           return (
-            <div key={group.category} className={`sidebar-category ${isExpanded ? 'expanded' : 'collapsed'}`}>
+            <div key={group.category} className="sidebar-category expanded">
               <div
                 className="sidebar-category-header"
-                onClick={() => toggleCategory(group.category)}
+                style={{ cursor: 'default' }}
               >
                 <span className="category-text">{group.category}</span>
-                <FiChevronDown className="chevron-icon" />
               </div>
               <div className="sidebar-category-items">
                 {group.items.map((item) => {
