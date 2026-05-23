@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle, FiX, FiFolder, FiArrowLeft } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiDownload, FiHelpCircle, FiX, FiFolder, FiArrowLeft, FiEye, FiCheck, FiSearch } from 'react-icons/fi';
 import api from '../../services/api';
 import './GuruTheme.css';
 import './JadwalUjian.css';
@@ -46,6 +46,22 @@ function tingkatToDisplay(t) {
   return t;
 }
 
+function displayToTingkatApi(v) {
+  if (v === '10') return 'X';
+  if (v === '11') return 'XI';
+  if (v === '12') return 'XII';
+  if (v === '0') return 'SEMUA';
+  return v;
+}
+
+function apiToTingkatDisplay(t) {
+  if (t === 'X') return '10';
+  if (t === 'XI') return '11';
+  if (t === 'XII') return '12';
+  if (t === 'SEMUA') return '0';
+  return t;
+}
+
 export default function BankSoalDetail() {
   const { koleksiId } = useParams();
   const navigate = useNavigate();
@@ -70,7 +86,23 @@ export default function BankSoalDetail() {
   const [importError, setImportError] = useState('');
   const [importNotice, setImportNotice] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const fileInputRef = useRef(null);
+
+  const [selectedSoalForPreview, setSelectedSoalForPreview] = useState(null);
+  const [selectedSoalForEdit, setSelectedSoalForEdit] = useState(null);
+
+  // States for Edit Form
+  const [editMataPelajaranId, setEditMataPelajaranId] = useState('');
+  const [editTingkat, setEditTingkat] = useState('10');
+  const [editJurusanId, setEditJurusanId] = useState('');
+  const [editKategoriSoal, setEditKategoriSoal] = useState('pilgan');
+  const [editSoalText, setEditSoalText] = useState('');
+  const [editKolom, setEditKolom] = useState({ A: '', B: '', C: '', D: '', E: '', F: '' });
+  const [editJawaban, setEditJawaban] = useState({ single: '', multi: [], benarSalah: { A: '', B: '', C: '', D: '', E: '', F: '' } });
+  const [editGambar, setEditGambar] = useState('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editFormError, setEditFormError] = useState('');
 
   const loadOptions = async () => {
     try {
@@ -121,15 +153,173 @@ export default function BankSoalDetail() {
     }
   };
 
-  const totalItems = items.length;
+  const handleOpenEdit = (row) => {
+    setSelectedSoalForEdit(row);
+    setEditMataPelajaranId(row.mataPelajaranId ?? '');
+    setEditTingkat(apiToTingkatDisplay(row.tingkat) ?? '10');
+    setEditJurusanId(row.jurusanId != null ? String(row.jurusanId) : '');
+    setEditKategoriSoal(row.kategoriSoal || 'pilgan');
+    setEditSoalText(row.soal || '');
+    setEditKolom({
+      A: row.kolomA || '',
+      B: row.kolomB || '',
+      C: row.kolomC || '',
+      D: row.kolomD || '',
+      E: row.kolomE || '',
+      F: row.kolomF || '',
+    });
+    setEditGambar(row.gambar || '');
+    
+    // Parse jawaban
+    if (row.kategoriSoal === 'pilgan') {
+      setEditJawaban({
+        single: row.jawaban || '',
+        multi: [],
+        benarSalah: { A: '', B: '', C: '', D: '', E: '', F: '' }
+      });
+    } else if (row.kategoriSoal === 'pilgan_kompleks') {
+      setEditJawaban({
+        single: '',
+        multi: (row.jawaban || '').split(',').map((s) => s.trim()).filter(Boolean),
+        benarSalah: { A: '', B: '', C: '', D: '', E: '', F: '' }
+      });
+    } else {
+      const parts = (row.jawaban || '').split(',').map((s) => s.trim().toUpperCase());
+      const k = { A: row.kolomA || '', B: row.kolomB || '', C: row.kolomC || '', D: row.kolomD || '', E: row.kolomE || '', F: row.kolomF || '' };
+      const filledLetters = ['A', 'B', 'C', 'D', 'E', 'F'].filter((l) => k[l]?.trim());
+      const bs = { A: '', B: '', C: '', D: '', E: '', F: '' };
+      filledLetters.forEach((l, i) => { bs[l] = parts[i] === 'S' ? 'S' : 'B'; });
+      setEditJawaban({
+        single: '',
+        multi: [],
+        benarSalah: bs
+      });
+    }
+    setEditFormError('');
+  };
+
+  const toggleMultiEdit = (letter) => {
+    setEditJawaban((j) => ({
+      ...j,
+      multi: j.multi.includes(letter) ? j.multi.filter((x) => x !== letter) : [...j.multi, letter],
+    }));
+  };
+
+  const setBenarSalahEdit = (letter, value) => {
+    setEditJawaban((j) => ({
+      ...j,
+      benarSalah: { ...j.benarSalah, [letter]: value },
+    }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditFormError('');
+
+    const filledKolom = ['A', 'B', 'C', 'D', 'E', 'F'].filter((l) => editKolom[l]?.trim()).length;
+    if (editKategoriSoal !== 'pilgan_kategori' && filledKolom < 3) {
+      setEditFormError('Minimal 3 kolom jawaban harus diisi.');
+      return;
+    }
+    if (editKategoriSoal === 'pilgan' && !editJawaban.single) {
+      setEditFormError('Pilih satu jawaban yang benar.');
+      return;
+    }
+    if (editKategoriSoal === 'pilgan_kompleks' && editJawaban.multi.length === 0) {
+      setEditFormError('Pilih minimal satu jawaban benar.');
+      return;
+    }
+    if ((editKategoriSoal === 'pilgan' || editKategoriSoal === 'pilgan_kompleks') && !editSoalText.trim()) {
+      setEditFormError('Pertanyaan wajib diisi.');
+      return;
+    }
+    if (!editMataPelajaranId || !editTingkat) {
+      setEditFormError('Mata pelajaran dan tingkat wajib dipilih.');
+      return;
+    }
+
+    setEditSaving(true);
+
+    try {
+      const buildEditJawabanValue = () => {
+        if (editKategoriSoal === 'pilgan') return editJawaban.single;
+        if (editKategoriSoal === 'pilgan_kompleks') return editJawaban.multi.sort().join(',');
+        if (editKategoriSoal === 'pilgan_kategori') {
+          const filled = ['A', 'B', 'C', 'D', 'E', 'F'].filter((l) => editKolom[l]?.trim());
+          return filled.map((l) => (editJawaban.benarSalah[l] === 'S' ? 'S' : 'B')).join(',');
+        }
+        return '';
+      };
+
+      const payload = {
+        bankSoalKoleksiId: Number(koleksiId),
+        mataPelajaranId: Number(editMataPelajaranId),
+        tingkat: displayToTingkatApi(editTingkat),
+        jurusanId: editJurusanId === '' ? null : Number(editJurusanId),
+        kategoriSoal: editKategoriSoal,
+        soal: editSoalText.trim() || null,
+        kolomA: editKolom.A || null,
+        kolomB: editKolom.B || null,
+        kolomC: editKolom.C || null,
+        kolomD: editKolom.D || null,
+        kolomE: editKolom.E || null,
+        kolomF: editKolom.F || null,
+        jawaban: buildEditJawabanValue(),
+        gambar: editGambar.trim() || null,
+      };
+
+      await api.put(`/guru/bank-soal/${selectedSoalForEdit.id}`, payload);
+      setSelectedSoalForEdit(null);
+      loadSoal();
+    } catch (err) {
+      setEditFormError(err?.response?.data?.message || 'Gagal menyimpan soal');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  // Filter items based on search query
+  const filteredItems = items.filter((row) => {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) return true;
+    
+    const soalMatch = (row.soal || '').toLowerCase().includes(query);
+    const jawabanMatch = (row.jawaban || '').toLowerCase().includes(query);
+    const opsiAMatch = (row.kolomA || '').toLowerCase().includes(query);
+    const opsiBMatch = (row.kolomB || '').toLowerCase().includes(query);
+    const opsiCMatch = (row.kolomC || '').toLowerCase().includes(query);
+    const opsiDMatch = (row.kolomD || '').toLowerCase().includes(query);
+    const opsiEMatch = (row.kolomE || '').toLowerCase().includes(query);
+    const opsiFMatch = (row.kolomF || '').toLowerCase().includes(query);
+    
+    return soalMatch || jawabanMatch || opsiAMatch || opsiBMatch || opsiCMatch || opsiDMatch || opsiEMatch || opsiFMatch;
+  });
+
+  const totalItems = filteredItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
   const displayPage = Math.min(Math.max(1, currentPage), totalPages);
   const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      const first = items[0];
+      setImportMapel(first.mataPelajaranId ? String(first.mataPelajaranId) : '');
+      setImportTingkat(first.tingkat ? apiToTingkatDisplay(first.tingkat) : '');
+      setImportJurusan(first.jurusanId != null ? String(first.jurusanId) : '');
+    }
+    if (koleksiId) {
+      setImportKoleksiId(koleksiId);
+    }
+  }, [items, koleksiId]);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -223,20 +413,6 @@ export default function BankSoalDetail() {
             <div className="guru-meta-value">{items.length}</div>
           </div>
         </div>
-        
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn-import-excel"
-            onClick={() => setShowImportModal(true)}
-          >
-            <FiUpload /> Import Soal
-          </button>
-          <Link to="/guru/bank-soal/tambah" className="btn-tambah">
-            <FiPlus /> 
-            <span>Tambah Soal</span>
-          </Link>
-        </div>
       </div>
 
       {importNotice && (
@@ -275,30 +451,23 @@ export default function BankSoalDetail() {
                 {importError && <div className="form-error">{importError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div className="filter-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
-                    <label>Pilih Bank Soal</label>
-                    <select value={importKoleksiId} onChange={(e) => setImportKoleksiId(e.target.value)}>
-                      <option value="">— Jangan Masukkan Koleksi (Opsional) —</option>
+                    <label>Pilih Bank Soal (Terkunci)</label>
+                    <select value={importKoleksiId} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}>
+                      <option value="">— Pilih Bank Soal —</option>
                       {koleksiList.map((k) => (
                         <option key={k.id} value={k.id}>{k.nama}</option>
                       ))}
-                      <option value="new">+ Buat Koleksi Baru</option>
                     </select>
                   </div>
-                  {importKoleksiId === 'new' && (
-                    <div className="filter-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
-                      <label>Nama Koleksi Baru</label>
-                      <input
-                        type="text"
-                        placeholder="Misal: Latihan UN 2024"
-                        value={importNamaBankSoal}
-                        onChange={(e) => setImportNamaBankSoal(e.target.value)}
-                        required
-                      />
-                    </div>
-                  )}
                   <div className="filter-group" style={{ margin: 0 }}>
-                    <label>Mata Pelajaran *</label>
-                    <select value={importMapel} onChange={(e) => setImportMapel(e.target.value)} required>
+                    <label>Mata Pelajaran * {items.length > 0 && '(Terkunci)'}</label>
+                    <select 
+                      value={importMapel} 
+                      onChange={(e) => setImportMapel(e.target.value)} 
+                      required 
+                      disabled={items.length > 0}
+                      style={items.length > 0 ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+                    >
                       <option value="">— Pilih Mapel —</option>
                       {mapelList.map((m) => (
                         <option key={m.id} value={m.id}>{m.namaMapel}</option>
@@ -306,8 +475,14 @@ export default function BankSoalDetail() {
                     </select>
                   </div>
                   <div className="filter-group" style={{ margin: 0 }}>
-                    <label>Tingkat (Kelas) *</label>
-                    <select value={importTingkat} onChange={(e) => setImportTingkat(e.target.value)} required>
+                    <label>Tingkat (Kelas) * {items.length > 0 && '(Terkunci)'}</label>
+                    <select 
+                      value={importTingkat} 
+                      onChange={(e) => setImportTingkat(e.target.value)} 
+                      required 
+                      disabled={items.length > 0}
+                      style={items.length > 0 ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+                    >
                       <option value="">— Pilih Tingkat —</option>
                       {TINGKAT_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -315,8 +490,13 @@ export default function BankSoalDetail() {
                     </select>
                   </div>
                   <div className="filter-group" style={{ margin: 0 }}>
-                    <label>Program Studi (Opsional)</label>
-                    <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
+                    <label>Program Studi (Opsional) {items.length > 0 && '(Terkunci)'}</label>
+                    <select 
+                      value={importJurusan} 
+                      onChange={(e) => setImportJurusan(e.target.value)}
+                      disabled={items.length > 0}
+                      style={items.length > 0 ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+                    >
                       <option value="">Semua Prodi</option>
                       {jurusanList.map((j) => (
                         <option key={j.id} value={j.id}>{j.namaProdi}</option>
@@ -400,7 +580,72 @@ export default function BankSoalDetail() {
         </div>
       )}
 
-      {/* Filter dihapus sesuai permintaan */}
+      <div className="guru-card">
+        <div className="guru-card-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.25rem', padding: '1rem 1.5rem' }}>
+          {/* Kelompok Judul dan Search Bar di sebelah Kiri */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flex: '1', minWidth: '300px', flexWrap: 'wrap' }}>
+            <h2 className="guru-card-title" style={{ margin: 0, whiteSpace: 'nowrap' }}>Daftar Butir Soal</h2>
+            
+            {/* Beautiful compact search input with magnifier icon */}
+            <div className="search-box-wrap" style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+              <FiSearch style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontSize: '1.1rem', pointerEvents: 'none' }} />
+              <input
+                type="text"
+                placeholder="Cari soal, opsi, atau kunci..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.55rem 2rem 0.55rem 2.25rem',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontSize: '0.9rem',
+                  boxSizing: 'border-box',
+                  outline: 'none',
+                  backgroundColor: '#f8fafc',
+                  transition: 'all 0.2s'
+                }}
+                className="search-input-premium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: '#ef4444',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    padding: 0
+                  }}
+                >
+                  Bersihkan
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Kelompok Aksi di sebelah Kanan */}
+          <div className="header-actions" style={{ display: 'flex', gap: '0.75rem', margin: 0 }}>
+            <button
+              type="button"
+              className="btn-import-excel"
+              onClick={() => setShowImportModal(true)}
+            >
+              <FiUpload /> Import Soal
+            </button>
+            <Link to={`/guru/bank-soal/tambah?bankSoalKoleksiId=${koleksiId}`} className="btn-tambah">
+              <FiPlus /> 
+              <span>Tambah Soal</span>
+            </Link>
+          </div>
+        </div>
 
       {error && <div className="bank-soal-error">{error}</div>}
 
@@ -412,37 +657,56 @@ export default function BankSoalDetail() {
             <thead>
               <tr>
                 <th>No</th>
-                <th>Mapel</th>
-                <th>Tingkat</th>
-                <th>Prodi</th>
                 <th>Kategori</th>
-                <th>Soal / Pernyataan</th>
-                <th>Jawaban</th>
+                <th>Soal</th>
+                <th>Jawaban A</th>
+                <th>Jawaban B</th>
+                <th>Jawaban C</th>
+                <th>Jawaban D</th>
+                <th>Jawaban E</th>
+                <th>Jawaban F</th>
+                <th>Kunci Jawaban</th>
                 <th>Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {items.length === 0 ? (
-                <tr><td colSpan={8} className="empty-row">Belum ada soal. Klik &quot;Tambah Soal&quot;.</td></tr>
+              {filteredItems.length === 0 ? (
+                <tr>
+                  <td colSpan={11} className="empty-row">
+                    {searchQuery ? 'Tidak ada soal yang cocok dengan pencarian Anda.' : 'Belum ada soal. Klik "Tambah Soal".'}
+                  </td>
+                </tr>
               ) : (
                 paginatedItems.map((row, idx) => (
                   <tr key={row.id}>
                     <td>{startIndex + idx + 1}</td>
-                    <td>{row.mataPelajaran?.namaMapel}</td>
-                    <td>{tingkatToDisplay(row.tingkat)}</td>
-                    <td>{row.jurusan ? row.jurusan.namaProdi : 'Semua Prodi'}</td>
                     <td>
                       <span className={`badge badge-${row.kategoriSoal}`}>
                         {KATEGORI_OPTIONS.find((o) => o.value === row.kategoriSoal)?.label || row.kategoriSoal}
                       </span>
                     </td>
-                    <td className="soal-preview">{row.soal ? row.soal.slice(0, 80) + (row.soal.length > 80 ? '…' : '') : '(Pernyataan di kolom A-F)'}</td>
-                    <td>{row.jawaban}</td>
+                    <td className="soal-preview" style={{ maxWidth: '200px' }}>
+                      {row.soal ? (row.soal.length > 50 ? row.soal.slice(0, 50) + '…' : row.soal) : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>(Pernyataan)</span>}
+                    </td>
+                    <td>{row.kolomA || '-'}</td>
+                    <td>{row.kolomB || '-'}</td>
+                    <td>{row.kolomC || '-'}</td>
+                    <td>{row.kolomD || '-'}</td>
+                    <td>{row.kolomE || '-'}</td>
+                    <td>{row.kolomF || '-'}</td>
+                    <td>
+                      <span className="badge badge-pilgan">
+                        {row.jawaban}
+                      </span>
+                    </td>
                     <td>
                       <div className="action-buttons-cell">
-                        <Link to={`/guru/bank-soal/edit/${row.id}`} className="btn-icon edit" title="Edit">
+                        <button type="button" className="btn-icon view" onClick={() => setSelectedSoalForPreview(row)} title="Preview">
+                          <FiEye />
+                        </button>
+                        <button type="button" className="btn-icon edit" onClick={() => handleOpenEdit(row)} title="Edit">
                           <FiEdit2 />
-                        </Link>
+                        </button>
                         <button type="button" className="btn-icon delete" onClick={() => handleDelete(row.id)} title="Hapus">
                           <FiTrash2 />
                         </button>
@@ -500,6 +764,294 @@ export default function BankSoalDetail() {
             >
               Berikutnya
             </button>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {/* Preview Modal - Hanya bisa ditutup dengan menekan tombol X */}
+      {selectedSoalForPreview && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="bank-soal-modal" style={{ maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Preview Detail Soal</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setSelectedSoalForPreview(null)}
+                aria-label="Tutup"
+              >
+                <FiX />
+              </button>
+            </div>
+            <div className="import-modal-body" style={{ padding: '1.5rem' }}>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kategori</h4>
+                <span className={`badge badge-${selectedSoalForPreview.kategoriSoal}`}>
+                  {KATEGORI_OPTIONS.find((o) => o.value === selectedSoalForPreview.kategoriSoal)?.label || selectedSoalForPreview.kategoriSoal}
+                </span>
+              </div>
+
+              {selectedSoalForPreview.soal && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pertanyaan</h4>
+                  <p style={{ margin: 0, fontSize: '1rem', color: '#0f172a', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                    {selectedSoalForPreview.soal}
+                  </p>
+                </div>
+              )}
+
+              {selectedSoalForPreview.gambar && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gambar</h4>
+                  <img 
+                    src={selectedSoalForPreview.gambar} 
+                    alt="Soal" 
+                    style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'contain' }} 
+                  />
+                </div>
+              )}
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <h4 style={{ margin: '0 0 0.75rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Opsi Jawaban / Pernyataan</h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {['A', 'B', 'C', 'D', 'E', 'F'].map((letter) => {
+                    const optionText = selectedSoalForPreview[`kolom${letter}`];
+                    if (!optionText) return null;
+                    
+                    let isCorrect = false;
+                    if (selectedSoalForPreview.kategoriSoal === 'pilgan') {
+                      isCorrect = selectedSoalForPreview.jawaban === letter;
+                    } else if (selectedSoalForPreview.kategoriSoal === 'pilgan_kompleks') {
+                      const correctAnswers = (selectedSoalForPreview.jawaban || '').split(',').map(s => s.trim());
+                      isCorrect = correctAnswers.includes(letter);
+                    } else if (selectedSoalForPreview.kategoriSoal === 'pilgan_kategori') {
+                      const bsParts = (selectedSoalForPreview.jawaban || '').split(',').map(s => s.trim().toUpperCase());
+                      const letters = ['A', 'B', 'C', 'D', 'E', 'F'].filter(l => selectedSoalForPreview[`kolom${l}`]?.trim());
+                      const idx = letters.indexOf(letter);
+                      const status = bsParts[idx] === 'S' ? 'Salah' : 'Benar';
+                      
+                      return (
+                        <div key={letter} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                          <span style={{ fontWeight: 600, color: '#1e293b' }}>{letter}. {optionText}</span>
+                          <span className={`badge ${status === 'Benar' ? 'badge-pilgan_kompleks' : 'badge-pilgan_kategori'}`}>{status}</span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div 
+                        key={letter} 
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          padding: '0.75rem 1rem', 
+                          background: isCorrect ? 'rgba(34, 197, 94, 0.1)' : '#f8fafc', 
+                          border: isCorrect ? '1px solid #22c55e' : '1px solid #e2e8f0', 
+                          borderRadius: '8px',
+                          color: isCorrect ? '#15803d' : '#0f172a',
+                          fontWeight: isCorrect ? 600 : 400
+                        }}
+                      >
+                        <span style={{ marginRight: '0.5rem', fontWeight: 700 }}>{letter}.</span>
+                        <span>{optionText}</span>
+                        {isCorrect && <FiCheck style={{ marginLeft: 'auto', color: '#22c55e' }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Kunci Jawaban</h4>
+                <span className="badge badge-pilgan" style={{ fontSize: '0.95rem', padding: '0.4rem 0.8rem' }}>
+                  {selectedSoalForPreview.jawaban}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal - Hanya bisa ditutup dengan menekan tombol X */}
+      {selectedSoalForEdit && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="bank-soal-modal" style={{ maxWidth: '780px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Soal</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => setSelectedSoalForEdit(null)}
+                aria-label="Tutup"
+              >
+                <FiX />
+              </button>
+            </div>
+            
+            <div style={{ overflowY: 'auto', padding: '1.5rem', flex: 1 }}>
+              <form onSubmit={handleEditSubmit} className="import-form" style={{ marginTop: 0 }}>
+                {editFormError && <div className="form-error">{editFormError}</div>}
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+                  <div className="filter-group" style={{ margin: 0 }}>
+                    <label>Mata Pelajaran (Terkunci)</label>
+                    <select value={editMataPelajaranId} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}>
+                      <option value="">— Pilih Mapel —</option>
+                      {mapelList.map((m) => (
+                        <option key={m.id} value={m.id}>{m.namaMapel}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="filter-group" style={{ margin: 0 }}>
+                    <label>Tingkat (Kelas) (Terkunci)</label>
+                    <select value={editTingkat} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}>
+                      {TINGKAT_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="filter-group" style={{ margin: 0 }}>
+                    <label>Program Studi (Terkunci)</label>
+                    <select value={editJurusanId} disabled style={{ backgroundColor: '#f1f5f9', cursor: 'not-allowed' }}>
+                      <option value="">Semua Prodi</option>
+                      {jurusanList.map((j) => (
+                        <option key={j.id} value={j.id}>{j.namaProdi}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
+                  <label>Kategori Soal *</label>
+                  <select value={editKategoriSoal} onChange={(e) => setEditKategoriSoal(e.target.value)}>
+                    {KATEGORI_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {(editKategoriSoal === 'pilgan' || editKategoriSoal === 'pilgan_kompleks') && (
+                  <>
+                    <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
+                      <label>Pertanyaan *</label>
+                      <textarea 
+                        value={editSoalText} 
+                        onChange={(e) => setEditSoalText(e.target.value)} 
+                        rows={3} 
+                        placeholder="Tulis pertanyaan..." 
+                        required 
+                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '2px solid #cbd5e1', borderRadius: '8px', background: '#fff', fontSize: '0.9375rem', resize: 'vertical' }}
+                      />
+                    </div>
+                    <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
+                      <label>URL Gambar (opsional)</label>
+                      <input 
+                        type="text" 
+                        value={editGambar} 
+                        onChange={(e) => setEditGambar(e.target.value)} 
+                        placeholder="https://..." 
+                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '2px solid #cbd5e1', borderRadius: '8px', background: '#fff', fontSize: '0.9375rem' }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {editKategoriSoal === 'pilgan_kategori' && (
+                  <>
+                    <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
+                      <label>Pertanyaan (opsional)</label>
+                      <textarea 
+                        value={editSoalText} 
+                        onChange={(e) => setEditSoalText(e.target.value)} 
+                        rows={3} 
+                        placeholder="Tulis pertanyaan atau konteks untuk pernyataan di bawah (opsional)..." 
+                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '2px solid #cbd5e1', borderRadius: '8px', background: '#fff', fontSize: '0.9375rem', resize: 'vertical' }}
+                      />
+                    </div>
+                    <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
+                      <label>URL Gambar (opsional)</label>
+                      <input 
+                        type="text" 
+                        value={editGambar} 
+                        onChange={(e) => setEditGambar(e.target.value)} 
+                        placeholder="https://..." 
+                        style={{ width: '100%', padding: '0.65rem 0.85rem', border: '2px solid #cbd5e1', borderRadius: '8px', background: '#fff', fontSize: '0.9375rem' }}
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="filter-group" style={{ margin: '0 0 1.5rem 0' }}>
+                  <label>{editKategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.50rem' }}>
+                    {['A', 'B', 'C', 'D', 'E', 'F'].map((letter) => (
+                      <div key={letter} className="kolom-row" style={{ margin: 0 }}>
+                        <span className="kolom-letter" style={{ fontSize: '1rem', fontWeight: 'bold' }}>{letter}.</span>
+                        <input
+                          type="text"
+                          value={editKolom[letter]}
+                          onChange={(e) => setEditKolom((k) => ({ ...k, [letter]: e.target.value }))}
+                          placeholder={editKategoriSoal === 'pilgan_kategori' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
+                          style={{ margin: 0 }}
+                        />
+                        {editKategoriSoal === 'pilgan' && (
+                          <button
+                            type="button"
+                            className={`btn-check ${editJawaban.single === letter ? 'active' : ''}`}
+                            onClick={() => setEditJawaban((j) => ({ ...j, single: letter }))}
+                            title="Jawaban benar"
+                            style={{ margin: 0 }}
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
+                        {editKategoriSoal === 'pilgan_kompleks' && (
+                          <button
+                            type="button"
+                            className={`btn-check ${editJawaban.multi.includes(letter) ? 'active' : ''}`}
+                            onClick={() => toggleMultiEdit(letter)}
+                            title="Centang jika benar"
+                            style={{ margin: 0 }}
+                          >
+                            <FiCheck />
+                          </button>
+                        )}
+                        {editKategoriSoal === 'pilgan_kategori' && (
+                          <div className="benar-salah-btns" style={{ display: 'flex', gap: '0.25rem' }}>
+                            <button
+                              type="button"
+                              className={editJawaban.benarSalah[letter] === 'B' ? 'active' : ''}
+                              onClick={() => setBenarSalahEdit(letter, 'B')}
+                              style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: editJawaban.benarSalah[letter] === 'B' ? '#22c55e' : '#fff', color: editJawaban.benarSalah[letter] === 'B' ? '#fff' : '#475569', fontWeight: 600 }}
+                            >
+                              Benar
+                            </button>
+                            <button
+                              type="button"
+                              className={editJawaban.benarSalah[letter] === 'S' ? 'active' : ''}
+                              onClick={() => setBenarSalahEdit(letter, 'S')}
+                              style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: editJawaban.benarSalah[letter] === 'S' ? '#ef4444' : '#fff', color: editJawaban.benarSalah[letter] === 'S' ? '#fff' : '#475569', fontWeight: 600 }}
+                            >
+                              Salah
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.25rem' }}>
+                  <button type="button" className="btn-secondary" onClick={() => setSelectedSoalForEdit(null)} style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.6rem 1.2rem', cursor: 'pointer', background: '#fff' }}>
+                    Batal
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={editSaving} style={{ borderRadius: '8px', padding: '0.6rem 1.2rem', cursor: 'pointer', background: '#3b82f6', color: '#fff', border: 'none', fontWeight: 600 }}>
+                    {editSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

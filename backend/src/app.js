@@ -28,6 +28,49 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// DEBUG SEMENTARA: cek nilai .env yang terbaca server
+app.get('/api/debug-env', (req, res) => {
+  const dbUrl = process.env.DATABASE_URL || 'TIDAK ADA';
+  const masked = dbUrl.replace(/:([^@]+)@/, ':****@');
+  res.json({
+    NODE_ENV: process.env.NODE_ENV,
+    DB_USER: process.env.DB_USER,
+    DB_NAME: process.env.DB_NAME,
+    DB_HOST: process.env.DB_HOST,
+    DATABASE_URL_MASKED: masked,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  });
+});
+
+// DEBUG SEMENTARA: test koneksi MySQL langsung
+app.get('/api/debug-db', async (req, res) => {
+  const mysql = require('mysql2/promise');
+  const host = process.env.DB_HOST || 'localhost';
+  
+  // Coba beberapa konfigurasi koneksi
+  const configs = [
+    { label: 'localhost+port', host: 'localhost', port: 3306, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME },
+    { label: '127.0.0.1+port', host: '127.0.0.1', port: 3306, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME },
+    { label: 'socket', socketPath: '/var/run/mysqld/mysqld.sock', user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME },
+    { label: 'socket-mysql', socketPath: '/tmp/mysql.sock', user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME },
+  ];
+
+  const results = [];
+  for (const cfg of configs) {
+    const { label, ...connOpts } = cfg;
+    try {
+      const conn = await mysql.createConnection({ ...connOpts, connectTimeout: 5000 });
+      await conn.query('SELECT 1');
+      await conn.end();
+      results.push({ label, status: 'SUKSES' });
+    } catch (err) {
+      results.push({ label, status: 'GAGAL', code: err.code, message: err.message });
+    }
+  }
+  res.json({ results });
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { FiCheck, FiArrowLeft } from 'react-icons/fi';
 import api from '../../services/api';
 import './BankSoal.css';
@@ -40,6 +40,9 @@ export default function BankSoalForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
+  const [searchParams] = useSearchParams();
+  const queryKoleksiId = searchParams.get('bankSoalKoleksiId');
+  const [hasPrefilledKoleksi, setHasPrefilledKoleksi] = useState(false);
 
   const [mapelList, setMapelList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
@@ -77,6 +80,30 @@ export default function BankSoalForm() {
     };
     loadOptions();
   }, []);
+
+  useEffect(() => {
+    if (!isEdit && queryKoleksiId) {
+      setBankSoalKoleksiId(queryKoleksiId);
+      setModeKoleksi('pilih');
+      
+      const fetchKoleksiQuestions = async () => {
+        try {
+          const res = await api.get(`/guru/bank-soal?bankSoalKoleksiId=${queryKoleksiId}`);
+          const questions = res.data?.data || [];
+          if (questions.length > 0) {
+            const first = questions[0];
+            setMataPelajaranId(first.mataPelajaranId ?? '');
+            setTingkat(apiToTingkatDisplay(first.tingkat) ?? '10');
+            setJurusanId(first.jurusanId != null ? String(first.jurusanId) : '');
+            setHasPrefilledKoleksi(true);
+          }
+        } catch (e) {
+          console.error('Fetch koleksi questions error:', e);
+        }
+      };
+      fetchKoleksiQuestions();
+    }
+  }, [queryKoleksiId, isEdit]);
 
   useEffect(() => {
     if (!isEdit) return;
@@ -265,8 +292,13 @@ export default function BankSoalForm() {
 
           <div className="form-row two-cols">
             <div className="form-group">
-              <label>Pilih Bank Soal *</label>
-              <select value={modeKoleksi} onChange={(e) => setModeKoleksi(e.target.value)}>
+              <label>Pilih Bank Soal * {queryKoleksiId && '(Terkunci)'}</label>
+              <select 
+                value={modeKoleksi} 
+                onChange={(e) => setModeKoleksi(e.target.value)}
+                disabled={Boolean(queryKoleksiId)}
+                style={queryKoleksiId ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+              >
                 <option value="pilih">Pilih dari yang sudah ada</option>
                 <option value="buat">Buat Bank Soal baru</option>
               </select>
@@ -274,11 +306,13 @@ export default function BankSoalForm() {
             <div className="form-group">
               {modeKoleksi === 'pilih' ? (
                 <>
-                  <label>Bank Soal *</label>
+                  <label>Bank Soal * {queryKoleksiId && '(Terkunci)'}</label>
                   <select
                     value={bankSoalKoleksiId}
                     onChange={(e) => setBankSoalKoleksiId(e.target.value)}
                     required
+                    disabled={Boolean(queryKoleksiId)}
+                    style={queryKoleksiId ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
                   >
                     <option value="">Pilih Bank Soal</option>
                     {koleksiList.map((k) => (
@@ -303,8 +337,14 @@ export default function BankSoalForm() {
 
           <div className="form-row two-cols">
             <div className="form-group">
-              <label>Mata Pelajaran *</label>
-              <select value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
+              <label>Mata Pelajaran * {hasPrefilledKoleksi && '(Terkunci)'}</label>
+              <select 
+                value={mataPelajaranId} 
+                onChange={(e) => setMataPelajaranId(e.target.value)} 
+                required
+                disabled={hasPrefilledKoleksi}
+                style={hasPrefilledKoleksi ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+              >
                 <option value="">Pilih Mapel</option>
                 {mapelList.map((m) => (
                   <option key={m.id} value={m.id}>{m.namaMapel}</option>
@@ -312,8 +352,14 @@ export default function BankSoalForm() {
               </select>
             </div>
             <div className="form-group">
-              <label>Tingkat (Kelas) *</label>
-              <select value={tingkat} onChange={(e) => setTingkat(e.target.value)} required>
+              <label>Tingkat (Kelas) * {hasPrefilledKoleksi && '(Terkunci)'}</label>
+              <select 
+                value={tingkat} 
+                onChange={(e) => setTingkat(e.target.value)} 
+                required
+                disabled={hasPrefilledKoleksi}
+                style={hasPrefilledKoleksi ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+              >
                 {TINGKAT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
@@ -321,8 +367,13 @@ export default function BankSoalForm() {
             </div>
           </div>
           <div className="form-group">
-            <label>Prodi</label>
-            <select value={jurusanId} onChange={(e) => setJurusanId(e.target.value)}>
+            <label>Prodi {hasPrefilledKoleksi && '(Terkunci)'}</label>
+            <select 
+              value={jurusanId} 
+              onChange={(e) => setJurusanId(e.target.value)}
+              disabled={hasPrefilledKoleksi}
+              style={hasPrefilledKoleksi ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+            >
               <option value="">Semua Prodi</option>
               {jurusanList.map((j) => (
                 <option key={j.id} value={j.id}>{j.nama} ({j.idJurusan})</option>

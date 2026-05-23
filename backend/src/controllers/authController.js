@@ -80,7 +80,10 @@ exports.googleCallback = async (req, res) => {
 
   } catch (error) {
     console.error('Google OAuth Callback Error:', error);
-    res.redirect(`${env.frontendUrl}/login?error=oauth_failed`);
+    // DEBUG SEMENTARA: tampilkan pesan error di URL agar bisa didiagnosis
+    const errMsg = encodeURIComponent(error?.message || 'unknown');
+    const errCode = encodeURIComponent(error?.code || error?.constructor?.name || 'unknown');
+    res.redirect(`${env.frontendUrl}/login?error=oauth_failed&debug_msg=${errMsg}&debug_code=${errCode}`);
   }
 };
 
