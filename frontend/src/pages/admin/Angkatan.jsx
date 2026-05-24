@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import { 
   FiPlus, FiTrash2, FiEdit2, FiSave, FiX, FiCalendar, 
   FiSearch, FiAlertCircle, FiCheckCircle 
@@ -7,9 +8,9 @@ import {
 import './Angkatan.css';
 
 const Angkatan = () => {
+  const { showToast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Form state untuk modal tambah
@@ -38,7 +39,7 @@ const Angkatan = () => {
         setItems(res.data.data);
       }
     } catch (err) {
-      setError('Gagal memuat data angkatan');
+      showToast('Gagal memuat data angkatan', 'error');
     } finally {
       setLoading(false);
     }
@@ -47,18 +48,18 @@ const Angkatan = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     setSaving(true);
-    setError('');
     try {
       await api.post('/admin/angkatan', {
         namaAngkatan,
         tahunAngkatan: Number(tahunAngkatan)
       });
+      showToast('Angkatan berhasil ditambahkan', 'success');
       setShowAddModal(false);
       setNamaAngkatan('');
       setTahunAngkatan(new Date().getFullYear());
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal menambah angkatan');
+      showToast(err.response?.data?.message || 'Gagal menambah angkatan', 'error');
     } finally {
       setSaving(false);
     }
@@ -83,10 +84,11 @@ const Angkatan = () => {
         namaAngkatan: editNama,
         tahunAngkatan: Number(editTahun)
       });
+      showToast('Angkatan berhasil diperbarui', 'success');
       setEditingId(null);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal memperbarui angkatan');
+      showToast(err.response?.data?.message || 'Gagal memperbarui angkatan', 'error');
     } finally {
       setSaving(false);
     }
@@ -101,10 +103,11 @@ const Angkatan = () => {
     setSaving(true);
     try {
       await api.delete(`/admin/angkatan/${selectedItem.id}`);
+      showToast('Angkatan berhasil dihapus', 'success');
       setShowDeleteModal(false);
       loadData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal menghapus angkatan');
+      showToast(err.response?.data?.message || 'Gagal menghapus angkatan', 'error');
     } finally {
       setSaving(false);
     }
@@ -124,11 +127,7 @@ const Angkatan = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="user-alert">
-          <FiAlertCircle /> {error}
-        </div>
-      )}
+
 
       <div className="user-card">
         <div className="angkatan-table-wrap">

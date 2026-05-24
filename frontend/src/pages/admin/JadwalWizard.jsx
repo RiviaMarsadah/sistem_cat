@@ -2,14 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiChevronLeft, FiChevronRight, FiCheck, FiSave, FiAlertCircle, FiSettings, FiList, FiClock, FiShield } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './JadwalWizard.css';
 
 export default function JadwalWizard() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
 
   // Step 1: Periode
   const [periodes, setPeriodes] = useState([]);
@@ -56,59 +57,71 @@ export default function JadwalWizard() {
       setMasterKelas(resKel.data.data || []);
       setMasterMapel(resMap.data.data || []);
     } catch(err) {
-      setError('Gagal mengambil data master');
+      showToast('Gagal mengambil data master', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const handleNextStep = () => {
-    setError('');
     // Validation before next
     if (currentStep === 1) {
       if (isNewPeriode) {
         if (!periodeNama || !periodeMulai || !periodeSelesai || !periodeSemester || !periodeTahun) {
-          setError('Mohon lengkapi semua isian periode baru.');
+          showToast('Mohon lengkapi semua isian periode baru.', 'error');
           return;
         }
       } else {
         if (!selectedPeriodeId) {
-          setError('Silakan pilih periode yang ada atau buat periode baru.');
+          showToast('Silakan pilih periode yang ada atau buat periode baru.', 'error');
           return;
         }
       }
     } else if (currentStep === 2) {
       if (selectedJurusans.length === 0) {
-        setError('Pilih minimal satu program studi/jurusan.');
+        showToast('Pilih minimal satu program studi/jurusan.', 'error');
         return;
       }
-      // Auto select kelas that belong to selected jurusans
-      const availableClasses = masterKelas.filter(k => selectedJurusans.includes(String(k.jurusanId)));
-      // Initialize slots when moving to step 4
+      // Keep only selectedKelas that belong to currently selected jurusans
+      const availableClassIds = masterKelas
+        .filter(k => selectedJurusans.includes(String(k.jurusanId)))
+        .map(k => String(k.id));
+      setSelectedKelas(prev => prev.filter(id => availableClassIds.includes(id)));
     } else if (currentStep === 3) {
        if (selectedKelas.length === 0) {
-         setError('Pilih minimal satu kelas.');
+         showToast('Pilih minimal satu kelas.', 'error');
          return;
        }
-       // Prepare slots for Step 4 grouping by Kelas or just one big slot setup
-       // For simplicity, we allow adding rows in Step 4
+       // Prepare slots for Step 4
        if (sessions.length === 0) {
           addEmptySession();
+       } else {
+          // Synchronize existing sessions' classSettings with current selectedKelas
+          setSessions(prev => prev.map(s => {
+            const updatedClassSettings = selectedKelas.map(kId => {
+              const existing = s.classSettings.find(c => String(c.kelasId) === String(kId));
+              return existing || { kelasId: kId, mapelId: '', ruangan: '' };
+            });
+            return {
+              ...s,
+              classSettings: updatedClassSettings
+            };
+          }));
        }
     } else if (currentStep === 4) {
       if (sessions.length === 0) {
-         setError('Tentukan minimal satu sesi ujian.');
+         showToast('Tentukan minimal satu sesi ujian.', 'error');
          return;
       }
       for (const sess of sessions) {
         if (!sess.mulai || !sess.durasi) {
-          setError('Tentukan waktu mulai dan durasi untuk tiap sesi.');
+          showToast('Tentukan waktu mulai dan durasi untuk tiap sesi.', 'error');
           return;
         }
         for (const cls of sess.classSettings) {
            if (!cls.mapelId) {
              const className = masterKelas.find(k => String(k.id) === String(cls.kelasId))?.inisial || 'Kelas';
-             setError(`Pilih Mata Pelajaran untuk ${className} di Sesi ${sess.id}.`);
+             showToast(`Pilih Mata Pelajaran untuk ${className} di Sesi ${sess.id}.`, 'error');
              return;
            }
         }
@@ -120,7 +133,6 @@ export default function JadwalWizard() {
 
   const handlePrevStep = () => {
     setCurrentStep(prev => prev - 1);
-    setError('');
   };
 
   // Step 2 Toggles
@@ -230,7 +242,6 @@ export default function JadwalWizard() {
   // Final Submit
   const handleGenerate = async () => {
     setSaving(true);
-    setError('');
     
     try {
       let finalPeriodeId = selectedPeriodeId;
@@ -276,10 +287,11 @@ export default function JadwalWizard() {
          slots: payloadSlots
       });
 
-      navigate('/admin/jadwal-ujian', { state: { message: 'Jadwal berhasil digenerate' }});
+      showToast('Jadwal berhasil digenerate', 'success');
+      navigate('/admin/jadwal-ujian');
 
     } catch (err) {
-      setError('Terjadi kesalahan saat memproses jadwal: ' + (err?.response?.data?.message || err.message));
+      showToast('Terjadi kesalahan saat memproses jadwal: ' + (err?.response?.data?.message || err.message), 'error');
     } finally {
       setSaving(false);
     }
@@ -310,8 +322,6 @@ export default function JadwalWizard() {
              </div>
           ))}
        </div>
-
-       {error && <div className="user-alert">{error}</div>}
 
        <div className="wizard-content">
           {/* STEP 1: PERIODE */}
@@ -552,7 +562,7 @@ export default function JadwalWizard() {
                                    className={`wizard-input row-input ${!hasMapel ? 'input-empty' : ''}`}
                                  >
                                    <option value="">— Pilih Mata Pelajaran —</option>
-                                   {masterMapel.map(m => <option key={m.id} value={m.id}>{m.namaMapel}</option>)}
+                                   {masterMapel.map(m => <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>)}
                                  </select>
                                </div>
                                <div className="col-ruangan">

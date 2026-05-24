@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { FiBook, FiInfo, FiPieChart, FiAlertTriangle, FiCheck } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
 import './AnalisisSoal.css';
 
 export default function AnalisisSoal() {
+  const { showToast } = useToast();
   const [loading, setLoading]       = useState(false);
   const [analyzing, setAnalyzing]   = useState(false);
   const [packages, setPackages]     = useState([]);
@@ -18,9 +20,10 @@ export default function AnalisisSoal() {
   const rawData = analysisData?.analysis || [];
   const totalItems = rawData.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = rawData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const isShowAll = currentPage === 9999;
+  const displayPage = isShowAll ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = isShowAll ? 0 : (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = isShowAll ? rawData : rawData.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   function getPaginationPages(tp, cp) {
     if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
@@ -33,7 +36,7 @@ export default function AnalisisSoal() {
     return result;
   }
 
-  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+  useEffect(() => { if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
   useEffect(() => { setCurrentPage(1); }, [selectedPaket]);
 
   const fetchPackages = async () => {
@@ -45,6 +48,7 @@ export default function AnalisisSoal() {
       if (list.length > 0) setSelectedPaket(list[0].id);
     } catch (e) {
       console.error('Fetch packages error:', e);
+      showToast('Gagal memuat daftar paket ujian', 'error');
     } finally {
       setLoading(false);
     }
@@ -58,6 +62,7 @@ export default function AnalisisSoal() {
       setAnalysisData(res.data?.data);
     } catch (e) {
       console.error('Run analysis error:', e);
+      showToast('Gagal menganalisis butir soal paket ini', 'error');
     } finally {
       setAnalyzing(false);
     }
@@ -122,7 +127,7 @@ export default function AnalisisSoal() {
               ? <option value="">Belum ada paket yang dikerjakan siswa</option>
               : packages.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.nama} — {p.mataPelajaran?.namaMapel} ({p._count?.soalPaket} Soal)
+                    {p.nama} — {p.mataPelajaran?.namaMapel} ({p.mataPelajaran?.kodeMapel || '-'}) ({p._count?.soalPaket} Soal)
                   </option>
                 ))
             }
@@ -213,18 +218,27 @@ export default function AnalisisSoal() {
             {!analyzing && totalItems > 0 && (
               <div className="table-pagination">
                 <span className="table-pagination-info">
-                  Menampilkan {startIndex + 1}{' – '}{Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} soal
+                  {isShowAll 
+                    ? `Menampilkan 1 – ${totalItems} dari ${totalItems} soal` 
+                    : `Menampilkan ${startIndex + 1} – ${Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari ${totalItems} soal`
+                  }
                 </span>
                 <div className="table-pagination-controls">
-                  <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+                  <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
                   <div className="table-pagination-pages">
-                    {getPaginationPages(totalPages, displayPage).map((pg) =>
-                      pg.type === 'ellipsis' ? <span key={`ellipsis-${pg.key}`} className="table-pagination-ellipsis">…</span> :
-                      <button key={pg.value} type="button" className={`table-pagination-page ${pg.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(pg.value)}>{pg.value}</button>
+                    {isShowAll ? (
+                      <button type="button" className="table-pagination-page active" onClick={() => setCurrentPage(1)}>Tampilkan Per Halaman</button>
+                    ) : (
+                      getPaginationPages(totalPages, displayPage).map((pg) =>
+                        pg.type === 'ellipsis' ? <span key={`ellipsis-${pg.key}`} className="table-pagination-ellipsis">…</span> :
+                        <button key={pg.value} type="button" className={`table-pagination-page ${pg.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(pg.value)}>{pg.value}</button>
+                      )
                     )}
                   </div>
-                  <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
-                  <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+                  <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+                  {!isShowAll && (
+                    <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+                  )}
                 </div>
               </div>
             )}

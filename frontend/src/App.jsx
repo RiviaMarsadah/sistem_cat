@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
 import DashboardLayout from './layout/DashboardLayout';
 import AdminDashboard from './pages/admin/Dashboard';
@@ -11,6 +12,7 @@ import AdminGuru from './pages/admin/Guru';
 import AdminMataPelajaran from './pages/admin/MataPelajaran';
 import AdminAngkatan from './pages/admin/Angkatan';
 import AdminApiSync from './pages/admin/ApiSync';
+import AdminUjianSiswa from './pages/admin/UjianSiswa';
 import GuruDashboard from './pages/guru/Dashboard';
 import GuruBankSoal from './pages/guru/BankSoal';
 import GuruBankSoalDetail from './pages/guru/BankSoalDetail';
@@ -28,7 +30,8 @@ import ReviewHasilGuru from './pages/guru/ReviewHasil';
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ToastProvider>
+        <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
@@ -45,6 +48,7 @@ function App() {
             <Route path="guru" element={<AdminGuru />} />
             <Route path="angkatan" element={<AdminAngkatan />} />
             <Route path="api-sync" element={<AdminApiSync />} />
+            <Route path="ujian-siswa" element={<AdminUjianSiswa />} />
             <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
             <Route path="jadwal-ujian/wizard" element={<AdminJadwalWizard />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
@@ -69,6 +73,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

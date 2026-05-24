@@ -22,11 +22,10 @@ const singleChoiceSchema = Joi.object({
   kolomC: Joi.string().trim().max(500).allow('', null),
   kolomD: Joi.string().trim().max(500).allow('', null),
   kolomE: Joi.string().trim().max(500).allow('', null),
-  kolomF: Joi.string().trim().max(500).allow('', null),
-  jawaban: Joi.string().valid('A', 'B', 'C', 'D', 'E', 'F').required(),
+  jawaban: Joi.string().valid('A', 'B', 'C', 'D', 'E').required(),
   gambar: Joi.string().trim().max(500).allow('', null),
 }).custom((value, helpers) => {
-  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE, value.kolomF].filter(Boolean);
+  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE].filter(Boolean);
   if (cols.length < 3) return helpers.message('Minimal 3 kolom jawaban harus diisi');
   return value;
 });
@@ -39,17 +38,16 @@ const multiChoiceSchema = Joi.object({
   kolomC: Joi.string().trim().max(500).allow('', null),
   kolomD: Joi.string().trim().max(500).allow('', null),
   kolomE: Joi.string().trim().max(500).allow('', null),
-  kolomF: Joi.string().trim().max(500).allow('', null),
-  jawaban: Joi.string().pattern(/^[A-F](,[A-F])*$/).required().messages({
-    'string.pattern.base': 'Jawaban harus huruf A-F dipisah koma, contoh: A,B,F',
+  jawaban: Joi.string().pattern(/^[A-E](,[A-E])*$/).required().messages({
+    'string.pattern.base': 'Jawaban harus huruf A-E dipisah koma, contoh: A,B,E',
   }),
   gambar: Joi.string().trim().max(500).allow('', null),
 }).custom((value, helpers) => {
-  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE, value.kolomF].filter(Boolean);
+  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE].filter(Boolean);
   if (cols.length < 3) return helpers.message('Minimal 3 kolom jawaban harus diisi');
   const letters = value.jawaban.split(',').map((s) => s.trim());
-  const valid = new Set(['A', 'B', 'C', 'D', 'E', 'F']);
-  if (!letters.every((l) => valid.has(l))) return helpers.message('Jawaban hanya boleh A,B,C,D,E,F');
+  const valid = new Set(['A', 'B', 'C', 'D', 'E']);
+  if (!letters.every((l) => valid.has(l))) return helpers.message('Jawaban hanya boleh A,B,C,D,E');
   return value;
 });
 
@@ -61,13 +59,12 @@ const benarSalahSchema = Joi.object({
   kolomC: Joi.string().trim().max(500).allow('', null),
   kolomD: Joi.string().trim().max(500).allow('', null),
   kolomE: Joi.string().trim().max(500).allow('', null),
-  kolomF: Joi.string().trim().max(500).allow('', null),
   jawaban: Joi.string().pattern(/^[BS](,[BS])*$/).required().messages({
     'string.pattern.base': 'Jawaban benar/salah: B atau S dipisah koma, contoh: B,B,S',
   }),
   gambar: Joi.string().trim().max(500).allow('', null),
 }).custom((value, helpers) => {
-  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE, value.kolomF].filter(Boolean);
+  const cols = [value.kolomA, value.kolomB, value.kolomC, value.kolomD, value.kolomE].filter(Boolean);
   if (cols.length < 1) return helpers.message('Minimal 1 pernyataan harus diisi');
   return value;
 });
@@ -98,7 +95,6 @@ function normalizePayload(body) {
     kolomC: body.kolomC || null,
     kolomD: body.kolomD || null,
     kolomE: body.kolomE || null,
-    kolomF: body.kolomF || null,
     jawaban: String(body.jawaban).trim(),
     gambar: body.gambar || null,
   };
@@ -284,5 +280,38 @@ exports.remove = async (req, res) => {
   } catch (err) {
     console.error('BankSoal remove error:', err);
     return res.status(500).json({ success: false, message: 'Gagal menghapus soal' });
+  }
+};
+
+const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
+
+exports.uploadImage = async (req, res) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
+    }
+
+    const uuid = crypto.randomUUID();
+    const filename = `${uuid}.webp`;
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    
+    // Ensure the uploads directory exists
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const filePath = path.join(uploadsDir, filename);
+    await fs.promises.writeFile(filePath, req.file.buffer);
+
+    return res.json({
+      success: true,
+      message: 'Gambar berhasil diunggah',
+      filename: filename
+    });
+  } catch (err) {
+    console.error('Upload image error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal mengunggah gambar' });
   }
 };

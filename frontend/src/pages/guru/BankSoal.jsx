@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX, FiCheck } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
 import './JadwalUjian.css';
 import './BankSoal.css';
@@ -14,11 +15,16 @@ const TINGKAT_OPTIONS = [
 ];
 
 export default function BankSoal() {
+  const navigate = useNavigate();
+  const { showToast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
 
+  // Create Collection Modal States (Persistent Input)
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createNamaKoleksi, setCreateNamaKoleksi] = useState('');
+
+  // Edit Collection Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [namaKoleksi, setNamaKoleksi] = useState('');
   const [saving, setSaving] = useState(false);
@@ -34,9 +40,7 @@ export default function BankSoal() {
   const [importNamaBankSoal, setImportNamaBankSoal] = useState('');
   const [importFile, setImportFile] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
-  const [importError, setImportError] = useState('');
   const [importResult, setImportResult] = useState(null);
-  const [importNotice, setImportNotice] = useState(null);
   const fileInputRef = useRef(null);
 
   const [mapelList, setMapelList] = useState([]);
@@ -48,9 +52,10 @@ export default function BankSoal() {
 
   const totalItems = items.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const isShowAll = currentPage === 9999;
+  const displayPage = isShowAll ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = isShowAll ? 0 : (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = isShowAll ? items : items.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   function getPaginationPages(tp, cp) {
     if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
@@ -65,7 +70,9 @@ export default function BankSoal() {
 
   const handleShowAll = () => { setCurrentPage(9999); };
 
-  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+  useEffect(() => { 
+    if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); 
+  }, [totalPages, currentPage]);
 
   const loadOptions = async () => {
     try {
@@ -82,12 +89,11 @@ export default function BankSoal() {
 
   const load = async () => {
     setLoading(true);
-    setError('');
     try {
       const res = await api.get('/guru/bank-soal-koleksi');
       setItems(res.data?.data || []);
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal memuat bank soal');
+      showToast(e?.response?.data?.message || 'Gagal memuat bank soal', 'error');
     } finally {
       setLoading(false);
     }
@@ -102,9 +108,27 @@ export default function BankSoal() {
     if (!window.confirm('Yakin hapus bank soal (koleksi) ini? Seluruh soal di dalamnya bisa terhapus atau kehilangan referensi koleksi.')) return;
     try {
       await api.delete(`/guru/bank-soal-koleksi/${id}`);
+      showToast('Bank Soal berhasil dihapus.', 'success');
       load();
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal menghapus');
+      showToast(e?.response?.data?.message || 'Gagal menghapus', 'error');
+    }
+  };
+
+  const handleCreateKoleksi = async (e) => {
+    e.preventDefault();
+    if (!createNamaKoleksi.trim()) return;
+    setSaving(true);
+    try {
+      await api.post('/guru/bank-soal-koleksi', { nama: createNamaKoleksi.trim() });
+      showToast('Bank Soal baru berhasil dibuat!', 'success');
+      setShowCreateModal(false);
+      setCreateNamaKoleksi(''); // Clear state on success only!
+      load();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Gagal membuat bank soal', 'error');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -114,10 +138,11 @@ export default function BankSoal() {
     setSaving(true);
     try {
       await api.put(`/guru/bank-soal-koleksi/${editingId}`, { nama: namaKoleksi });
+      showToast('Nama Bank Soal berhasil diperbarui.', 'success');
       setShowEditModal(false);
       load();
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal menyimpan koleksi');
+      showToast(e?.response?.data?.message || 'Gagal menyimpan koleksi', 'error');
     } finally {
       setSaving(false);
     }
@@ -141,20 +166,18 @@ export default function BankSoal() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal mengunduh template');
+      showToast(e?.response?.data?.message || 'Gagal mengunduh template', 'error');
     }
   };
 
   const handleImport = async (e) => {
     e.preventDefault();
-    setImportError('');
-    setImportNotice(null);
     if (!importMapel || !importTingkat) {
-      setImportError('Pilih Mata Pelajaran dan Tingkat terlebih dahulu.');
+      showToast('Pilih Mata Pelajaran dan Tingkat terlebih dahulu.', 'error');
       return;
     }
     if (!importFile) {
-      setImportError('Pilih file Excel yang akan diunggah.');
+      showToast('Pilih file Excel yang akan diunggah.', 'error');
       return;
     }
     setImportLoading(true);
@@ -175,10 +198,9 @@ export default function BankSoal() {
       });
       const resultData = res.data?.data || res.data;
       setImportResult(resultData);
-      setImportNotice({
-        type: 'success',
-        text: `${resultData?.created || 0} soal berhasil diimpor.`,
-      });
+      
+      showToast(`${resultData?.created || 0} soal berhasil diimpor.`, 'success');
+      
       setImportMapel('');
       setImportTingkat('');
       setImportJurusan('');
@@ -189,7 +211,7 @@ export default function BankSoal() {
       if (res.data?.data?.created > 0) load();
       setShowImportModal(false);
     } catch (e) {
-      setImportError(e?.response?.data?.message || 'Gagal mengimpor. Periksa format file lalu coba lagi.');
+      showToast(e?.response?.data?.message || 'Gagal mengimpor. Periksa format file lalu coba lagi.', 'error');
       setImportResult(null);
     } finally {
       setImportLoading(false);
@@ -214,8 +236,6 @@ export default function BankSoal() {
         </div>
       </div>
 
-      {error && <div className="bank-soal-error" role="alert">{error}</div>}
-
       <div className="guru-card">
         <div className="guru-card-header">
           <h2 className="guru-card-title">Daftar Bank Soal</h2>
@@ -227,10 +247,14 @@ export default function BankSoal() {
             >
               <FiUpload /> Import Bank Soal
             </button>
-            <Link to="/guru/bank-soal/tambah" className="btn-tambah">
+            <button 
+              type="button" 
+              onClick={() => setShowCreateModal(true)} 
+              className="btn-tambah"
+            >
               <FiPlus />
               <span>Tambah Bank Soal</span>
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -256,7 +280,7 @@ export default function BankSoal() {
               ) : (
                 paginatedItems.map((row, idx) => (
                   <tr key={row.id} style={{ cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)}>
-                    <td>{idx + 1}</td>
+                    <td>{startIndex + idx + 1}</td>
                     <td>
                       <div className="folder-name-cell">
                         <FiFolder className="folder-icon" />
@@ -274,14 +298,14 @@ export default function BankSoal() {
                       </div>
                     </td>
                     <td>
-                      <div className="action-buttons-cell">
-                        <button type="button" className="btn-icon view" onClick={(e) => { e.stopPropagation(); navigate(`/guru/bank-soal/detail/${row.id}`); }} title="Masuk / Edit Soal">
+                      <div className="action-buttons-cell" onClick={(e) => e.stopPropagation()}>
+                        <button type="button" className="btn-icon view" onClick={() => navigate(`/guru/bank-soal/detail/${row.id}`)} title="Masuk / Edit Soal">
                           <FiEye />
                         </button>
-                        <button type="button" className="btn-icon edit" onClick={(e) => { e.stopPropagation(); openEdit(row); }} title="Rename Koleksi">
+                        <button type="button" className="btn-icon edit" onClick={() => openEdit(row)} title="Rename Koleksi">
                           <FiEdit2 />
                         </button>
-                        <button type="button" className="btn-icon delete" onClick={(e) => { e.stopPropagation(); handleDelete(row.id); }} title="Hapus Koleksi">
+                        <button type="button" className="btn-icon delete" onClick={() => handleDelete(row.id)} title="Hapus Koleksi">
                           <FiTrash2 />
                         </button>
                       </div>
@@ -298,38 +322,77 @@ export default function BankSoal() {
       {!loading && totalItems > 0 && (
         <div className="table-pagination">
           <span className="table-pagination-info">
-            Menampilkan {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} bank soal
+            {isShowAll 
+              ? `Menampilkan 1 - ${totalItems} dari ${totalItems} bank soal` 
+              : `Menampilkan ${startIndex + 1} - ${Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari ${totalItems} bank soal`
+            }
           </span>
           <div className="table-pagination-controls">
-            <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+            <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
             <div className="table-pagination-pages">
-              {getPaginationPages(totalPages, displayPage).map((item, idx) =>
-                item.type === 'ellipsis' ? (
-                  <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span>
-                ) : (
-                  <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+              {isShowAll ? (
+                <button type="button" className="table-pagination-page active" onClick={() => setCurrentPage(1)}>Tampilkan Per Halaman</button>
+              ) : (
+                getPaginationPages(totalPages, displayPage).map((item, idx) =>
+                  item.type === 'ellipsis' ? (
+                    <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span>
+                  ) : (
+                    <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                  )
                 )
               )}
             </div>
-            <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
-            <button type="button" className="table-pagination-btn show-all" onClick={handleShowAll}>Tampilkan Semua</button>
+            <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+            {!isShowAll && (
+              <button type="button" className="table-pagination-btn show-all" onClick={handleShowAll}>Tampilkan Semua</button>
+            )}
           </div>
         </div>
       )}
       </div>
 
-      {importNotice && (
-        <div className={`bank-soal-notice ${importNotice.type}`}>
-          {importNotice.text}
+      {/* Tambah Bank Soal Modal (Persistent State) */}
+      {showCreateModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">Tambah Bank Soal Baru</h3>
+              <button className="modal-close" onClick={() => setShowCreateModal(false)} aria-label="Tutup"><FiX /></button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleCreateKoleksi}>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nama Bank Soal *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Misal: Try Out Mandiri Ke-4"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px' }}
+                    value={createNamaKoleksi}
+                    onChange={(e) => setCreateNamaKoleksi(e.target.value)}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
+                  <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: '10px 16px', background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>
+                    Batal
+                  </button>
+                  <button type="submit" disabled={saving} style={{ padding: '10px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                    {saving ? 'Loading...' : 'Simpan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
 
+      {/* Edit Bank Soal Modal */}
       {showEditModal && (
-        <div className="modal-overlay">
-          <div className="modal-container">
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title">Ubah Nama Bank Soal</h3>
-              <button className="modal-close" onClick={() => setShowEditModal(false)}><FiPlus style={{transform: 'rotate(45deg)'}} /></button>
+              <button className="modal-close" onClick={() => setShowEditModal(false)} aria-label="Tutup"><FiX /></button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSaveKoleksi}>
@@ -357,6 +420,7 @@ export default function BankSoal() {
         </div>
       )}
 
+      {/* Import Modal */}
       {showImportModal && (
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="bank-soal-modal import-modal" onClick={(e) => e.stopPropagation()}>
@@ -384,7 +448,6 @@ export default function BankSoal() {
                 </button>
               </div>
               <form onSubmit={handleImport} className="import-form">
-                {importError && <div className="form-error">{importError}</div>}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div className="filter-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
                     <label>Pilih Bank Soal</label>
@@ -413,7 +476,7 @@ export default function BankSoal() {
                     <select value={importMapel} onChange={(e) => setImportMapel(e.target.value)} required>
                       <option value="">— Pilih Mapel —</option>
                       {mapelList.map((m) => (
-                        <option key={m.id} value={m.id}>{m.namaMapel}</option>
+                        <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
                       ))}
                     </select>
                   </div>
@@ -484,12 +547,12 @@ export default function BankSoal() {
           <div className="bank-soal-modal guide-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Panduan Format Excel Import Bank Soal</h2>
-              <button type="button" className="modal-close" onClick={() => setShowGuideModal(false)} aria-label="Tutup">×</button>
+              <button type="button" className="modal-close" onClick={() => setShowGuideModal(false)} aria-label="Tutup"><FiX /></button>
             </div>
             <div className="guide-content">
               <p className="guide-note mb-3" style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '8px', borderLeft: '4px solid #3b82f6', marginBottom: '1rem' }}>
                 <strong>Catatan Penting:</strong> 
-                Semua soal di dalam file Excel akan dimasukkan ke dalam <strong>Nama Bank Soal</strong> yang Anda ketikkan di form aplikasi sebelum melakukan klik Import. 
+                Semua soal di dalam file Excel akan dimasukkan ke dalam <strong>Nama Bank Soal</strong> yang Anda pilih atau ketikkan sebelum mengunggah berkas.
               </p>
               <p><strong>Kolom di sheet &quot;Soal&quot; (baris pertama = header):</strong></p>
               <table className="guide-table">
@@ -499,8 +562,8 @@ export default function BankSoal() {
                 <tbody>
                   <tr><td><code>Kategori</code></td><td><code>pilgan</code> | <code>pilgan_kompleks</code> | <code>pilgan_kategori</code></td></tr>
                   <tr><td><code>Soal</code></td><td>Teks pertanyaan (opsional untuk <code>pilgan_kategori</code>)</td></tr>
-                  <tr><td><code>Opsi A</code> s/d <code>Opsi F</code></td><td>Isi opsi atau pernyataan. Minimal 3 untuk <code>pilgan</code>/<code>pilgan_kompleks</code>, minimal 1 untuk <code>pilgan_kategori</code></td></tr>
-                  <tr><td><code>Jawaban</code></td><td>Single: satu huruf A–F. Multi: dipisah koma, contoh <code>A,B,D</code>. Benar/Salah: B atau S per pernyataan, contoh <code>B,B,S</code></td></tr>
+                  <tr><td><code>Opsi A</code> s/d <code>Opsi E</code></td><td>Isi opsi atau pernyataan. Minimal 3 untuk <code>pilgan</code>/<code>pilgan_kompleks</code>, minimal 1 untuk <code>pilgan_kategori</code></td></tr>
+                  <tr><td><code>Jawaban</code></td><td>Single: satu huruf A–E. Multi: dipisah koma, contoh <code>A,B,D</code>. Benar/Salah: B atau S per pernyataan, contoh <code>B,B,S</code></td></tr>
                   <tr><td><code>Gambar</code></td><td>URL gambar (opsional)</td></tr>
                 </tbody>
               </table>
@@ -511,6 +574,8 @@ export default function BankSoal() {
           </div>
         </div>
       )}
+
+
     </div>
   );
 }

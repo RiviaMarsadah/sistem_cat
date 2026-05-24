@@ -1,8 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { FiCheck, FiArrowLeft } from 'react-icons/fi';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { FiArrowLeft, FiPlus, FiTrash2, FiFolder, FiCheck, FiX } from 'react-icons/fi';
 import api from '../../services/api';
+import { compressImageToWebP } from '../../utils/imageCompressor';
+import { useToast } from '../../context/ToastContext';
+import './GuruTheme.css';
+import './JadwalUjian.css';
 import './BankSoal.css';
+
+const KOLOM_LABELS = ['A', 'B', 'C', 'D', 'E'];
 
 const KATEGORI_OPTIONS = [
   { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
@@ -10,16 +16,14 @@ const KATEGORI_OPTIONS = [
   { value: 'pilgan_kategori', label: 'Pilihan Ganda Kategori' },
 ];
 
-const KOLOM_LABELS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
 const TINGKAT_OPTIONS = [
-  { value: '10', api: 'X', label: '10' },
-  { value: '11', api: 'XI', label: '11' },
-  { value: '12', api: 'XII', label: '12' },
-  { value: '0', api: 'SEMUA', label: 'Semua Tingkat' },
+  { value: '10', label: '10' },
+  { value: '11', label: '11' },
+  { value: '12', label: '12' },
+  { value: '0', label: 'Semua Tingkat' },
 ];
 
-const emptyKolom = () => ({ A: '', B: '', C: '', D: '', E: '', F: '' });
+const emptyKolom = () => ({ A: '', B: '', C: '', D: '', E: '' });
 
 function displayToTingkatApi(v) {
   if (v === '10') return 'X';
@@ -28,6 +32,7 @@ function displayToTingkatApi(v) {
   if (v === '0') return 'SEMUA';
   return v;
 }
+
 function apiToTingkatDisplay(t) {
   if (t === 'X') return '10';
   if (t === 'XI') return '11';
@@ -38,10 +43,14 @@ function apiToTingkatDisplay(t) {
 
 export default function BankSoalForm() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const isEdit = Boolean(id);
-  const [searchParams] = useSearchParams();
-  const queryKoleksiId = searchParams.get('bankSoalKoleksiId');
+  const location = useLocation();
+  const { showToast } = useToast();
+
+  const queryParams = new URLSearchParams(location.search);
+  const isEdit = location.pathname.includes('/edit/');
+  const id = isEdit ? location.pathname.split('/').pop() : null;
+  const queryKoleksiId = queryParams.get('bankSoalKoleksiId');
+
   const [hasPrefilledKoleksi, setHasPrefilledKoleksi] = useState(false);
 
   const [mapelList, setMapelList] = useState([]);
@@ -49,7 +58,6 @@ export default function BankSoalForm() {
   const [koleksiList, setKoleksiList] = useState([]);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState('');
 
   const [modeKoleksi, setModeKoleksi] = useState('pilih');
   const [bankSoalKoleksiId, setBankSoalKoleksiId] = useState('');
@@ -62,6 +70,12 @@ export default function BankSoalForm() {
   const [kolom, setKolom] = useState(emptyKolom());
   const [jawaban, setJawaban] = useState({ single: '', multi: [], benarSalah: emptyKolom() });
   const [gambar, setGambar] = useState('');
+
+  // Queue states for image uploads
+  const [gambarFile, setGambarFile] = useState(null);
+  const [gambarPreview, setGambarPreview] = useState('');
+  const [kolomGambarFile, setKolomGambarFile] = useState({ A: null, B: null, C: null, D: null, E: null });
+  const [kolomGambarPreview, setKolomGambarPreview] = useState({ A: '', B: '', C: '', D: '', E: '' });
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -112,12 +126,9 @@ export default function BankSoalForm() {
       try {
         const res = await api.get(`/guru/bank-soal/${id}`);
         const row = res.data?.data;
-        if (!row) {
-          navigate('/guru/bank-soal', { replace: true });
-          return;
-        }
-        setBankSoalKoleksiId(row.bankSoalKoleksiId != null ? String(row.bankSoalKoleksiId) : '');
-        setModeKoleksi(row.bankSoalKoleksiId != null ? 'pilih' : 'buat');
+        if (!row) throw new Error('Data tidak ditemukan');
+
+        setBankSoalKoleksiId(row.bankSoalKoleksiId ?? '');
         setMataPelajaranId(row.mataPelajaranId ?? '');
         setTingkat(apiToTingkatDisplay(row.tingkat) ?? '10');
         setJurusanId(row.jurusanId != null ? String(row.jurusanId) : '');
@@ -129,29 +140,72 @@ export default function BankSoalForm() {
           C: row.kolomC || '',
           D: row.kolomD || '',
           E: row.kolomE || '',
-          F: row.kolomF || '',
         });
+
+        // Setup image edit preview
         setGambar(row.gambar || '');
+        if (row.gambar && row.gambar.endsWith('.webp')) {
+          setGambarPreview(row.gambar);
+        }
+
+        const initialKolomGambarPreview = { A: '', B: '', C: '', D: '', E: '' };
+        KOLOM_LABELS.forEach((letter) => {
+          const val = row[`kolom${letter}`];
+          if (val && val.endsWith('.webp')) {
+            initialKolomGambarPreview[letter] = val;
+          }
+        });
+        setKolomGambarPreview(initialKolomGambarPreview);
+
         if (row.kategoriSoal === 'pilgan') {
           setJawaban((j) => ({ ...j, single: row.jawaban || '' }));
         } else if (row.kategoriSoal === 'pilgan_kompleks') {
           setJawaban((j) => ({ ...j, multi: (row.jawaban || '').split(',').map((s) => s.trim()).filter(Boolean) }));
         } else {
           const parts = (row.jawaban || '').split(',').map((s) => s.trim().toUpperCase());
-          const k = { A: row.kolomA || '', B: row.kolomB || '', C: row.kolomC || '', D: row.kolomD || '', E: row.kolomE || '', F: row.kolomF || '' };
+          const k = { A: row.kolomA || '', B: row.kolomB || '', C: row.kolomC || '', D: row.kolomD || '', E: row.kolomE || '' };
           const filledLetters = KOLOM_LABELS.filter((l) => k[l]?.trim());
           const bs = emptyKolom();
           filledLetters.forEach((l, i) => { bs[l] = parts[i] === 'S' ? 'S' : 'B'; });
           setJawaban((j) => ({ ...j, benarSalah: bs }));
         }
       } catch (e) {
-        setFormError(e?.response?.data?.message || 'Gagal memuat data soal');
+        showToast(e?.response?.data?.message || 'Gagal memuat data soal', 'error');
       } finally {
         setLoading(false);
       }
     };
     load();
   }, [id, isEdit, navigate]);
+
+  const handleImageUpload = async (file, type) => {
+    if (!file) return;
+    try {
+      const { compressedFile, previewUrl } = await compressImageToWebP(file);
+      if (type === 'soal') {
+        setGambarFile(compressedFile);
+        setGambarPreview(previewUrl);
+      } else {
+        setKolomGambarFile(prev => ({ ...prev, [type]: compressedFile }));
+        setKolomGambarPreview(prev => ({ ...prev, [type]: previewUrl }));
+        setKolom(prev => ({ ...prev, [type]: `${type}_image.webp` }));
+      }
+    } catch (err) {
+      showToast(err.message || 'Gagal memproses gambar', 'error');
+    }
+  };
+
+  const handleRemoveImage = (type) => {
+    if (type === 'soal') {
+      setGambarFile(null);
+      setGambarPreview('');
+      setGambar('');
+    } else {
+      setKolomGambarFile(prev => ({ ...prev, [type]: null }));
+      setKolomGambarPreview(prev => ({ ...prev, [type]: '' }));
+      setKolom(prev => ({ ...prev, [type]: '' }));
+    }
+  };
 
   const buildJawabanValue = () => {
     if (kategoriSoal === 'pilgan') return jawaban.single;
@@ -165,72 +219,96 @@ export default function BankSoalForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError('');
 
     let selectedKoleksiId = bankSoalKoleksiId ? Number(bankSoalKoleksiId) : null;
     const trimmedNamaKoleksi = namaKoleksiBaru.trim();
 
     if (modeKoleksi === 'pilih' && !selectedKoleksiId) {
-      setFormError('Pilih Bank Soal terlebih dahulu.');
+      showToast('Pilih Bank Soal terlebih dahulu.', 'error');
       return;
     }
     if (modeKoleksi === 'buat' && !trimmedNamaKoleksi) {
-      setFormError('Nama Bank Soal baru wajib diisi.');
+      showToast('Nama Bank Soal baru wajib diisi.', 'error');
       return;
     }
 
     const filledKolom = KOLOM_LABELS.filter((l) => kolom[l]?.trim()).length;
     if (kategoriSoal !== 'pilgan_kategori' && filledKolom < 3) {
-      setFormError('Minimal 3 kolom jawaban harus diisi.');
+      showToast('Minimal 3 kolom jawaban harus diisi.', 'error');
       return;
     }
     if (kategoriSoal === 'pilgan' && !jawaban.single) {
-      setFormError('Pilih satu jawaban yang benar.');
+      showToast('Pilih satu jawaban yang benar.', 'error');
       return;
     }
     if (kategoriSoal === 'pilgan_kompleks' && jawaban.multi.length === 0) {
-      setFormError('Pilih minimal satu jawaban benar.');
+      showToast('Pilih minimal satu jawaban benar.', 'error');
       return;
     }
     if ((kategoriSoal === 'pilgan' || kategoriSoal === 'pilgan_kompleks') && !soal.trim()) {
-      setFormError('Pertanyaan wajib diisi.');
+      showToast('Pertanyaan wajib diisi.', 'error');
       return;
     }
     if (!mataPelajaranId || !tingkat) {
-      setFormError('Mata pelajaran dan tingkat wajib dipilih.');
+      showToast('Mata pelajaran dan tingkat wajib dipilih.', 'error');
       return;
     }
 
     setSaving(true);
 
     try {
+      // 1. Process local image queue
+      let finalGambar = gambar;
+      if (gambarFile) {
+        const formData = new FormData();
+        formData.append('image', gambarFile);
+        const uploadRes = await api.post('/guru/bank-soal/upload-image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        finalGambar = uploadRes.data?.filename;
+      }
+
+      const finalKolom = { ...kolom };
+      for (const letter of KOLOM_LABELS) {
+        if (kolomGambarFile[letter]) {
+          const formData = new FormData();
+          formData.append('image', kolomGambarFile[letter]);
+          const uploadRes = await api.post('/guru/bank-soal/upload-image', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          finalKolom[letter] = uploadRes.data?.filename;
+        } else if (kolomGambarPreview[letter]) {
+          finalKolom[letter] = kolomGambarPreview[letter];
+        }
+      }
+
       if (modeKoleksi === 'buat') {
         const createKoleksiRes = await api.post('/guru/bank-soal-koleksi', { nama: trimmedNamaKoleksi });
         const idKoleksiBaru = createKoleksiRes.data?.data?.id;
         if (!idKoleksiBaru) {
-          setFormError('Gagal membuat Bank Soal baru.');
+          showToast('Gagal membuat Bank Soal baru.', 'error');
           setSaving(false);
           return;
         }
         selectedKoleksiId = Number(idKoleksiBaru);
       }
 
-    const payload = {
-      bankSoalKoleksiId: selectedKoleksiId,
-      mataPelajaranId: Number(mataPelajaranId),
-      tingkat: displayToTingkatApi(tingkat),
-      jurusanId: jurusanId === '' ? null : Number(jurusanId),
-      kategoriSoal,
-      soal: soal.trim() || null,
-      kolomA: kolom.A || null,
-      kolomB: kolom.B || null,
-      kolomC: kolom.C || null,
-      kolomD: kolom.D || null,
-      kolomE: kolom.E || null,
-      kolomF: kolom.F || null,
-      jawaban: buildJawabanValue(),
-      gambar: gambar.trim() || null,
-    };
+      const payload = {
+        bankSoalKoleksiId: selectedKoleksiId,
+        mataPelajaranId: Number(mataPelajaranId),
+        tingkat: displayToTingkatApi(tingkat),
+        jurusanId: jurusanId === '' ? null : Number(jurusanId),
+        kategoriSoal,
+        soal: soal.trim() || null,
+        kolomA: finalKolom.A || null,
+        kolomB: finalKolom.B || null,
+        kolomC: finalKolom.C || null,
+        kolomD: finalKolom.D || null,
+        kolomE: finalKolom.E || null,
+        jawaban: buildJawabanValue(),
+        gambar: finalGambar || null,
+      };
+
       if (isEdit) {
         await api.put(`/guru/bank-soal/${id}`, payload);
       } else {
@@ -238,7 +316,7 @@ export default function BankSoalForm() {
       }
       navigate('/guru/bank-soal');
     } catch (err) {
-      setFormError(err?.response?.data?.message || 'Gagal menyimpan soal');
+      showToast(err?.response?.data?.message || 'Gagal menyimpan soal', 'error');
     } finally {
       setSaving(false);
     }
@@ -282,8 +360,6 @@ export default function BankSoalForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="bank-soal-form bank-soal-form-full">
-        {formError && <div className="form-error">{formError}</div>}
-
         <div className="form-section">
           <h3 className="form-section-title">Data Soal</h3>
           <p className="form-section-desc">
@@ -327,7 +403,7 @@ export default function BankSoalForm() {
                     type="text"
                     value={namaKoleksiBaru}
                     onChange={(e) => setNamaKoleksiBaru(e.target.value)}
-                    placeholder="Contoh: Bank Soal Matematika Kelas 10"
+                    placeholder="Contoh: Try Out Mandiri Ke-3"
                     required
                   />
                 </>
@@ -335,7 +411,7 @@ export default function BankSoalForm() {
             </div>
           </div>
 
-          <div className="form-row two-cols">
+          <div className="form-row three-cols">
             <div className="form-group">
               <label>Mata Pelajaran * {hasPrefilledKoleksi && '(Terkunci)'}</label>
               <select 
@@ -347,7 +423,7 @@ export default function BankSoalForm() {
               >
                 <option value="">Pilih Mapel</option>
                 {mapelList.map((m) => (
-                  <option key={m.id} value={m.id}>{m.namaMapel}</option>
+                  <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
                 ))}
               </select>
             </div>
@@ -365,22 +441,28 @@ export default function BankSoalForm() {
                 ))}
               </select>
             </div>
+            <div className="form-group">
+              <label>Program Studi (Jurusan) {hasPrefilledKoleksi && '(Terkunci)'}</label>
+              <select 
+                value={jurusanId} 
+                onChange={(e) => setJurusanId(e.target.value)}
+                disabled={hasPrefilledKoleksi}
+                style={hasPrefilledKoleksi ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
+              >
+                <option value="">Semua Prodi</option>
+                {jurusanList.map((j) => (
+                  <option key={j.id} value={j.id}>{j.namaProdi}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div className="form-group">
-            <label>Prodi {hasPrefilledKoleksi && '(Terkunci)'}</label>
-            <select 
-              value={jurusanId} 
-              onChange={(e) => setJurusanId(e.target.value)}
-              disabled={hasPrefilledKoleksi}
-              style={hasPrefilledKoleksi ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed' } : {}}
-            >
-              <option value="">Semua Prodi</option>
-              {jurusanList.map((j) => (
-                <option key={j.id} value={j.id}>{j.nama} ({j.idJurusan})</option>
-              ))}
-            </select>
-            <p className="field-hint">Kosongkan = untuk semua prodi; pilih satu = hanya prodi tersebut.</p>
-          </div>
+        </div>
+
+        <div className="form-section">
+          <h3 className="form-section-title">Isi Soal & Opsi Jawaban</h3>
+          <p className="form-section-desc">
+            Pilih kategori soal, tulis pertanyaan, opsi jawaban, dan kunci jawaban.
+          </p>
 
           <div className="form-group">
             <label>Kategori Soal *</label>
@@ -391,95 +473,183 @@ export default function BankSoalForm() {
             </select>
           </div>
 
-        {(kategoriSoal === 'pilgan' || kategoriSoal === 'pilgan_kompleks') && (
-            <>
-              <div className="form-group">
-                <label>Pertanyaan *</label>
-                <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan..." required />
-              </div>
-              <div className="form-group">
-                <label>URL Gambar (opsional)</label>
-                <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
-              </div>
-            </>
-          )}
+          <div className="form-group">
+            <label>{kategoriSoal === 'pilgan_kategori' ? 'Pertanyaan (opsional)' : 'Pertanyaan *'}</label>
+            <textarea
+              value={soal}
+              onChange={(e) => setSoal(e.target.value)}
+              rows={4}
+              placeholder="Tulis butir pertanyaan di sini..."
+              required={kategoriSoal !== 'pilgan_kategori'}
+            />
+          </div>
 
-        {kategoriSoal === 'pilgan_kategori' && (
-            <>
-              <div className="form-group">
-                <label>Pertanyaan (opsional)</label>
-                <textarea value={soal} onChange={(e) => setSoal(e.target.value)} rows={4} placeholder="Tulis pertanyaan atau konteks untuk pernyataan di bawah (opsional)..." />
-              </div>
-              <div className="form-group">
-                <label>URL Gambar (opsional)</label>
-                <input type="text" value={gambar} onChange={(e) => setGambar(e.target.value)} placeholder="https://..." />
-              </div>
-            </>
-          )}
+          {/* Premium Compression Image Upload for Question */}
+          <div className="form-group" style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid #cbd5e1', marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Gambar Soal (Opsional, Maks 3MB)</label>
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => {
+                  handleImageUpload(e.target.files[0], 'soal');
+                  e.target.value = '';
+                }} 
+                style={{ display: 'none' }}
+                id="soal-image-file"
+              />
+              <label htmlFor="soal-image-file" className="btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', padding: '0.6rem 1.25rem', border: '2px dashed #cbd5e1', borderRadius: '8px' }}>
+                Pilih / Unggah Gambar
+              </label>
+              {gambarPreview && (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img 
+                    src={gambarPreview.endsWith('.webp') ? `http://localhost:3000/uploads/${gambarPreview}` : gambarPreview} 
+                    alt="Preview Soal" 
+                    style={{ maxHeight: '120px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => handleRemoveImage('soal')}
+                    style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontWeight: 'bold' }}
+                    title="Hapus"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="form-group">
-          <label>{kategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–F)' : 'Opsi Jawaban (minimal 3)'}</label>
-            {KOLOM_LABELS.map((letter) => (
-              <div key={letter} className="kolom-row">
-                <span className="kolom-letter">{letter}.</span>
-                <input
-                  type="text"
-                  value={kolom[letter]}
-                  onChange={(e) => setKolom((k) => ({ ...k, [letter]: e.target.value }))}
-                placeholder={kategoriSoal === 'pilgan_kategori' ? `Pernyataan ${letter}` : `Opsi ${letter}`}
-                />
-              {kategoriSoal === 'pilgan' && (
-                  <button
-                    type="button"
-                    className={`btn-check ${jawaban.single === letter ? 'active' : ''}`}
-                    onClick={() => setJawaban((j) => ({ ...j, single: letter }))}
-                    title="Jawaban benar"
-                  >
-                    <FiCheck />
-                  </button>
-                )}
-              {kategoriSoal === 'pilgan_kompleks' && (
-                  <button
-                    type="button"
-                    className={`btn-check ${jawaban.multi.includes(letter) ? 'active' : ''}`}
-                    onClick={() => toggleMulti(letter)}
-                    title="Centang jika benar"
-                  >
-                    <FiCheck />
-                  </button>
-                )}
-              {kategoriSoal === 'pilgan_kategori' && (
-                  <div className="benar-salah-btns">
-                    <button
-                      type="button"
-                      className={jawaban.benarSalah[letter] === 'B' ? 'active' : ''}
-                      onClick={() => setBenarSalah(letter, 'B')}
-                    >
-                      Benar
-                    </button>
-                    <button
-                      type="button"
-                      className={jawaban.benarSalah[letter] === 'S' ? 'active' : ''}
-                      onClick={() => setBenarSalah(letter, 'S')}
-                    >
-                      Salah
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+            <label style={{ fontWeight: 600 }}>
+              {kategoriSoal === 'pilgan_kategori' ? 'Pernyataan (Isi kolom A–E)' : 'Opsi Jawaban (Minimal 3 Terisi)'}
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.50rem' }}>
+              {KOLOM_LABELS.map((letter) => {
+                const val = kolom[letter] || '';
+                const hasText = val.trim() !== '' && !val.endsWith('.webp');
+                const hasImage = Boolean(kolomGambarPreview[letter]);
+                
+                return (
+                  <div key={letter} className="kolom-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.50rem', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '1rem', background: '#f8fafc' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+                      <span className="kolom-letter" style={{ fontSize: '1.2rem', fontWeight: 700 }}>{letter}.</span>
+                      <input
+                        type="text"
+                        value={hasImage ? `[Berisi Gambar]` : val}
+                        onChange={(e) => setKolom((k) => ({ ...k, [letter]: e.target.value }))}
+                        placeholder={hasImage ? "Opsi berupa gambar (Terkunci)" : (kategoriSoal === 'pilgan_kategori' ? `Pernyataan ${letter}` : `Opsi ${letter}`)}
+                        disabled={hasImage}
+                        style={{ margin: 0, flex: 1, backgroundColor: hasImage ? '#e2e8f0' : 'white', cursor: hasImage ? 'not-allowed' : 'text' }}
+                      />
+                      {kategoriSoal === 'pilgan' && (
+                        <button
+                          type="button"
+                          className={`btn-check ${jawaban.single === letter ? 'active' : ''}`}
+                          onClick={() => setJawaban((j) => ({ ...j, single: letter }))}
+                          title="Jawaban benar"
+                        >
+                          <FiCheck />
+                        </button>
+                      )}
+                      {kategoriSoal === 'pilgan_kompleks' && (
+                        <button
+                          type="button"
+                          className={`btn-check ${jawaban.multi.includes(letter) ? 'active' : ''}`}
+                          onClick={() => toggleMulti(letter)}
+                          title="Centang jika benar"
+                        >
+                          <FiCheck />
+                        </button>
+                      )}
+                      {kategoriSoal === 'pilgan_kategori' && (
+                        <div className="benar-salah-btns" style={{ display: 'flex', gap: '0.25rem' }}>
+                          <button
+                            type="button"
+                            className={jawaban.benarSalah[letter] === 'B' ? 'active' : ''}
+                            onClick={() => setBenarSalah(letter, 'B')}
+                            style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: jawaban.benarSalah[letter] === 'B' ? '#22c55e' : '#fff', color: jawaban.benarSalah[letter] === 'B' ? '#fff' : '#475569', fontWeight: 600 }}
+                          >
+                            Benar
+                          </button>
+                          <button
+                            type="button"
+                            className={jawaban.benarSalah[letter] === 'S' ? 'active' : ''}
+                            onClick={() => setBenarSalah(letter, 'S')}
+                            style={{ padding: '0.4rem 0.8rem', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', background: jawaban.benarSalah[letter] === 'S' ? '#ef4444' : '#fff', color: jawaban.benarSalah[letter] === 'S' ? '#fff' : '#475569', fontWeight: 600 }}
+                          >
+                            Salah
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-          <div className="form-actions-full">
-            <button type="button" className="btn-secondary" onClick={() => navigate('/guru/bank-soal')}>
-              Batal
-            </button>
-            <button type="submit" className="btn-primary" disabled={saving}>
-              {saving ? 'Menyimpan...' : (isEdit ? 'Simpan Perubahan' : 'Simpan Soal')}
-            </button>
+                    {/* Image Upload for Option (Mutually Exclusive) */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingLeft: '2rem', flexWrap: 'wrap' }}>
+                      {!hasText && !hasImage && (
+                        <>
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={(e) => {
+                              handleImageUpload(e.target.files[0], letter);
+                              e.target.value = '';
+                            }} 
+                            id={`file-opsi-${letter}`}
+                            style={{ display: 'none' }}
+                          />
+                          <label htmlFor={`file-opsi-${letter}`} className="btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', padding: '0.35rem 0.85rem', border: '1.5px dashed #cbd5e1', borderRadius: '8px', fontSize: '0.8rem' }}>
+                            Unggah Gambar {letter}
+                          </label>
+                        </>
+                      )}
+                      {hasImage && (
+                        <div style={{ position: 'relative', display: 'inline-block', marginTop: '0.25rem' }}>
+                          <img 
+                            src={kolomGambarPreview[letter].endsWith('.webp') ? `http://localhost:3000/uploads/${kolomGambarPreview[letter]}` : kolomGambarPreview[letter]} 
+                            alt={`Preview Opsi ${letter}`} 
+                            style={{ maxHeight: '90px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
+                          />
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveImage(letter)}
+                            style={{ position: 'absolute', top: '-8px', right: '-8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}
+                            title="Hapus Gambar"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                      {hasText && (
+                        <span style={{ fontSize: '0.75rem', color: '#64748b', fontStyle: 'italic' }}>
+                          Unggah gambar dinonaktifkan karena kolom berisi teks.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={() => navigate('/guru/bank-soal')}
+            disabled={saving}
+          >
+            Batal
+          </button>
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Simpan Soal'}
+          </button>
+        </div>
       </form>
+
+
     </div>
   );
 }

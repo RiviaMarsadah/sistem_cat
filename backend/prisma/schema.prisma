@@ -231,7 +231,6 @@ model BankSoal {
   kolomC            String?      @map("kolom_c") @db.VarChar(500)
   kolomD            String?      @map("kolom_d") @db.VarChar(500)
   kolomE            String?      @map("kolom_e") @db.VarChar(500)
-  kolomF            String?      @map("kolom_f") @db.VarChar(500)
   jawaban           String       @db.VarChar(100)
   gambar            String?      @db.VarChar(500)
   createdAt         DateTime     @default(now()) @map("created_at")

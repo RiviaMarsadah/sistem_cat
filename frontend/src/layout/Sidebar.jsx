@@ -70,6 +70,7 @@ const Sidebar = ({ role, user }) => {
       category: 'UJIAN',
       items: [
         { path: '/admin/jadwal-ujian', label: 'Jadwal Ujian', icon: FiCalendar, disabled: false },
+        { path: '/admin/ujian-siswa', label: 'Ujian Siswa', icon: FiFileText, disabled: false },
       ]
     }
   ];
@@ -139,7 +140,7 @@ const Sidebar = ({ role, user }) => {
           <img src="/gambar/logo.png" alt="RIVIA" onError={(e) => { e.target.style.display='none'; }} />
         </div>
         {/* Subtitle */}
-        <span className="sidebar-logo-sub">Dashboard <br />Sistem Assisted Test</span>
+        <span className="sidebar-logo-sub">Dashboard <br />computer Assisted test</span>
       </div>
 
       {/* User Profile Section */}

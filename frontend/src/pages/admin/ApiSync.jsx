@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import {
   FiRefreshCw, FiCheckCircle, FiAlertCircle, FiDatabase,
   FiArrowRight, FiActivity, FiSearch, FiSave, FiList,
@@ -17,13 +18,12 @@ const MODULES = [
 ];
 
 const ApiSync = () => {
+  const { showToast } = useToast();
   const [selectedModules, setSelectedModules] = useState(MODULES.map(m => m.id));
   const [analyzing, setAnalyzing] = useState(false);
   const [executing, setExecuting] = useState(false);
   const [executingModule, setExecutingModule] = useState('');
   const [reports, setReports] = useState({});
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('summary');
   const [showAll, setShowAll] = useState({}); // { modId_type: boolean }
 
@@ -36,8 +36,6 @@ const ApiSync = () => {
   const startAnalysis = async () => {
     if (selectedModules.length === 0) return;
     setAnalyzing(true);
-    setError('');
-    setSuccess('');
     const newReports = {};
 
     try {
@@ -49,8 +47,9 @@ const ApiSync = () => {
       }
       setReports(newReports);
       setActiveTab('report');
+      showToast('Analisa data selesai', 'success');
     } catch (err) {
-      setError(err.response?.data?.message || 'Gagal melakukan analisa API');
+      showToast(err.response?.data?.message || 'Gagal melakukan analisa API', 'error');
     } finally {
       setAnalyzing(false);
     }
@@ -59,8 +58,6 @@ const ApiSync = () => {
   const handleExecute = async (module, type) => {
     setExecuting(true);
     setExecutingModule(module);
-    setError('');
-    setSuccess('');
 
     try {
       const report = reports[module];
@@ -82,15 +79,16 @@ const ApiSync = () => {
         const { result } = res.data;
         const skipped = result.skipped || 0;
         const errors = result.errors?.length || 0;
-        setSuccess(
+        showToast(
           `Sinkron "${MODULES.find(m => m.id === module)?.label}" selesai — ` +
           `${result.created} dibuat, ${result.updated} diperbarui` +
           (skipped > 0 ? `, ${skipped} dilewati` : '') +
-          (errors > 0 ? `, ${errors} error` : '')
+          (errors > 0 ? `, ${errors} error` : ''),
+          'success'
         );
       }
     } catch (err) {
-      setError(`Gagal sinkronisasi ${module}: ` + (err.response?.data?.message || err.message));
+      showToast(`Gagal sinkronisasi ${module}: ` + (err.response?.data?.message || err.message), 'error');
     } finally {
       setExecuting(false);
       setExecutingModule('');
@@ -115,17 +113,7 @@ const ApiSync = () => {
         </button>
       </div>
 
-      {error && (
-        <div className="user-alert">
-          <FiAlertCircle /> {error}
-        </div>
-      )}
 
-      {success && (
-        <div className="user-success">
-          <FiCheckCircle /> {success}
-        </div>
-      )}
 
       <div className="sync-layout">
         <aside className="sync-sidebar">

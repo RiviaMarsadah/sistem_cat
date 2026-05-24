@@ -16,6 +16,7 @@ const adminPeriodeController = require('../controllers/adminPeriodeController');
 const adminAngkatanController = require('../controllers/adminAngkatanController');
 const adminSyncController = require('../controllers/adminSyncController');
 const adminStatsController = require('../controllers/adminStatsController');
+const adminUjianSiswaController = require('../controllers/adminUjianSiswaController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -55,6 +56,11 @@ router.post('/siswa', adminSiswaController.create);
 router.put('/siswa/:id', adminSiswaController.update);
 router.delete('/siswa/:id', adminSiswaController.remove);
 router.post('/siswa/import', upload.single('file'), adminSiswaController.importSiswa);
+
+// Ujian Siswa Management
+router.get('/ujian-siswa', adminUjianSiswaController.list);
+router.delete('/ujian-siswa/:id', adminUjianSiswaController.remove);
+router.put('/ujian-siswa/:id/status', adminUjianSiswaController.updateStatus);
 
 // Guru CRUD (Unified)
 router.get('/guru', adminGuruController.list);

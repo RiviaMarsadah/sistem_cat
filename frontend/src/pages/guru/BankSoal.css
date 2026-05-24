@@ -1,6 +1,108 @@
 /* Bank Soal - Guru */
 
 /* Header styles now handled by GuruTheme.css */
+
+/* Premium Elegant Fully-Colored Gradient Toast Notification System */
+.premium-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 999999;
+  padding: 1.1rem 1.4rem;
+  border-radius: 16px;
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.15), 
+    0 10px 10px -5px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.95rem;
+  animation: slideInToast 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-width: 400px;
+  min-width: 300px;
+  font-family: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Elegant Success Emerald Gradient */
+.premium-toast.toast-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+}
+
+/* Elegant Error Rose Red Gradient */
+.premium-toast.toast-error {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+}
+
+.premium-toast-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 1px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.premium-toast-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.premium-toast-title {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.premium-toast-message {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.premium-toast-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0 0 0 0.5rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  line-height: 1;
+  transition: all 0.2s;
+}
+
+.premium-toast-close:hover {
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+@keyframes slideInToast {
+  from {
+    transform: translateX(120%) scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+
 .bank-soal-page {
   width: 100%;
   max-width: 100%;

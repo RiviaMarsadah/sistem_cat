@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiBook, FiClock, FiCheckCircle, FiFileText, FiFilter, FiEye, FiTrash2 } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
 import './RekapUjian.css';
 
 export default function RekapUjianGuru() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [fetchingResults, setFetchingResults] = useState(false);
   const [exams, setExams] = useState([]);
@@ -21,9 +23,10 @@ export default function RekapUjianGuru() {
 
   const totalItems = results.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
-  const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const isShowAll = currentPage === 9999;
+  const displayPage = isShowAll ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = isShowAll ? 0 : (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedResults = isShowAll ? results : results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   function getPaginationPages(tp, cp) {
     if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
@@ -36,7 +39,7 @@ export default function RekapUjianGuru() {
     return result;
   }
 
-  useEffect(() => { if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
+  useEffect(() => { if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
   useEffect(() => { setCurrentPage(1); }, [selectedExam, selectedKelas]);
 
   const fetchData = async () => {
@@ -50,6 +53,7 @@ export default function RekapUjianGuru() {
       }
     } catch (error) {
       console.error('Fetch exams error:', error);
+      showToast('Gagal memuat daftar ujian', 'error');
     } finally {
       setLoading(false);
     }
@@ -74,6 +78,7 @@ export default function RekapUjianGuru() {
       });
     } catch (error) {
       console.error('Fetch results error:', error);
+      showToast('Gagal memuat data hasil ujian', 'error');
     } finally {
       setFetchingResults(false);
     }
@@ -90,10 +95,11 @@ export default function RekapUjianGuru() {
     if (window.confirm(`Apakah Anda yakin ingin menghapus hasil ujian dari ${studentName}? Tindakan ini tidak dapat dibatalkan.`)) {
       try {
         await api.delete(`/guru/rekap/results/${id}`);
+        showToast('Hasil ujian berhasil dihapus', 'success');
         fetchResults(); // Refresh list
       } catch (error) {
         console.error('Delete result error:', error);
-        alert('Gagal menghapus hasil ujian.');
+        showToast('Gagal menghapus hasil ujian', 'error');
       }
     }
   };
@@ -150,7 +156,7 @@ export default function RekapUjianGuru() {
             >
               {exams.length === 0 ? <option>Tidak ada ujian</option> : null}
               {exams.map(e => (
-                <option key={e.id} value={e.id}>{e.nama} - {e.mataPelajaran?.namaMapel}</option>
+                <option key={e.id} value={e.id}>{e.nama} - {e.mataPelajaran?.namaMapel} ({e.mataPelajaran?.kodeMapel || '-'})</option>
               ))}
             </select>
           </div>
@@ -251,18 +257,27 @@ export default function RekapUjianGuru() {
         {!fetchingResults && totalItems > 0 && (
           <div className="table-pagination">
             <span className="table-pagination-info">
-              Menampilkan {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari {totalItems} hasil
+              {isShowAll 
+                ? `Menampilkan 1 - ${totalItems} dari ${totalItems} hasil` 
+                : `Menampilkan ${startIndex + 1} - ${Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari ${totalItems} hasil`
+              }
             </span>
             <div className="table-pagination-controls">
-              <button type="button" className="table-pagination-btn" disabled={displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+              <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
               <div className="table-pagination-pages">
-                {getPaginationPages(totalPages, displayPage).map((item) =>
-                  item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
-                  <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                {isShowAll ? (
+                  <button type="button" className="table-pagination-page active" onClick={() => setCurrentPage(1)}>Tampilkan Per Halaman</button>
+                ) : (
+                  getPaginationPages(totalPages, displayPage).map((item) =>
+                    item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
+                    <button key={item.value} type="button" className={`table-pagination-page ${item.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(item.value)}>{item.value}</button>
+                  )
                 )}
               </div>
-              <button type="button" className="table-pagination-btn" disabled={displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
-              <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+              <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+              {!isShowAll && (
+                <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
+              )}
             </div>
           </div>
         )}

@@ -5,7 +5,6 @@ const { getSchema, normalizePayload } = require('./bankSoalController');
 const KATEGORI = ['pilgan', 'pilgan_kompleks', 'pilgan_kategori'];
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
 
-// Map header cell (flexible) to our field name
 const HEADER_MAP = {
   kategori: 'kategoriSoal',
   soal: 'soal',
@@ -14,7 +13,6 @@ const HEADER_MAP = {
   'opsi c': 'kolomC',
   'opsi d': 'kolomD',
   'opsi e': 'kolomE',
-  'opsi f': 'kolomF',
   jawaban: 'jawaban',
   gambar: 'gambar',
 };
@@ -206,7 +204,6 @@ exports.downloadTemplate = (req, res) => {
     'Opsi C',
     'Opsi D',
     'Opsi E',
-    'Opsi F',
     'Jawaban',
     'Gambar',
   ];
@@ -216,7 +213,6 @@ exports.downloadTemplate = (req, res) => {
     'Soekarno',
     'Soeharto',
     'B.J. Habibie',
-    '',
     '',
     '',
     'A',
@@ -229,7 +225,6 @@ exports.downloadTemplate = (req, res) => {
     '3',
     '4',
     '5',
-    '6',
     '',
     'A,B,D',
     '',
@@ -242,14 +237,13 @@ exports.downloadTemplate = (req, res) => {
     'Air mendidih pada 100°C',
     '',
     '',
-    '',
     'B,S,B',
     '',
   ];
 
   const data = [headers, exampleSingle, exampleMulti, exampleBenarSalah];
   const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 14 }, { wch: 40 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 20 }];
+  ws['!cols'] = [{ wch: 14 }, { wch: 40 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 12 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Soal');
 
   const panduanRows = [
@@ -260,8 +254,8 @@ exports.downloadTemplate = (req, res) => {
     ['Kolom di sheet "Soal" (baris pertama = header):'],
     ['Kategori', 'pilgan | pilgan_kompleks | pilgan_kategori'],
     ['Soal', 'Teks pertanyaan (opsional untuk pilgan_kategori)'],
-    ['Opsi A s/d F', 'Isi opsi atau pernyataan. Minimal 3 untuk pilgan/pilgan_kompleks, minimal 1 untuk pilgan_kategori'],
-    ['Jawaban', 'Single: satu huruf A-F. Multi: dipisah koma contoh A,B,D. Benar/Salah: B atau S per pernyataan, contoh B,B,S'],
+    ['Opsi A s/d E', 'Isi opsi atau pernyataan. Minimal 3 untuk pilgan/pilgan_kompleks, minimal 1 untuk pilgan_kategori'],
+    ['Jawaban', 'Single: satu huruf A-E. Multi: dipisah koma contoh A,B,D. Benar/Salah: B atau S per pernyataan, contoh B,B,S'],
     ['Gambar', 'URL gambar (opsional)'],
     [],
     ['Contoh nilai Kategori: pilgan, pilgan_kompleks, pilgan_kategori'],

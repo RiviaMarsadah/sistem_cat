@@ -2,15 +2,15 @@ import { useEffect, useState, useMemo } from 'react';
 import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2, FiAlertCircle, FiChevronLeft } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import '../guru/PaketUjian.css';
 import './JadwalUjian.css';
 import './User.css';
 
 export default function JadwalUjianAdmin() {
+  const { showToast } = useToast();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -62,7 +62,7 @@ export default function JadwalUjianAdmin() {
       setItems(resJadwal.data?.data || []);
       setPeriodes(resPeriode.data?.data || []);
     } catch (e) {
-      setError('Gagal memuat jadwal. ' + (e?.response?.data?.message || ''));
+      showToast('Gagal memuat jadwal. ' + (e?.response?.data?.message || ''), 'error');
     } finally {
       setLoading(false);
     }
@@ -72,15 +72,7 @@ export default function JadwalUjianAdmin() {
     loadData();
   }, []);
 
-  useEffect(() => {
-    if (error || success) {
-      const timer = setTimeout(() => {
-        setError('');
-        setSuccess('');
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, success]);
+
 
   const handleBuatWizard = () => {
      navigate('/admin/jadwal-ujian/wizard');
@@ -95,11 +87,11 @@ export default function JadwalUjianAdmin() {
     setSaving(true);
     try {
       const res = await api.delete(`/admin/jadwal-ujian/${confirmData.id}`);
+      showToast(res.data.message || 'Jadwal berhasil dihapus', 'success');
       setShowConfirmModal(false);
-      setSuccess(res.data.message);
       await loadData();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Gagal menghapus jadwal');
+      showToast(err?.response?.data?.message || 'Gagal menghapus jadwal', 'error');
     } finally {
       setSaving(false);
     }
@@ -123,11 +115,11 @@ export default function JadwalUjianAdmin() {
       setSaving(true);
       try {
           const res = await api.put(`/admin/periode/${editPeriodeData.id}`, editPeriodeData);
+          showToast("Periode berhasil diperbarui", 'success');
           setShowEditPeriodeModal(false);
-          setSuccess("Periode berhasil diperbarui");
           await loadData();
       } catch (err) {
-          setError(err?.response?.data?.message || "Gagal memperbarui periode");
+          showToast(err?.response?.data?.message || "Gagal memperbarui periode", 'error');
       } finally {
           setSaving(false);
       }
@@ -142,11 +134,11 @@ export default function JadwalUjianAdmin() {
     setSaving(true);
     try {
       const res = await api.delete(`/admin/periode/${confirmPeriodeData.id}`);
+      showToast("Periode berhasil dihapus", 'success');
       setShowConfirmPeriodeModal(false);
-      setSuccess("Periode berhasil dihapus");
       await loadData();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Gagal menghapus periode');
+      showToast(err?.response?.data?.message || 'Gagal menghapus periode', 'error');
     } finally {
       setSaving(false);
     }
@@ -451,8 +443,7 @@ export default function JadwalUjianAdmin() {
         </div>
       </div>
 
-      {error && <div className="paket-ujian-error">{error}</div>}
-      {success && <div className="paket-ujian-error admin-success-alert">{success}</div>}
+
 
       {activePeriodeId === null ? renderListPeriode() : renderDetailPeriode()}
 

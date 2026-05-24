@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import '../guru/PaketUjian.css';
 import './Kelas.css';
 
@@ -16,12 +17,24 @@ const getNamaKelasDisplay = (item) => {
 };
 
 const AdminKelas = () => {
+  const { showToast } = useToast();
+  const ITEMS_PER_PAGE = 20;
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+
+  // Helper paginasi ala Guru
+  function getPaginationPages(tp, cp) {
+    if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
+    const delta = 1;
+    let result = [{ type: 'page', value: 1 }];
+    if (cp - delta > 2) result.push({ type: 'ellipsis', key: 'left' });
+    for (let i = Math.max(2, cp - delta); i <= Math.min(tp - 1, cp + delta); i++) result.push({ type: 'page', value: i });
+    if (cp + delta < tp - 1) result.push({ type: 'ellipsis', key: 'right' });
+    result.push({ type: 'page', value: tp });
+    return result;
+  }
 
   // Form state
   const [tingkat, setTingkat] = useState('');
@@ -56,17 +69,23 @@ const AdminKelas = () => {
     });
   }, [items, search]);
 
-  const totalPages = itemsPerPage === 0 ? 1 : Math.ceil(filteredItems.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
   
   const paginatedItems = useMemo(() => {
-    if (itemsPerPage === 0) return filteredItems;
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredItems.slice(start, start + itemsPerPage);
-  }, [filteredItems, currentPage, itemsPerPage]);
+    if (currentPage === 9999) return filteredItems;
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredItems.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredItems, currentPage]);
+
+  useEffect(() => {
+    if (currentPage !== 9999 && currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [filteredItems, totalPages, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, itemsPerPage]);
+  }, [search]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -86,12 +105,11 @@ const AdminKelas = () => {
   // Load kelas list
   const load = async () => {
     setLoading(true);
-    setError('');
     try {
       const res = await api.get('/admin/kelas');
       setItems(res.data.data || []);
     } catch (e) {
-      setError(e?.response?.data?.message || 'Gagal memuat data kelas');
+      showToast(e?.response?.data?.message || 'Gagal memuat data kelas', 'error');
     } finally {
       setLoading(false);
     }
@@ -106,7 +124,6 @@ const AdminKelas = () => {
     setTingkat('');
     setJurusanId('');
     setInisial('');
-    setError('');
     setShowAddModal(true);
   };
 
@@ -115,7 +132,6 @@ const AdminKelas = () => {
     setTingkat('');
     setJurusanId('');
     setInisial('');
-    setError('');
   };
 
   const onCreate = async (e) => {
@@ -123,17 +139,17 @@ const AdminKelas = () => {
     if (!tingkat || !jurusanId || !inisial.trim()) return;
 
     setSaving(true);
-    setError('');
     try {
       await api.post('/admin/kelas', {
         tingkat,
         jurusanId: parseInt(jurusanId),
         inisial: inisial.trim().toUpperCase()
       });
+      showToast('Kelas berhasil ditambahkan', 'success');
       handleCloseAddModal();
       await load();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Gagal menambah kelas');
+      showToast(err?.response?.data?.message || 'Gagal menambah kelas', 'error');
     } finally {
       setSaving(false);
     }
@@ -142,15 +158,15 @@ const AdminKelas = () => {
   const handleConfirm = async () => {
     if (confirmAction === 'delete') {
       setSaving(true);
-      setError('');
       try {
         await api.delete(`/admin/kelas/${confirmData.id}`);
+        showToast('Kelas berhasil dihapus', 'success');
         await load();
         setShowConfirmModal(false);
         setConfirmAction(null);
         setConfirmData(null);
       } catch (err) {
-        setError(err?.response?.data?.message || 'Gagal menghapus kelas');
+        showToast(err?.response?.data?.message || 'Gagal menghapus kelas', 'error');
         setShowConfirmModal(false);
       } finally {
         setSaving(false);
@@ -169,7 +185,6 @@ const AdminKelas = () => {
     setEditingTingkat(item.tingkat || '');
     setEditingJurusanId(item.jurusanId?.toString() || '');
     setEditingInisial(item.inisial || '');
-    setError('');
   };
 
   const cancelEdit = () => {
@@ -182,17 +197,17 @@ const AdminKelas = () => {
   const saveEdit = async () => {
     if (!editingTingkat || !editingJurusanId || !editingInisial.trim()) return;
     setSaving(true);
-    setError('');
     try {
       await api.put(`/admin/kelas/${editingId}`, { 
         tingkat: editingTingkat,
         jurusanId: parseInt(editingJurusanId),
         inisial: editingInisial.trim().toUpperCase()
       });
+      showToast('Kelas berhasil diperbarui', 'success');
       cancelEdit();
       await load();
     } catch (err) {
-      setError(err?.response?.data?.message || 'Gagal mengubah kelas');
+      showToast(err?.response?.data?.message || 'Gagal mengubah kelas', 'error');
     } finally {
       setSaving(false);
     }
@@ -229,11 +244,7 @@ const AdminKelas = () => {
         </div>
       </div>
 
-      {error && (
-        <div className="kelas-alert" role="alert">
-          {error}
-        </div>
-      )}
+
 
       <div className="kelas-card">
         <div className="kelas-card-header">
@@ -387,50 +398,63 @@ const AdminKelas = () => {
         )}
 
         {filteredItems.length > 0 && (
-          <div className="pagination-container">
-            <div className="pagination-info">
-              Menampilkan <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, (currentPage - 1) * itemsPerPage + 1)}</strong> - <strong>{itemsPerPage === 0 ? filteredItems.length : Math.min(filteredItems.length, currentPage * itemsPerPage)}</strong> dari <strong>{filteredItems.length}</strong> data
-            </div>
-            <div className="pagination-controls">
-              <button 
-                className="btn-pagination" 
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                disabled={currentPage === 1 || itemsPerPage === 0}
+          <div className="table-pagination">
+            <span className="table-pagination-info">
+              Menampilkan {currentPage === 9999 ? 1 : (currentPage - 1) * ITEMS_PER_PAGE + 1}–
+              {currentPage === 9999 ? filteredItems.length : Math.min(currentPage * ITEMS_PER_PAGE, filteredItems.length)} dari {filteredItems.length} kelas
+            </span>
+            <div className="table-pagination-controls">
+              <button
+                type="button"
+                className="table-pagination-btn"
+                disabled={currentPage === 9999 || currentPage <= 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               >
-                <FiChevronLeft />
+                Sebelumnya
               </button>
-              
-              {itemsPerPage !== 0 && Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                  return (
-                    <button 
-                      key={page} 
-                      className={`btn-pagination ${currentPage === page ? 'active' : ''}`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                  return <span key={page} style={{ color: '#94a3b8' }}>...</span>;
-                }
-                return null;
-              })}
-
-              <button 
-                className="btn-pagination" 
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                disabled={currentPage === totalPages || itemsPerPage === 0}
+              <div className="table-pagination-pages">
+                {currentPage === 9999 ? (
+                  <button
+                    type="button"
+                    className="table-pagination-page active"
+                    onClick={() => setCurrentPage(1)}
+                  >
+                    Tampilkan Per Halaman
+                  </button>
+                ) : (
+                  getPaginationPages(totalPages, currentPage).map(item =>
+                    item.type === 'ellipsis' ? (
+                      <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span>
+                    ) : (
+                      <button
+                        key={item.value}
+                        type="button"
+                        className={`table-pagination-page ${item.value === currentPage ? 'active' : ''}`}
+                        onClick={() => setCurrentPage(item.value)}
+                      >
+                        {item.value}
+                      </button>
+                    )
+                  )
+                )}
+              </div>
+              <button
+                type="button"
+                className="table-pagination-btn"
+                disabled={currentPage === 9999 || currentPage >= totalPages}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               >
-                <FiChevronRight />
+                Berikutnya
               </button>
-
-              <button 
-                className={`pagination-show-all ${itemsPerPage === 0 ? 'active' : ''}`}
-                onClick={() => setItemsPerPage(itemsPerPage === 0 ? 20 : 0)}
-              >
-                {itemsPerPage === 0 ? 'Batasi 20' : 'Tampilkan Semua'}
-              </button>
+              {currentPage !== 9999 && (
+                <button
+                  type="button"
+                  className="table-pagination-btn show-all"
+                  onClick={() => setCurrentPage(9999)}
+                >
+                  Tampilkan Semua
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -448,12 +472,7 @@ const AdminKelas = () => {
             </div>
             <form className="kelas-form" onSubmit={onCreate}>
               <div className="modal-body">
-                {error && (
-                  <div className="kelas-alert" style={{ marginTop: 0, marginBottom: '1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', padding: '0.75rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <FiAlertCircle />
-                    {error}
-                  </div>
-                )}
+
                 <div className="form-group">
                   <div className="field-wrapper">
                     <label className="label" htmlFor="modal-tingkat">

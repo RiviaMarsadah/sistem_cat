@@ -15,6 +15,12 @@ exports.list = async (req, res) => {
       orderBy: [{ updatedAt: 'desc' }, { nama: 'asc' }],
       include: {
         _count: { select: { bankSoal: true } },
+        bankSoal: {
+          select: {
+            mataPelajaranId: true,
+            tingkat: true,
+          }
+        }
       },
     });
     return res.json({ success: true, data: items });

@@ -101,16 +101,21 @@ exports.mobileGoogleLogin = async (req, res) => {
   let payload;
   try {
     const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: [
+        process.env.GOOGLE_CLIENT_ID,
+        '168608116787-bgm9cnr24jf6udnj54fgvt3d1huhj3v2.apps.googleusercontent.com',
+        '168608116787-ih623omm0ajmjffg8oslqvi32p50h9o1.apps.googleusercontent.com'
+      ].filter(Boolean),
+      idToken
     });
 
     payload = ticket.getPayload();
   } catch (error) {
     // idToken invalid/expired/audience mismatch
+    console.error('Mobile Google Token Verification Failed:', error.message);
     return res.status(401).json({
       success: false,
-      message: 'Invalid idToken'
+      message: `Invalid idToken: ${error.message}`
     });
   }
 

@@ -98,7 +98,7 @@ exports.getById = async (req, res) => {
                 tingkat: true,
                 jurusanId: true,
                 mataPelajaran: { select: { namaMapel: true } },
-                jurusan: { select: { nama: true } },
+                jurusan: { select: { namaProdi: true } },
               },
             },
           },

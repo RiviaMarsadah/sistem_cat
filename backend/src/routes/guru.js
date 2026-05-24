@@ -76,6 +76,7 @@ router.put('/bank-soal-koleksi/:id', bankSoalKoleksiController.update);
 router.delete('/bank-soal-koleksi/:id', bankSoalKoleksiController.remove);
 router.get('/bank-soal/template', bankSoalImportController.downloadTemplate);
 router.post('/bank-soal/import', upload.single('file'), bankSoalImportController.importExcel);
+router.post('/bank-soal/upload-image', upload.single('image'), bankSoalController.uploadImage);
 router.get('/bank-soal', bankSoalController.list);
 router.get('/bank-soal/:id', bankSoalController.getById);
 router.post('/bank-soal', bankSoalController.create);

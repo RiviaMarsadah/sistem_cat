@@ -45,13 +45,13 @@ function scoreByType(tipeSoal, kunci, jawaban) {
   if (tipeSoal === 'pilgan_kompleks') {
     const kk = normalizeMulti(k);
     const jj = normalizeMulti(j);
-    return { isBenar: kk === jj, skorItem: kk === jj ? 1 : 0 };
+    return { isBenar: kk === jj, skorItem: kk === jj ? 2 : 0 };
   }
 
   if (tipeSoal === 'pilgan_kategori') {
     const kk = normalizeCategory(k);
     const jj = normalizeCategory(j);
-    return { isBenar: kk === jj, skorItem: kk === jj ? 1 : 0 };
+    return { isBenar: kk === jj, skorItem: kk === jj ? 2 : 0 };
   }
 
   return { isBenar: false, skorItem: 0 };
@@ -78,16 +78,20 @@ function mapBankSoalToQuestion(bankSoal, nomorSoal, jawaban) {
   const kategori = bankSoal.kategoriSoal;
   const soal = pick(bankSoal.soal);
   const gambar = bankSoal.gambar ? String(bankSoal.gambar).trim() : null;
-  const pilihan = [pick(bankSoal.kolomA), pick(bankSoal.kolomB), pick(bankSoal.kolomC), pick(bankSoal.kolomD), pick(bankSoal.kolomE), pick(bankSoal.kolomF)];
+  const pilihan = [
+    pick(bankSoal.kolomA),
+    pick(bankSoal.kolomB),
+    pick(bankSoal.kolomC),
+    pick(bankSoal.kolomD),
+    pick(bankSoal.kolomE)
+  ].filter(Boolean);
 
   let type = 'simple';
-  let options = pilihan.slice(0, 5);
+  let options = pilihan;
   if (kategori === 'pilgan_kompleks') {
     type = 'complex';
-    options = pilihan.slice(0, 6);
   } else if (kategori === 'pilgan_kategori') {
     type = 'category';
-    options = pilihan.slice(0, 3);
   }
 
   return {
@@ -496,34 +500,39 @@ exports.submitUjian = async (req, res) => {
     }
 
     let benar = 0, salah = 0, kosong = 0, raguRagu = 0;
+    let nilaiBenar = 0, nilaiTotal = 0;
 
-    await prisma.$transaction(
-      ujian.jawabanSiswa.map((row) => {
-        const incoming = answerMap.get(row.bankSoalId) || { jawabanSiswa: row.jawabanSiswa || '', statusJawaban: row.statusJawaban };
-        const statusJawaban = getStatusFromAnswer(incoming.jawabanSiswa, incoming.statusJawaban);
-        const { isBenar, skorItem } = scoreByType(row.tipeSoal, row.bankSoal.jawaban, incoming.jawabanSiswa);
+    const updates = ujian.jawabanSiswa.map((row) => {
+      const incoming = answerMap.get(row.bankSoalId) || { jawabanSiswa: row.jawabanSiswa || '', statusJawaban: row.statusJawaban };
+      const statusJawaban = getStatusFromAnswer(incoming.jawabanSiswa, incoming.statusJawaban);
+      const { isBenar, skorItem } = scoreByType(row.tipeSoal, row.bankSoal.jawaban, incoming.jawabanSiswa);
 
-        if (statusJawaban === 'kosong') kosong += 1;
-        else if (statusJawaban === 'ragu_ragu') raguRagu += 1;
+      const weight = (row.tipeSoal === 'pilgan_kompleks' || row.tipeSoal === 'pilgan_kategori') ? 2 : 1;
+      nilaiTotal += weight;
 
-        if (isBenar) {
-          benar += 1;
-        } else {
-          salah += 1; // Semua yang tidak benar (termasuk kosong/ragu) dihitung salah
-        }
+      if (statusJawaban === 'kosong') kosong += 1;
+      else if (statusJawaban === 'ragu_ragu') raguRagu += 1;
 
-        return prisma.jawabanSiswa.update({
-          where: { id: row.id },
-          data: {
-            jawabanSiswa: incoming.jawabanSiswa ? String(incoming.jawabanSiswa) : null,
-            statusJawaban, isBenar, skorItem,
-          },
-        });
-      })
-    );
+      if (isBenar) {
+        nilaiBenar += weight;
+        benar += 1;
+      } else {
+        salah += 1;
+      }
+
+      return prisma.jawabanSiswa.update({
+        where: { id: row.id },
+        data: {
+          jawabanSiswa: incoming.jawabanSiswa ? String(incoming.jawabanSiswa) : null,
+          statusJawaban, isBenar, skorItem,
+        },
+      });
+    });
+
+    await prisma.$transaction(updates);
 
     const totalSoal = ujian.jawabanSiswa.length;
-    const nilaiAkhir = totalSoal > 0 ? Number(((benar / totalSoal) * 100).toFixed(2)) : 0;
+    const nilaiAkhir = nilaiTotal > 0 ? Number(((nilaiBenar / nilaiTotal) * 100).toFixed(2)) : 0;
 
     await prisma.ujianSiswa.update({
       where: { id: ujianSiswaId },
@@ -658,3 +667,34 @@ exports.cancelWaitingUjian = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal membatalkan antrian ujian.' });
   }
 };
+
+exports.getUjianStatus = async (req, res) => {
+  const siswaId = req.siswaId;
+  const ujianSiswaId = Number(req.params.ujianSiswaId);
+
+  try {
+    const ujian = await prisma.ujianSiswa.findUnique({
+      where: { id: ujianSiswaId },
+      select: {
+        id: true,
+        siswaId: true,
+        status: true
+      }
+    });
+
+    if (!ujian || ujian.siswaId !== siswaId) {
+      return res.status(404).json({ success: false, message: 'Data ujian tidak ditemukan.' });
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        status: ujian.status
+      }
+    });
+  } catch (err) {
+    console.error('getUjianStatus error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal mengecek status ujian.' });
+  }
+};
+

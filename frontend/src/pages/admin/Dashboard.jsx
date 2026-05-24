@@ -11,13 +11,14 @@ import {
 } from 'recharts';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './Dashboard.css';
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
 const AdminDashboard = () => {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [ringkasan, setRingkasan] = useState({
     totalMapel: 0,
     totalKelas: 0,
@@ -38,7 +39,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     const loadRingkasan = async () => {
       setLoading(true);
-      setError('');
       try {
         const [mapelRes, kelasRes, siswaRes, guruRes, adminRes, jurusanRes, angkatanRes, periodeRes, jadwalRes, statsRes, chartRes] = await Promise.all([
           api.get('/admin/mata-pelajaran'),
@@ -74,7 +74,7 @@ const AdminDashboard = () => {
           totalUjianDijalankan: statsData.totalUjianDijalankan || 0,
         }));
       } catch (e) {
-        setError(e?.response?.data?.message || 'Gagal memuat ringkasan dashboard');
+        showToast(e?.response?.data?.message || 'Gagal memuat ringkasan dashboard', 'error');
       } finally {
         setLoading(false);
       }
@@ -158,7 +158,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {error && <div className="dashboard-error">{error}</div>}
+
 
       <div className="stats-grid">
         {stats.map((stat, index) => {

@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
-import { FiCalendar, FiClock, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiPlus, FiLink, FiShield, FiTrash2, FiEdit2 } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiPlus, FiLink, FiShield, FiTrash2, FiEdit2, FiCheck } from 'react-icons/fi';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
 import './JadwalUjian.css';
 
 export default function JadwalUjianGuru() {
   const [activeTab, setActiveTab] = useState('official'); // 'official' | 'custom'
+  const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
 
   // Data states
@@ -33,13 +33,20 @@ export default function JadwalUjianGuru() {
   const [currentPageCustom, setCurrentPageCustom] = useState(1);
 
   const getPaginated = (data, page) => {
+    const isShowAll = page === 9999;
     const tp = Math.max(1, Math.ceil(data.length / ITEMS_PER_PAGE));
-    const dp = Math.min(Math.max(1, page), tp);
-    const si = (dp - 1) * ITEMS_PER_PAGE;
-    return { data: data.slice(si, si + ITEMS_PER_PAGE), tp, dp, si };
+    const dp = isShowAll ? 1 : Math.min(Math.max(1, page), tp);
+    const si = isShowAll ? 0 : (dp - 1) * ITEMS_PER_PAGE;
+    return { 
+      data: isShowAll ? data : data.slice(si, si + ITEMS_PER_PAGE), 
+      tp, 
+      dp, 
+      si,
+      isShowAll
+    };
   };
-  const { data: paginatedOfficial, tp: tpOfficial, dp: dpOfficial, si: siOfficial } = getPaginated(officialJadwal, currentPageOfficial);
-  const { data: paginatedCustom, tp: tpCustom, dp: dpCustom, si: siCustom } = getPaginated(customJadwal, currentPageCustom);
+  const { data: paginatedOfficial, tp: tpOfficial, dp: dpOfficial, si: siOfficial, isShowAll: isShowAllOfficial } = getPaginated(officialJadwal, currentPageOfficial);
+  const { data: paginatedCustom, tp: tpCustom, dp: dpCustom, si: siCustom, isShowAll: isShowAllCustom } = getPaginated(customJadwal, currentPageCustom);
 
   function getPaginationPages(tp, cp) {
     if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
@@ -52,20 +59,31 @@ export default function JadwalUjianGuru() {
     return result;
   }
 
-  const renderPagination = (total, tp, dp, setPage, page) => (
+  const renderPagination = (total, tp, dp, setPage, page, isShowAll) => (
     total > 0 && (
       <div className="table-pagination">
-        <span className="table-pagination-info">Menampilkan {(page === 1 ? 0 : (page - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(page * ITEMS_PER_PAGE, total)} dari {total} jadwal</span>
+        <span className="table-pagination-info">
+          {isShowAll 
+            ? `Menampilkan 1–${total} dari ${total} jadwal` 
+            : `Menampilkan ${(page === 1 ? 0 : (page - 1) * ITEMS_PER_PAGE) + 1}–${Math.min(page * ITEMS_PER_PAGE, total)} dari ${total} jadwal`
+          }
+        </span>
         <div className="table-pagination-controls">
-          <button type="button" className="table-pagination-btn" disabled={dp <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+          <button type="button" className="table-pagination-btn" disabled={isShowAll || dp <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
           <div className="table-pagination-pages">
-            {getPaginationPages(tp, dp).map((item) =>
-              item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
-              <button key={item.value} type="button" className={`table-pagination-page ${item.value === dp ? 'active' : ''}`} onClick={() => setPage(item.value)}>{item.value}</button>
+            {isShowAll ? (
+              <button type="button" className="table-pagination-page active" onClick={() => setPage(1)}>Tampilkan Per Halaman</button>
+            ) : (
+              getPaginationPages(tp, dp).map((item) =>
+                item.type === 'ellipsis' ? <span key={`ellipsis-${item.key}`} className="table-pagination-ellipsis">…</span> :
+                <button key={item.value} type="button" className={`table-pagination-page ${item.value === dp ? 'active' : ''}`} onClick={() => setPage(item.value)}>{item.value}</button>
+              )
             )}
           </div>
-          <button type="button" className="table-pagination-btn" disabled={dp >= tp} onClick={() => setPage(p => Math.min(tp, p + 1))}>Berikutnya</button>
-          <button type="button" className="table-pagination-btn show-all" onClick={() => setPage(9999)}>Tampilkan Semua</button>
+          <button type="button" className="table-pagination-btn" disabled={isShowAll || dp >= tp} onClick={() => setPage(p => Math.min(tp, p + 1))}>Berikutnya</button>
+          {!isShowAll && (
+            <button type="button" className="table-pagination-btn show-all" onClick={() => setPage(9999)}>Tampilkan Semua</button>
+          )}
         </div>
       </div>
     )
@@ -97,19 +115,14 @@ export default function JadwalUjianGuru() {
       setKelasList(resKel.data?.data || []);
       setMapelList(resMap.data?.data || []);
     } catch(err) {
-      setError('Gagal memuat data. ' + (err?.response?.data?.message || ''));
+      showToast('Gagal memuat data. ' + (err?.response?.data?.message || ''), 'error');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => { fetchData() }, []);
-  useEffect(() => {
-    if(error || success) {
-      const timer = setTimeout(() => { setError(''); setSuccess(''); }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, success]);
+
 
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -127,11 +140,11 @@ export default function JadwalUjianGuru() {
     setSaving(true);
     try {
       const res = await api.put(`/guru/jadwal-ujian/official/${activeJadwalId}/paket`, { paketUjianId: paketId });
-      setSuccess(res.data.message);
+      showToast(res.data.message || 'Berhasil menautkan paket.', 'success');
       setShowPilihPaketModal(false);
       fetchData(); //mengambil data terbaru
     } catch(err) {
-      setError(err?.response?.data?.message || 'Gagal menautkan paket.');
+      showToast(err?.response?.data?.message || 'Gagal menautkan paket.', 'error');
     } finally {
       setSaving(false);
     }
@@ -142,10 +155,10 @@ export default function JadwalUjianGuru() {
     setSaving(true);
     try {
        const res = await api.delete(`/guru/jadwal-ujian/official/${jdwlId}/paket`);
-       setSuccess(res.data.message);
+       showToast(res.data.message || 'Tautan paket berhasil dilepas.', 'success');
        fetchData();
     } catch(err) {
-       setError(err?.response?.data?.message || 'Gagal melepas paket.');
+       showToast(err?.response?.data?.message || 'Gagal melepas paket.', 'error');
     } finally {
        setSaving(false);
     }
@@ -205,7 +218,7 @@ export default function JadwalUjianGuru() {
   const handleSaveCustom = async (e) => {
     e.preventDefault(); //menghapus settingan default browser
     if(!nama || !mataPelajaranId || !paketUjianId || !mulai || !selesai || selectedKelas.length === 0) {
-       setError('Mohon isi semua data, termasuk kelas peserta.'); return;
+       showToast('Mohon isi semua data, termasuk kelas peserta.', 'error'); return;
     }
     setSaving(true);
     try {
@@ -216,17 +229,17 @@ export default function JadwalUjianGuru() {
 
       if (editingId) {
         const res = await api.put(`/guru/jadwal-ujian/custom/${editingId}`, payload);
-        setSuccess(res.data.message);
+        showToast(res.data.message || 'Jadwal berhasil diperbarui.', 'success');
       } else {
         const res = await api.post('/guru/jadwal-ujian/custom', payload);
-        setSuccess(res.data.message);
+        showToast(res.data.message || 'Jadwal berhasil dibuat.', 'success');
       }
       
       setShowAddCustomModal(false);
       fetchData();
       setActiveTab('custom');
     } catch(err) {
-       setError(err?.response?.data?.message || 'Gagal menyimpan ulangan custom.');
+       showToast(err?.response?.data?.message || 'Gagal menyimpan ulangan custom.', 'error');
     } finally {
        setSaving(false);
     }
@@ -237,10 +250,10 @@ export default function JadwalUjianGuru() {
     setSaving(true);
     try {
        const res = await api.delete(`/guru/jadwal-ujian/custom/${id}`);
-       setSuccess(res.data.message);
+       showToast(res.data.message || 'Ulangan berhasil dihapus.', 'success');
        fetchData();
     } catch(err) {
-       setError(err?.response?.data?.message || 'Gagal menghapus ulangan.');
+       showToast(err?.response?.data?.message || 'Gagal menghapus ulangan.', 'error');
     } finally {
        setSaving(false);
     }
@@ -280,13 +293,7 @@ export default function JadwalUjianGuru() {
         </button>
       </div>
 
-      {error && (
-        <div className="user-alert" role="alert">
-           {error}
-        </div>
-      )}
 
-      {success && <div className="user-alert success" role="alert">{success}</div>}
 
       <div className="guru-card">
          <div className="guru-card-header">
@@ -342,7 +349,7 @@ export default function JadwalUjianGuru() {
 
                     <div className="col-mapel-paket">
                       <div className="mapel-badge">
-                        {j.mataPelajaran?.namaMapel}
+                        {j.mataPelajaran?.namaMapel} ({j.mataPelajaran?.kodeMapel || '-'})
                       </div>
                       <div className="paket-badge">
                         {j.paketUjianId ? (
@@ -390,7 +397,7 @@ export default function JadwalUjianGuru() {
                 ))}
               </>
             )}
-            {renderPagination(officialJadwal.length, tpOfficial, dpOfficial, setCurrentPageOfficial, currentPageOfficial)}
+            {renderPagination(officialJadwal.length, tpOfficial, dpOfficial, setCurrentPageOfficial, currentPageOfficial, isShowAllOfficial)}
           </div>
         ) : (
           /* CUSTOM TAB */
@@ -430,7 +437,7 @@ export default function JadwalUjianGuru() {
 
                       <div className="col-mapel-paket">
                          <div className="mapel-badge">
-                           {j.mataPelajaran?.namaMapel}
+                           {j.mataPelajaran?.namaMapel} ({j.mataPelajaran?.kodeMapel || '-'})
                          </div>
                          <div className="paket-badge">
                            {j.paketUjian?.nama}
@@ -467,7 +474,7 @@ export default function JadwalUjianGuru() {
                  ))}
                </>
              )}
-             {renderPagination(customJadwal.length, tpCustom, dpCustom, setCurrentPageCustom, currentPageCustom)}
+             {renderPagination(customJadwal.length, tpCustom, dpCustom, setCurrentPageCustom, currentPageCustom, isShowAllCustom)}
           </div>
         )}
       </div>
@@ -560,7 +567,7 @@ export default function JadwalUjianGuru() {
                       <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Mata Pelajaran <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <select className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
                          <option value="">Pilih Mapel...</option>
-                         {mapelList.map((m) => <option key={m.id} value={m.id}>{m.namaMapel}</option>)}
+                         {mapelList.map((m) => <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>)}
                       </select>
                     </div>
 
@@ -619,8 +626,8 @@ export default function JadwalUjianGuru() {
                  </div>
                </div>
                <div className="modal-footer" style={{padding: '1.5rem 2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '1rem'}}>
-                  <button type="button" className="btn-action" onClick={() => setShowAddCustomModal(false)} style={{padding: '0.75rem 1.5rem', borderRadius: '10px'}}>Batal</button>
-                  <button type="submit" className="btn-action success" style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)' }} disabled={saving}>
+                  <button type="button" className="btn-modal-cancel" onClick={() => setShowAddCustomModal(false)}>Batal</button>
+                  <button type="submit" className="btn-modal-submit" disabled={saving}>
                     {saving ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Buat Ujian Mandiri'}
                   </button>
                </div>

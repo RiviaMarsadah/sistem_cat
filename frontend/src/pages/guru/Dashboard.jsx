@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import { useToast } from '../../context/ToastContext';
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
 import './GuruTheme.css';
@@ -26,8 +27,8 @@ const getNamaKelasDisplay = (kelas) => {
 };
 
 const GuruDashboard = () => {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [ringkasan, setRingkasan] = useState({
     totalNamaBankSoal: 0,
     totalSoalDiBankSoal: 0,
@@ -43,7 +44,6 @@ const GuruDashboard = () => {
   useEffect(() => {
     const loadRingkasan = async () => {
       setLoading(true);
-      setError('');
       try {
         const [koleksiRes, bankSoalRes, paketRes, jadwalCustomRes, jadwalRes] = await Promise.all([
           api.get('/guru/bank-soal-koleksi'),
@@ -97,7 +97,7 @@ const GuruDashboard = () => {
           soalPerKoleksi: perKoleksi
         });
       } catch (e) {
-        setError(e?.response?.data?.message || 'Gagal memuat ringkasan dashboard');
+        showToast(e?.response?.data?.message || 'Gagal memuat ringkasan dashboard', 'error');
       } finally {
         setLoading(false);
       }
@@ -147,8 +147,6 @@ const GuruDashboard = () => {
         </div>
       </div>
 
-      {error && <div className="dashboard-error">{error}</div>}
-
       <div className="stats-grid">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
@@ -166,32 +164,6 @@ const GuruDashboard = () => {
         })}
       </div>
 
-      <div className="quick-actions">
-        <div className="section-header">
-          <h2 className="section-title">Akses Cepat</h2>
-          <p className="section-subtitle">Menu pintasan untuk manajemen aset soal Anda</p>
-        </div>
-        <div className="actions-grid">
-          <Link to="/guru/bank-soal" className="action-card guru-action-card">
-            <div className="action-icon-wrapper">
-              <FiFileText className="action-icon" />
-            </div>
-            <span className="action-label">Bank Soal</span>
-          </Link>
-          <Link to="/guru/paket-ujian" className="action-card guru-action-card">
-            <div className="action-icon-wrapper">
-              <FiPackage className="action-icon" />
-            </div>
-            <span className="action-label">Paket Ujian</span>
-          </Link>
-          <Link to="/guru/jadwal-ujian" className="action-card guru-action-card">
-            <div className="action-icon-wrapper">
-              <FiCalendar className="action-icon" />
-            </div>
-            <span className="action-label">Jadwal Ujian</span>
-          </Link>
-        </div>
-      </div>
 
       {/* Widgets Section */}
       <div className="widgets-section" style={{ marginTop: '1.5rem' }}>
