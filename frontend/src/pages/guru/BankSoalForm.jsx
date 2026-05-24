@@ -100,8 +100,21 @@ export default function BankSoalForm() {
       setBankSoalKoleksiId(queryKoleksiId);
       setModeKoleksi('pilih');
       
-      const fetchKoleksiQuestions = async () => {
+      const fetchKoleksiDetails = async () => {
         try {
+          // Fetch parent collection details first to get preset metadata
+          const colRes = await api.get(`/guru/bank-soal-koleksi/${queryKoleksiId}`);
+          const colData = colRes.data?.data;
+          
+          if (colData && colData.mataPelajaranId && colData.tingkat) {
+            setMataPelajaranId(colData.mataPelajaranId ?? '');
+            setTingkat(apiToTingkatDisplay(colData.tingkat) ?? '10');
+            setJurusanId(colData.jurusanId != null ? String(colData.jurusanId) : '');
+            setHasPrefilledKoleksi(true);
+            return; // Successfully prefilled from collection metadata!
+          }
+          
+          // Fallback: If collection metadata is empty (old collection), check first question
           const res = await api.get(`/guru/bank-soal?bankSoalKoleksiId=${queryKoleksiId}`);
           const questions = res.data?.data || [];
           if (questions.length > 0) {
@@ -112,10 +125,10 @@ export default function BankSoalForm() {
             setHasPrefilledKoleksi(true);
           }
         } catch (e) {
-          console.error('Fetch koleksi questions error:', e);
+          console.error('Fetch koleksi details/questions error:', e);
         }
       };
-      fetchKoleksiQuestions();
+      fetchKoleksiDetails();
     }
   }, [queryKoleksiId, isEdit]);
 
@@ -283,7 +296,12 @@ export default function BankSoalForm() {
       }
 
       if (modeKoleksi === 'buat') {
-        const createKoleksiRes = await api.post('/guru/bank-soal-koleksi', { nama: trimmedNamaKoleksi });
+        const createKoleksiRes = await api.post('/guru/bank-soal-koleksi', { 
+          nama: trimmedNamaKoleksi,
+          mataPelajaranId: Number(mataPelajaranId),
+          tingkat: displayToTingkatApi(tingkat),
+          jurusanId: jurusanId === '' ? null : Number(jurusanId)
+        });
         const idKoleksiBaru = createKoleksiRes.data?.data?.id;
         if (!idKoleksiBaru) {
           showToast('Gagal membuat Bank Soal baru.', 'error');
@@ -355,7 +373,7 @@ export default function BankSoalForm() {
           <span className="title-badge guru-badge">Guru</span>
         </h1>
         <p className="page-subtitle">
-          {isEdit ? 'Ubah data soal' : 'Isi form di bawah. Data tidak hilang saat pindah halaman.'}
+          {isEdit ? 'Formulir pengeditan detail butir soal dan pembaruan opsi jawaban.' : 'Pembuatan butir soal baru, konfigurasi tipe soal, dan kunci jawaban.'}
         </p>
       </div>
 
@@ -486,7 +504,7 @@ export default function BankSoalForm() {
 
           {/* Premium Compression Image Upload for Question */}
           <div className="form-group" style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '10px', border: '1px solid #cbd5e1', marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Gambar Soal (Opsional, Maks 3MB)</label>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Gambar Soal (Opsional, Maks 3MB)</label>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
               <input 
                 type="file" 
@@ -522,7 +540,7 @@ export default function BankSoalForm() {
           </div>
 
           <div className="form-group">
-            <label style={{ fontWeight: 600 }}>
+            <label style={{ fontWeight: 700 }}>
               {kategoriSoal === 'pilgan_kategori' ? 'Pernyataan (Isi kolom A–E)' : 'Opsi Jawaban (Minimal 3 Terisi)'}
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '0.50rem' }}>

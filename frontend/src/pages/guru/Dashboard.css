@@ -13,7 +13,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -452,7 +452,7 @@
 
 @media (max-width: 1024px) {
   .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -488,5 +488,41 @@
   .stat-value {
     font-size: 1.4rem;
   }
+}
+
+/* ================================================
+   COLORED WIDGET/CHART HEADERS
+   ================================================ */
+.widget-header.header-color-ujian {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
+}
+.widget-header.header-color-ujian .widget-title {
+  color: #ffffff !important;
+}
+.widget-header.header-color-ujian .widget-icon {
+  color: #ffffff !important;
+}
+.widget-header.header-color-ujian .widget-icon-wrapper {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+.widget-header.header-color-ujian .widget-see-all {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+.widget-header.header-color-ujian .widget-see-all:hover {
+  color: #ffffff !important;
+}
+
+.chart-header.header-color-tipe {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+}
+.chart-header.header-color-tipe .chart-title {
+  color: #ffffff !important;
+}
+
+.chart-header.header-color-koleksi {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
+}
+.chart-header.header-color-koleksi .chart-title {
+  color: #ffffff !important;
 }
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { FiCheck, FiX } from 'react-icons/fi';
 
 const ToastContext = createContext(null);
@@ -13,29 +13,54 @@ export const useToast = () => {
 
 export const ToastProvider = ({ children }) => {
   const [toast, setToast] = useState(null);
+  const timerRef = useRef(null);
+
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 5000);
+  }, []);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
   }, []);
 
   const hideToast = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
     setToast(null);
   }, []);
 
+  const handleMouseEnter = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    startTimer();
+  };
+
   useEffect(() => {
     if (toast) {
-      const timer = setTimeout(() => {
-        setToast(null);
-      }, 4000);
-      return () => clearTimeout(timer);
+      startTimer();
+      return () => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+      };
     }
-  }, [toast]);
+  }, [toast, startTimer]);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       {toast && (
-        <div className={`premium-toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}>
+        <div 
+          className={`premium-toast ${toast.type === 'success' ? 'toast-success' : 'toast-error'}`}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          style={{ cursor: 'pointer' }}
+        >
           <div className="premium-toast-icon-wrap">
             {toast.type === 'success' ? <FiCheck /> : <FiX />}
           </div>

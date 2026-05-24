@@ -76,22 +76,22 @@ model User {
 }
 
 model Guru {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique @map("user_id")
-  nip             String?       @db.VarChar(20)
-  jk              JenisKelamin? @map("jk")
-  foto            String?       @default("default.jpg") @db.VarChar(255)
-  tempatLahir     String?       @map("tempat_lahir") @db.VarChar(100)
-  tglLahir        String?       @map("tgl_lahir") @db.VarChar(20)
-  agama           String?       @db.VarChar(50)
-  noHp            String?       @map("nohp") @db.VarChar(20)
-  provinsi        String?       @db.VarChar(100)
-  kabupaten       String?       @db.VarChar(100)
-  kecamatan       String?       @db.VarChar(100)
-  desa            String?       @db.VarChar(100)
-  alamat          String?       @db.Text
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique @map("user_id")
+  nip         String?       @db.VarChar(20)
+  jk          JenisKelamin? @map("jk")
+  foto        String?       @default("default.jpg") @db.VarChar(255)
+  tempatLahir String?       @map("tempat_lahir") @db.VarChar(100)
+  tglLahir    String?       @map("tgl_lahir") @db.VarChar(20)
+  agama       String?       @db.VarChar(50)
+  noHp        String?       @map("nohp") @db.VarChar(20)
+  provinsi    String?       @db.VarChar(100)
+  kabupaten   String?       @db.VarChar(100)
+  kecamatan   String?       @db.VarChar(100)
+  desa        String?       @db.VarChar(100)
+  alamat      String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
   // Relations
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -104,39 +104,44 @@ model Guru {
 }
 
 model BankSoalKoleksi {
-  id        Int      @id @default(autoincrement())
-  guruId    Int      @map("guru_id")
-  nama      String   @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              Int          @id @default(autoincrement())
+  guruId          Int          @map("guru_id")
+  nama            String       @db.VarChar(120)
+  mataPelajaranId Int?         @map("mata_pelajaran_id")
+  tingkat         TingkatSoal?
+  jurusanId       Int?         @map("jurusan_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  guru     Guru       @relation(fields: [guruId], references: [id], onDelete: Cascade)
-  bankSoal BankSoal[]
+  guru          Guru           @relation(fields: [guruId], references: [id], onDelete: Cascade)
+  mataPelajaran MataPelajaran? @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  jurusan       Jurusan?       @relation(fields: [jurusanId], references: [id], onDelete: SetNull)
+  bankSoal      BankSoal[]
 
   @@unique([guruId, nama])
   @@map("bank_soal_koleksi")
 }
 
 model Siswa {
-  id           Int           @id @default(autoincrement())
-  userId       Int           @unique @map("user_id")
-  nis          String?       @unique @db.VarChar(20)
-  nisn         String?       @unique @db.VarChar(20)
-  kelasId      Int?          @map("kelas_id")
-  idAngkatan   Int?          @map("id_angkatan")
-  jk           JenisKelamin? @map("jk")
-  foto         String?       @default("default.jpg") @db.VarChar(255)
-  tempatLahir  String?       @map("tempat_lahir") @db.VarChar(100)
-  tglLahir     String?       @map("tgl_lahir") @db.VarChar(20)
-  agama        String?       @db.VarChar(50)
-  noHp         String?       @map("nohp") @db.VarChar(20)
-  provinsi     String?       @db.VarChar(100)
-  kabupaten    String?       @db.VarChar(100)
-  kecamatan    String?       @db.VarChar(100)
-  desa         String?       @db.VarChar(100)
-  alamat       String?       @db.Text
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique @map("user_id")
+  nis         String?       @unique @db.VarChar(20)
+  nisn        String?       @unique @db.VarChar(20)
+  kelasId     Int?          @map("kelas_id")
+  idAngkatan  Int?          @map("id_angkatan")
+  jk          JenisKelamin? @map("jk")
+  foto        String?       @default("default.jpg") @db.VarChar(255)
+  tempatLahir String?       @map("tempat_lahir") @db.VarChar(100)
+  tglLahir    String?       @map("tgl_lahir") @db.VarChar(20)
+  agama       String?       @db.VarChar(50)
+  noHp        String?       @map("nohp") @db.VarChar(20)
+  provinsi    String?       @db.VarChar(100)
+  kabupaten   String?       @db.VarChar(100)
+  kecamatan   String?       @db.VarChar(100)
+  desa        String?       @db.VarChar(100)
+  alamat      String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
   // Relations
   user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -171,15 +176,16 @@ enum KategoriMapel {
 }
 
 model MataPelajaran {
-  id        Int           @id @default(autoincrement())
-  namaMapel String        @map("nama_mapel") @db.VarChar(100)
-  kodeMapel String?       @unique @map("kode_mapel") @db.VarChar(20)
-  deskripsi String?       @db.Text
-  createdAt DateTime      @default(now()) @map("created_at")
+  id        Int      @id @default(autoincrement())
+  namaMapel String   @map("nama_mapel") @db.VarChar(100)
+  kodeMapel String?  @unique @map("kode_mapel") @db.VarChar(20)
+  deskripsi String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
 
-  bankSoal     BankSoal[]
-  paketUjian   PaketUjian[]
-  jadwalUjians JadwalUjian[]
+  bankSoal         BankSoal[]
+  paketUjian       PaketUjian[]
+  jadwalUjians     JadwalUjian[]
+  bankSoalKoleksis BankSoalKoleksi[]
 
   @@map("mata_pelajaran")
 }
@@ -210,9 +216,10 @@ model Jurusan {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  kelas         Kelas[]
-  bankSoal      BankSoal[]
-  jadwalUjians  JadwalUjian[]
+  kelas            Kelas[]
+  bankSoal         BankSoal[]
+  jadwalUjians     JadwalUjian[]
+  bankSoalKoleksis BankSoalKoleksi[]
 
   @@map("jurusan")
 }
@@ -278,15 +285,15 @@ model SoalPaketUjian {
 }
 
 model JadwalUjian {
-  id              Int      @id @default(autoincrement())
-  nama            String   @db.VarChar(100)
+  id              Int            @id @default(autoincrement())
+  nama            String         @db.VarChar(100)
   kategori        KategoriJadwal @default(terjadwal)
-  mataPelajaranId Int      @map("mata_pelajaran_id")
-  mulai           DateTime @map("mulai_pada")
-  selesai         DateTime @map("selesai_pada")
-  durasi          Int      @default(60)
-  token           String?  @db.VarChar(6)
-  tokenCheckOut   String?  @map("token_checkout") @db.VarChar(6)
+  mataPelajaranId Int            @map("mata_pelajaran_id")
+  mulai           DateTime       @map("mulai_pada")
+  selesai         DateTime       @map("selesai_pada")
+  durasi          Int            @default(60)
+  token           String?        @db.VarChar(6)
+  tokenCheckOut   String?        @map("token_checkout") @db.VarChar(6)
 
   guruId       Int?    @map("guru_id")
   opsiKeamanan Boolean @default(false) @map("opsi_keamanan")

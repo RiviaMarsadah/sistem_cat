@@ -165,7 +165,7 @@ const UjianSiswa = () => {
             <span className="title-text">Management Ujian Siswa</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Kelola dan pantau seluruh data progres ujian siswa yang sedang berlangsung maupun selesai</p>
+          <p className="user-subtitle">Pemantauan real-time status pengerjaan, sisa waktu, dan hasil ujian siswa.</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">

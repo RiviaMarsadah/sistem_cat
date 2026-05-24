@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   FiBookOpen, FiUsers, FiUser, FiCalendar,
   FiUserPlus, FiUsers as FiUsersIcon, FiHome, FiGrid,
-  FiLayers, FiAward, FiClock, FiActivity, FiCheckCircle,
-  FiTrendingUp, FiBarChart2
+  FiLayers, FiClock, FiActivity, FiCheckCircle,
+  FiBarChart2
 } from 'react-icons/fi';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -31,9 +31,8 @@ const AdminDashboard = () => {
     totalJadwal: 0,
     totalUjianDijalankan: 0,
   });
-  const [periodeAktif, setPeriodeAktif] = useState(null);
-  const [jadwalTerbaru, setJadwalTerbaru] = useState([]);
-  const [siswaTerbaru, setSiswaTerbaru] = useState([]);
+  const [periodeAktif, setPeriodeAktif] = useState([]);
+  const [sesiUjianTerbaru, setSesiUjianTerbaru] = useState([]);
   const [chartData, setChartData] = useState(null);
 
   useEffect(() => {
@@ -55,9 +54,8 @@ const AdminDashboard = () => {
         ]);
 
         const statsData = statsRes.data?.data || {};
-        setPeriodeAktif(statsData.periodeAktif || null);
-        setJadwalTerbaru(statsData.jadwalTerbaru || []);
-        setSiswaTerbaru(statsData.siswaTerbaru || []);
+        setPeriodeAktif(statsData.periodeAktif || []);
+        setSesiUjianTerbaru(statsData.sesiUjianTerbaru || []);
         setChartData(chartRes.data?.data || null);
 
         setRingkasan(prev => ({
@@ -109,12 +107,6 @@ const AdminDashboard = () => {
       path: '/admin/guru',
     },
     {
-      title: 'Total Admin',
-      value: ringkasan.totalAdmin,
-      icon: FiUser,
-      path: '/admin/user',
-    },
-    {
       title: 'Jurusan',
       value: ringkasan.totalJurusan,
       icon: FiGrid,
@@ -138,12 +130,6 @@ const AdminDashboard = () => {
       icon: FiCalendar,
       path: '/admin/jadwal-ujian',
     },
-    {
-      title: 'Ujian Dijalankan',
-      value: ringkasan.totalUjianDijalankan,
-      icon: FiAward,
-      path: '/admin/jadwal-ujian',
-    },
   ];
 
   return (
@@ -154,7 +140,7 @@ const AdminDashboard = () => {
             <span className="title-text">Dashboard</span>
             <span className="title-badge admin-badge">Admin</span>
           </h1>
-          <p className="page-subtitle">Ringkasan data utama dan akses cepat menu admin</p>
+          <p className="page-subtitle">Analisis aktivitas ujian, data statistik akademik, dan pemantauan sistem CAT.</p>
         </div>
       </div>
 
@@ -183,7 +169,7 @@ const AdminDashboard = () => {
 
           {/* Widget Periode Aktif */}
           <div className="widget-card">
-            <div className="widget-header">
+            <div className="widget-header header-color-periode">
               <div className="widget-icon-wrapper">
                 <FiActivity className="widget-icon" />
               </div>
@@ -192,20 +178,34 @@ const AdminDashboard = () => {
             <div className="widget-body">
               {loading ? (
                 <div className="widget-loading">Memuat...</div>
-              ) : periodeAktif ? (
-                <div className="periode-info">
-                  <div className="periode-nama">{periodeAktif.nama}</div>
-                  <div className="periode-detail">
-                    <span className="periode-badge">{periodeAktif.semester}</span>
-                    <span className="periode-badge">{periodeAktif.tahunAjaran}</span>
-                  </div>
-                  <div className="periode-dates">
-                    <FiClock size={12} />
-                    <span>{new Date(periodeAktif.mulai).toLocaleDateString('id-ID')} — {new Date(periodeAktif.selesai).toLocaleDateString('id-ID')}</span>
-                  </div>
-                  <Link to="/admin/jadwal-ujian" className="widget-link">
-                    Lihat Jadwal →
-                  </Link>
+              ) : (periodeAktif && periodeAktif.length > 0) ? (
+                <div className="table-responsive">
+                  <table className="admin-widget-table">
+                    <thead>
+                      <tr>
+                        <th>Nama</th>
+                        <th>Semester</th>
+                        <th>Tahun Ajaran</th>
+                        <th>Mulai</th>
+                        <th>Selesai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {periodeAktif.map(p => (
+                        <tr key={p.id}>
+                          <td style={{ fontWeight: 600 }}>{p.nama}</td>
+                          <td>
+                            <span className="periode-badge">{p.semester}</span>
+                          </td>
+                          <td>
+                            <span className="periode-badge">{p.tahunAjaran}</span>
+                          </td>
+                          <td>{new Date(p.mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                          <td>{new Date(p.selesai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="widget-empty">
@@ -217,71 +217,51 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Widget Jadwal Ujian Terbaru */}
-          <div className="widget-card">
-            <div className="widget-header">
+          {/* Widget Sesi Ujian Terbaru */}
+          <div className="widget-card widget-sesi-terbaru">
+            <div className="widget-header header-color-sesi">
               <div className="widget-icon-wrapper">
-                <FiCalendar className="widget-icon" />
+                <FiClock className="widget-icon" />
               </div>
-              <h3 className="widget-title">Jadwal Ujian Terbaru</h3>
-              <Link to="/admin/jadwal-ujian" className="widget-see-all">Lihat Semua</Link>
+              <h3 className="widget-title">Sesi Ujian Terbaru</h3>
             </div>
             <div className="widget-body">
               {loading ? (
                 <div className="widget-loading">Memuat...</div>
-              ) : jadwalTerbaru.length > 0 ? (
-                <div className="widget-list">
-                  {jadwalTerbaru.map(j => (
-                    <div key={j.id} className="widget-list-item">
-                      <div className="item-info">
-                        <div className="item-primary">{j.nama}</div>
-                        <div className="item-secondary">{j.namaMapel}</div>
-                      </div>
-                      <div className="item-date">
-                        {new Date(j.mulai).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                      </div>
-                    </div>
-                  ))}
+              ) : sesiUjianTerbaru.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="admin-widget-table">
+                    <thead>
+                      <tr>
+                        <th>Siswa</th>
+                        <th>Kelas</th>
+                        <th>Nama Ujian</th>
+                        <th>Status</th>
+                        <th>Mulai</th>
+                        <th>Selesai</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sesiUjianTerbaru.map(s => (
+                        <tr key={s.id}>
+                          <td style={{ fontWeight: 600 }}>{s.siswa}</td>
+                          <td>{s.kelas}</td>
+                          <td>{s.namaUjian}</td>
+                          <td>
+                            <span className={`status-badge-mini ${s.status}`}>
+                              {s.status}
+                            </span>
+                          </td>
+                          <td>{new Date(s.mulai).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>{s.selesai ? new Date(s.selesai).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="widget-empty">
-                  <FiCalendar size={28} className="empty-icon" />
-                  <p>Belum ada jadwal ujian</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Widget Siswa Terbaru */}
-          <div className="widget-card">
-            <div className="widget-header">
-              <div className="widget-icon-wrapper">
-                <FiUserPlus className="widget-icon" />
-              </div>
-              <h3 className="widget-title">Siswa Terbaru</h3>
-              <Link to="/admin/siswa" className="widget-see-all">Lihat Semua</Link>
-            </div>
-            <div className="widget-body">
-              {loading ? (
-                <div className="widget-loading">Memuat...</div>
-              ) : siswaTerbaru.length > 0 ? (
-                <div className="widget-list">
-                  {siswaTerbaru.map(s => (
-                    <div key={s.id} className="widget-list-item">
-                      <div className="item-info">
-                        <div className="item-primary">{s.nama}</div>
-                        <div className="item-secondary">{s.kelas} · NIS: {s.nis}</div>
-                      </div>
-                      <div className="item-date">
-                        {new Date(s.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="widget-empty">
-                  <FiUserPlus size={28} className="empty-icon" />
-                  <p>Belum ada siswa terdaftar</p>
+                  <p>Tidak ada sesi ujian terbaru</p>
                 </div>
               )}
             </div>
@@ -304,7 +284,7 @@ const AdminDashboard = () => {
           <div className="charts-grid">
             {/* Chart: Siswa per Angkatan (Bar Chart) */}
             <div className="chart-card">
-              <div className="chart-header">
+              <div className="chart-header header-color-angkatan">
                 <h3 className="chart-title">Jumlah Siswa per Angkatan</h3>
               </div>
               <div className="chart-body">
@@ -329,7 +309,7 @@ const AdminDashboard = () => {
 
             {/* Chart: Distribusi Siswa per Tingkat (Pie Chart) */}
             <div className="chart-card">
-              <div className="chart-header">
+              <div className="chart-header header-color-tingkat">
                 <h3 className="chart-title">Distribusi Siswa per Tingkat</h3>
               </div>
               <div className="chart-body">
@@ -374,7 +354,7 @@ const AdminDashboard = () => {
 
             {/* Chart: Distribusi Nilai Ujian (Bar Chart) */}
             <div className="chart-card chart-wide">
-              <div className="chart-header">
+              <div className="chart-header header-color-nilai">
                 <h3 className="chart-title">Distribusi Nilai Ujian</h3>
               </div>
               <div className="chart-body">

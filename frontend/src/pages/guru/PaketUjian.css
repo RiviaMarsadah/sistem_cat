@@ -307,13 +307,10 @@
 /* Label: tegas dan mudah dibedakan */
 .form-group > label {
   display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1e293b;
-  letter-spacing: 0.02em;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
   margin-bottom: 0.5rem;
-  padding-left: 0.5rem;
-  border-left: 3px solid #3b82f6;
   line-height: 1.4;
 }
 
@@ -386,12 +383,10 @@
 
 .soal-picker-filters .filter-group label {
   display: block;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1e293b;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
   margin-bottom: 0.45rem;
-  padding-left: 0.4rem;
-  border-left: 3px solid #64748b;
 }
 
 .soal-picker-filters .filter-group select {

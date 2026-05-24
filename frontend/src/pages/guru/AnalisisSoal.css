@@ -172,8 +172,8 @@
 
 .analisis-row {
   display: grid;
-  /* No | Pertanyaan | Penjawab | Benar | % Benar | Evaluasi */
-  grid-template-columns: 48px 1fr 100px 90px 130px 120px;
+  /* No | Pertanyaan | Kategori | Penjawab | Benar | % Benar | Evaluasi */
+  grid-template-columns: 48px 1fr 120px 90px 90px 120px 120px;
   align-items: center;
   padding: 0.875rem 1.25rem;
   gap: 1rem;

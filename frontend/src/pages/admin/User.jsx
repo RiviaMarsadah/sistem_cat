@@ -199,7 +199,7 @@ const AdminUser = () => {
             <span className="title-text">Manajemen Admin</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Kelola data akun administrator sistem</p>
+          <p className="user-subtitle">Manajemen akun administrator pengelola sistem dan pengaturan otorisasi akses.</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">

@@ -1,5 +1,7 @@
 const Joi = require('joi');
 const prisma = require('../config/prisma');
+const fs = require('fs');
+const path = require('path');
 
 const KATEGORI = ['pilgan', 'pilgan_kompleks', 'pilgan_kategori'];
 const TINGKAT = ['X', 'XI', 'XII', 'SEMUA'];
@@ -272,10 +274,66 @@ exports.remove = async (req, res) => {
   if (!guruId) return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
 
   try {
-    const deleted = await prisma.bankSoal.deleteMany({ where: { id, guruId } });
-    if (deleted.count === 0) {
+    const item = await prisma.bankSoal.findFirst({
+      where: { id, guruId },
+      select: { id: true, gambar: true }
+    });
+
+    if (!item) {
       return res.status(404).json({ success: false, message: 'Soal tidak ditemukan' });
     }
+
+    // Periksa apakah soal ini digunakan di Paket Ujian
+    const usedInPakets = await prisma.soalPaketUjian.findMany({
+      where: { bankSoalId: id },
+      include: {
+        paketUjian: { select: { nama: true } }
+      }
+    });
+
+    // Periksa apakah soal ini digunakan di Ujian Siswa (Riwayat Ujian)
+    const usedInJawabans = await prisma.jawabanSiswa.findMany({
+      where: { bankSoalId: id },
+      include: {
+        ujian: {
+          include: {
+            jadwalUjian: { select: { nama: true } }
+          }
+        }
+      }
+    });
+
+    if (usedInPakets.length > 0 || usedInJawabans.length > 0) {
+      const paketNames = Array.from(new Set(usedInPakets.map((p) => p.paketUjian?.nama))).filter(Boolean);
+      const jadwalNames = Array.from(new Set(usedInJawabans.map((j) => j.ujian?.jadwalUjian?.nama))).filter(Boolean);
+
+      let detailMessage = 'Tidak dapat menghapus soal ini karena masih digunakan:';
+      if (paketNames.length > 0) {
+        detailMessage += `\n• Paket Ujian: ${paketNames.join(', ')}`;
+      }
+      if (jadwalNames.length > 0) {
+        detailMessage += `\n• Riwayat/Jadwal Ujian: ${jadwalNames.join(', ')}`;
+      }
+      detailMessage += '\n\nSilakan hapus atau lepaskan soal ini dari paket/jadwal tersebut terlebih dahulu.';
+
+      return res.status(400).json({
+        success: false,
+        message: detailMessage
+      });
+    }
+
+    if (item.gambar) {
+      const filePath = path.join(process.cwd(), 'uploads', item.gambar);
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (unlinkErr) {
+        console.error(`Gagal menghapus file gambar ${item.gambar}:`, unlinkErr);
+      }
+    }
+
+    await prisma.bankSoal.delete({ where: { id } });
     return res.json({ success: true, message: 'Soal berhasil dihapus' });
   } catch (err) {
     console.error('BankSoal remove error:', err);
@@ -283,8 +341,6 @@ exports.remove = async (req, res) => {
   }
 };
 
-const fs = require('fs');
-const path = require('path');
 const crypto = require('crypto');
 
 exports.uploadImage = async (req, res) => {

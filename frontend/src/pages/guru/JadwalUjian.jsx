@@ -1,9 +1,21 @@
 import { useEffect, useState } from 'react';
-import { FiCalendar, FiClock, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiPlus, FiLink, FiShield, FiTrash2, FiEdit2, FiCheck } from 'react-icons/fi';
+import { FiCalendar, FiClock, FiBook, FiCheckCircle, FiXCircle, FiX, FiAlertCircle, FiPlus, FiLink, FiShield, FiTrash2, FiEdit2, FiCheck, FiEye, FiPrinter } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
 import './JadwalUjian.css';
+
+const getTingkatLabel = (tingkat) => {
+  const map = { X: '10', XI: '11', XII: '12', ALUMNI: 'ALUMNI', KI: 'KI' };
+  return map[tingkat] || tingkat;
+};
+
+const getNamaKelasDisplay = (kelas) => {
+  if (!kelas) return '-';
+  if (!kelas.tingkat || !kelas.jurusan || !kelas.inisial) return kelas.namaKelas || '-';
+  const kode = kelas.jurusan.kodeProdi || '';
+  return `${getTingkatLabel(kelas.tingkat)} ${kode} ${kelas.inisial}`;
+};
 
 export default function JadwalUjianGuru() {
   const [activeTab, setActiveTab] = useState('official'); // 'official' | 'custom'
@@ -26,11 +38,65 @@ export default function JadwalUjianGuru() {
   
   const [showAddCustomModal, setShowAddCustomModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   // Pagination per tab
   const ITEMS_PER_PAGE = 10;
   const [currentPageOfficial, setCurrentPageOfficial] = useState(1);
   const [currentPageCustom, setCurrentPageCustom] = useState(1);
+  const [selectedPeriodeId, setSelectedPeriodeId] = useState(null);
+  const [currentPagePeriods, setCurrentPagePeriods] = useState(1);
+
+  // Group officialJadwal by Periode
+  const getPeriodsFromOfficial = () => {
+    const periodMap = {};
+    officialJadwal.forEach((j) => {
+      if (j.periode) {
+        const pid = j.periode.id;
+        if (!periodMap[pid]) {
+          periodMap[pid] = {
+            id: pid,
+            nama: j.periode.nama,
+            semester: j.periode.semester,
+            tahunAjaran: j.periode.tahunAjaran,
+            mulai: j.periode.mulai,
+            selesai: j.periode.selesai,
+            schedules: [],
+          };
+        }
+        periodMap[pid].schedules.push(j);
+      } else {
+        const pid = 'other';
+        if (!periodMap[pid]) {
+          periodMap[pid] = {
+            id: 'other',
+            nama: 'Jadwal Resmi Lainnya',
+            semester: '-',
+            tahunAjaran: '-',
+            schedules: [],
+          };
+        }
+        periodMap[pid].schedules.push(j);
+      }
+    });
+    return Object.values(periodMap).sort((a, b) => {
+      if (a.id === 'other') return 1;
+      if (b.id === 'other') return -1;
+      return new Date(b.mulai) - new Date(a.mulai);
+    });
+  };
+
+  const periods = getPeriodsFromOfficial();
+
+  const getFilteredOfficial = () => {
+    if (!selectedPeriodeId) return [];
+    if (selectedPeriodeId === 'other') {
+      return officialJadwal.filter(j => !j.periode);
+    }
+    return officialJadwal.filter(j => j.periode?.id === selectedPeriodeId);
+  };
+  const filteredOfficialJadwal = getFilteredOfficial();
 
   const getPaginated = (data, page) => {
     const isShowAll = page === 9999;
@@ -45,8 +111,10 @@ export default function JadwalUjianGuru() {
       isShowAll
     };
   };
-  const { data: paginatedOfficial, tp: tpOfficial, dp: dpOfficial, si: siOfficial, isShowAll: isShowAllOfficial } = getPaginated(officialJadwal, currentPageOfficial);
+
+  const { data: paginatedOfficial, tp: tpOfficial, dp: dpOfficial, si: siOfficial, isShowAll: isShowAllOfficial } = getPaginated(filteredOfficialJadwal, currentPageOfficial);
   const { data: paginatedCustom, tp: tpCustom, dp: dpCustom, si: siCustom, isShowAll: isShowAllCustom } = getPaginated(customJadwal, currentPageCustom);
+  const { data: paginatedPeriods, tp: tpPeriods, dp: dpPeriods, si: siPeriods, isShowAll: isShowAllPeriods } = getPaginated(periods, currentPagePeriods);
 
   function getPaginationPages(tp, cp) {
     if (tp <= 7) return Array.from({ length: tp }, (_, i) => ({ type: 'page', value: i + 1 }));
@@ -129,6 +197,230 @@ export default function JadwalUjianGuru() {
     return `${d.toLocaleDateString('id-ID')} ${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`;
   };
 
+  const handleExportPDF = () => {
+    const periodObj = periods.find(p => p.id === selectedPeriodeId);
+    if (!periodObj) return;
+
+    const schedules = periodObj.schedules || [];
+    
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('Gagal membuka jendela cetak. Pastikan pop-up tidak diblokir.', 'error');
+      return;
+    }
+
+    // Build the HTML content
+    let htmlContent = `
+      <html>
+        <head>
+          <title>Jadwal Ujian Resmi - ${periodObj.nama}</title>
+          <style>
+            body {
+              font-family: 'Inter', -apple-system, sans-serif;
+              color: #1e293b;
+              padding: 40px;
+              margin: 0;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              border-bottom: 3px double #cbd5e1;
+              padding-bottom: 20px;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 24px;
+              color: #0f172a;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .header h2 {
+              margin: 5px 0 0 0;
+              font-size: 16px;
+              color: #475569;
+              font-weight: 500;
+            }
+            .meta-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 10px;
+              margin-bottom: 25px;
+              font-size: 13px;
+              background: #f8fafc;
+              padding: 15px;
+              border-radius: 8px;
+              border: 1px solid #e2e8f0;
+            }
+            .meta-item {
+              display: flex;
+            }
+            .meta-label {
+              font-weight: 700;
+              width: 120px;
+              color: #475569;
+            }
+            .meta-value {
+              color: #1e293b;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 15px;
+              font-size: 12px;
+            }
+            th, td {
+              border: 1px solid #cbd5e1;
+              padding: 10px 12px;
+              text-align: left;
+            }
+            th {
+              background: #f1f5f9;
+              color: #0f172a;
+              font-weight: 700;
+              text-transform: uppercase;
+              font-size: 11px;
+            }
+            tr:nth-child(even) {
+              background: #f8fafc;
+            }
+            .badge {
+              display: inline-block;
+              padding: 3px 8px;
+              border-radius: 4px;
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+            }
+            .badge-success {
+              background: #d1fae5;
+              color: #065f46;
+              border: 1px solid #a7f3d0;
+            }
+            .badge-warning {
+              background: #fef3c7;
+              color: #92400e;
+              border: 1px solid #fde68a;
+            }
+            .badge-info {
+              background: #e0f2fe;
+              color: #075985;
+              border: 1px solid #bae6fd;
+            }
+            .footer {
+              margin-top: 40px;
+              text-align: right;
+              font-size: 11px;
+              color: #64748b;
+            }
+            @media print {
+              body { padding: 0; }
+              @page { size: A4 landscape; margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>Jadwal Pelaksanaan Ujian Resmi</h1>
+            <h2>${periodObj.nama}</h2>
+          </div>
+
+          <div class="meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Semester:</span>
+              <span class="meta-value">${periodObj.semester}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Mulai Ujian:</span>
+              <span class="meta-value">${new Date(periodObj.mulai).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Tahun Ajaran:</span>
+              <span class="meta-value">${periodObj.tahunAjaran}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Selesai Ujian:</span>
+              <span class="meta-value">${new Date(periodObj.selfinished || periodObj.selesai).toLocaleDateString('id-ID', { dateStyle: 'long' })}</span>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">No</th>
+                <th style="width: 150px;">Mata Pelajaran</th>
+                <th style="width: 80px; text-align: center;">Token IN</th>
+                <th style="width: 80px; text-align: center;">Token OUT</th>
+                <th>Kelas Peserta</th>
+                <th style="width: 200px;">Waktu Ujian</th>
+                <th style="width: 120px; text-align: center;">Status Paket</th>
+              </tr>
+            </thead>
+            <tbody>
+    `;
+
+    schedules.forEach((j, index) => {
+      const classStr = j.kelasJadwal && j.kelasJadwal.length > 0
+        ? j.kelasJadwal.map(kj => getNamaKelasDisplay(kj.kelas)).join(', ')
+        : 'Tidak ada kelas';
+
+      const tokenIn = j.token || '-';
+      const tokenOut = j.tokenCheckOut || '-';
+      
+      const tglObj = new Date(j.mulai);
+      const hariTanggal = tglObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const waktuMulai = tglObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+      
+      const waktuStr = `${hariTanggal} (${waktuMulai} - ${waktuSelesai}) • ${j.durasi} Menit`;
+
+      let statusBadge = '';
+      if (j.paketUjianId) {
+        if (j.paketUjian?.guruId === myPakets?.[0]?.guruId) {
+          statusBadge = '<span class="badge badge-success">Milik Anda</span>';
+        } else {
+          statusBadge = `<span class="badge badge-info">${j.paketUjian?.guru?.user?.namaLengkap || 'Guru Lain'}</span>`;
+        }
+      } else {
+        statusBadge = '<span class="badge badge-warning">Belum Terisi</span>';
+      }
+
+      htmlContent += `
+        <tr>
+          <td style="text-align: center;">${index + 1}</td>
+          <td style="font-weight: 700;">${j.mataPelajaran?.namaMapel || '-'}</td>
+          <td style="text-align: center; font-family: monospace; font-size: 13px; font-weight: bold; color: #1e3a8a;">${tokenIn}</td>
+          <td style="text-align: center; font-family: monospace; font-size: 13px; font-weight: bold; color: #991b1b;">${tokenOut}</td>
+          <td style="font-weight: 600;">${classStr}</td>
+          <td>${waktuStr}</td>
+          <td style="text-align: center;">${statusBadge}</td>
+        </tr>
+      `;
+    });
+
+    htmlContent += `
+            </tbody>
+          </table>
+
+          <div class="footer">
+            Dicetak otomatis oleh Sistem CAT pada ${new Date().toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+  };
+
   // HANDLER OFFICIAL EXAMS -----------------------------
   const handleOpenPilihPaket = (jdwlId) => {
     setActiveJadwalId(jdwlId);
@@ -150,18 +442,28 @@ export default function JadwalUjianGuru() {
     }
   };
 
-  const handleUnlinkPaket = async (jdwlId) => {
-    if(!window.confirm("Yakin ingin menghapus tautan paket soal dari jadwal ini?")) return;
-    setSaving(true);
-    try {
-       const res = await api.delete(`/guru/jadwal-ujian/official/${jdwlId}/paket`);
-       showToast(res.data.message || 'Tautan paket berhasil dilepas.', 'success');
-       fetchData();
-    } catch(err) {
-       showToast(err?.response?.data?.message || 'Gagal melepas paket.', 'error');
-    } finally {
-       setSaving(false);
-    }
+  const handleUnlinkPaket = (jdwlId) => {
+    setConfirmData({
+      id: jdwlId,
+      title: 'Hapus Tautan Paket?',
+      message: 'Yakin ingin menghapus tautan paket soal dari jadwal ini?',
+      warning: 'Siswa tidak akan bisa mengerjakan ujian ini sampai ada paket soal baru yang ditautkan.',
+      action: async () => {
+        setSaving(true);
+        try {
+           const res = await api.delete(`/guru/jadwal-ujian/official/${jdwlId}/paket`);
+           showToast(res.data.message || 'Tautan paket berhasil dilepas.', 'success');
+           fetchData();
+        } catch(err) {
+           showToast(err?.response?.data?.message || 'Gagal melepas paket.', 'error');
+        } finally {
+           setSaving(false);
+           setShowConfirmModal(false);
+           setConfirmData(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
   };
 
 
@@ -245,18 +547,28 @@ export default function JadwalUjianGuru() {
     }
   };
 
-  const deleteCustomExam = async (id) => {
-    if(!window.confirm("Yakin ingin menghapus ulangan ini?")) return;
-    setSaving(true);
-    try {
-       const res = await api.delete(`/guru/jadwal-ujian/custom/${id}`);
-       showToast(res.data.message || 'Ulangan berhasil dihapus.', 'success');
-       fetchData();
-    } catch(err) {
-       showToast(err?.response?.data?.message || 'Gagal menghapus ulangan.', 'error');
-    } finally {
-       setSaving(false);
-    }
+  const deleteCustomExam = (id) => {
+    setConfirmData({
+      id,
+      title: 'Hapus Ulangan?',
+      message: 'Yakin ingin menghapus ulangan ini?',
+      warning: 'Tindakan ini tidak dapat dibatalkan. Seluruh data hasil ujian siswa terkait ulangan ini akan ikut terhapus.',
+      action: async () => {
+        setSaving(true);
+        try {
+           const res = await api.delete(`/guru/jadwal-ujian/custom/${id}`);
+           showToast(res.data.message || 'Ulangan berhasil dihapus.', 'success');
+           fetchData();
+        } catch(err) {
+           showToast(err?.response?.data?.message || 'Gagal menghapus ulangan.', 'error');
+        } finally {
+           setSaving(false);
+           setShowConfirmModal(false);
+           setConfirmData(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
   };
 
 
@@ -268,7 +580,7 @@ export default function JadwalUjianGuru() {
             <span className="guru-title-text">Jadwal Ujian</span>
             <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="guru-subtitle">Lihat jadwal resmi dari Admin dan kelola ulangan harian secara mandiri.</p>
+          <p className="guru-subtitle">Pemantauan jadwal ujian resmi sekolah dan pembuatan agenda ujian mandiri.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -281,13 +593,13 @@ export default function JadwalUjianGuru() {
       <div className="tabs-container">
         <button 
            className={`tab-button official ${activeTab === 'official' ? 'active' : ''}`}
-           onClick={() => setActiveTab('official')}
+           onClick={() => { setActiveTab('official'); setSelectedPeriodeId(null); }}
         >
           <FiBook /> Jadwal Pusat (Resmi Admin)
         </button>
         <button 
            className={`tab-button custom ${activeTab === 'custom' ? 'active' : ''}`}
-           onClick={() => setActiveTab('custom')}
+           onClick={() => { setActiveTab('custom'); setSelectedPeriodeId(null); }}
         >
           <FiPlus /> Ujian Mandiri (Custom Guru)
         </button>
@@ -296,15 +608,76 @@ export default function JadwalUjianGuru() {
 
 
       <div className="guru-card">
-         <div className="guru-card-header">
-           <h2 className="guru-card-title">
-             {activeTab === 'official' ? 'Daftar Jadwal Resmi' : 'Daftar Ulangan Custom'}
-           </h2>
-           {activeTab === 'custom' && (
-             <button className="btn-add-user" onClick={openAddCustom} disabled={saving}>
-               <FiPlus className="btn-plus" />
-               <span>Buat Ulangan Mandiri</span>
-             </button>
+         <div className="guru-card-header" style={{ flexDirection: selectedPeriodeId && activeTab === 'official' ? 'column' : 'row', alignItems: selectedPeriodeId && activeTab === 'official' ? 'flex-start' : 'center', gap: '0.75rem' }}>
+           {selectedPeriodeId && activeTab === 'official' ? (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '8px', marginBottom: '0.25rem' }}>
+                  <button 
+                    onClick={() => setSelectedPeriodeId(null)}
+                    style={{ 
+                      display: 'inline-flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      background: 'white', 
+                      border: '1px solid #cbd5e1', 
+                      padding: '6px 12px', 
+                      borderRadius: '8px', 
+                      color: '#475569', 
+                      cursor: 'pointer', 
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.15s ease',
+                      boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; }}
+                  >
+                    ← Kembali ke Daftar Ujian Resmi
+                  </button>
+                  <button
+                    onClick={handleExportPDF}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#10b981',
+                      color: 'white',
+                      border: 'none',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontWeight: '700',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.15s ease',
+                      boxShadow: '0 1px 3px rgba(16, 185, 129, 0.3)'
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#059669'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#10b981'; }}
+                  >
+                    <FiPrinter /> Export PDF
+                  </button>
+                </div>
+               <h2 className="guru-card-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                 {periods.find(p => p.id === selectedPeriodeId)?.nama}
+                 {periods.find(p => p.id === selectedPeriodeId)?.schedules?.some(j => j.opsiKeamanan) && (
+                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.7rem', padding: '2px 6px', borderRadius: '4px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                     <FiShield size={10} /> Kiosk
+                   </span>
+                 )}
+               </h2>
+             </>
+           ) : (
+             <>
+               <h2 className="guru-card-title">
+                 {activeTab === 'official' ? 'Daftar Jadwal Resmi' : 'Daftar Ulangan Custom'}
+               </h2>
+               {activeTab === 'custom' && (
+                 <button className="btn-add-user" onClick={openAddCustom} disabled={saving}>
+                   <FiPlus className="btn-plus" />
+                   <span>Buat Ulangan Mandiri</span>
+                 </button>
+               )}
+             </>
            )}
          </div>
 
@@ -314,90 +687,187 @@ export default function JadwalUjianGuru() {
           <div className="jadwal-table official-table">
             {officialJadwal.length === 0 ? (
                <div className="empty-state">Belum ada jadwal resmi dari Admin.</div>
+            ) : !selectedPeriodeId ? (
+               <>
+                 <div className="jadwal-row jadwal-row-head" style={{ gridTemplateColumns: '80px 1fr 200px 150px 150px' }}>
+                   <div>No</div>
+                   <div>Nama Ujian</div>
+                   <div>Semester & Tahun Ajaran</div>
+                   <div style={{ textAlign: 'center' }}>Jumlah Sesi</div>
+                   <div style={{ textAlign: 'center' }}>Aksi</div>
+                 </div>
+
+                 {paginatedPeriods.map((p, idx) => (
+                   <div 
+                     key={p.id} 
+                     className="jadwal-row" 
+                     style={{ gridTemplateColumns: '80px 1fr 200px 150px 150px', cursor: 'pointer', transition: 'background-color 0.15s ease' }}
+                     onClick={() => {
+                       setSelectedPeriodeId(p.id);
+                       setCurrentPageOfficial(1);
+                     }}
+                   >
+                     <div style={{ fontWeight: '500', color: '#64748b' }}>
+                       {siPeriods + idx + 1}
+                     </div>
+                     <div className="col-main" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                       <div className="jadwal-nama" style={{ fontSize: '1.05rem', fontWeight: '700', color: '#1e293b' }}>
+                         {p.nama}
+                       </div>
+                       {p.mulai && p.selesai && (
+                         <div className="jadwal-meta-info" style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                           <FiCalendar size={12} style={{ marginRight: '4px' }} />
+                           Periode: {new Date(p.mulai).toLocaleDateString('id-ID', { dateStyle: 'medium' })} s.d. {new Date(p.selesai).toLocaleDateString('id-ID', { dateStyle: 'medium' })}
+                         </div>
+                       )}
+                     </div>
+                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                       <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#475569' }}>
+                         Semester {p.semester}
+                       </span>
+                       <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                         TA: {p.tahunAjaran}
+                       </span>
+                     </div>
+                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                       <span className="mapel-badge" style={{ background: '#f1f5f9', color: '#334155', fontWeight: '700', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem' }}>
+                         {p.schedules.length} Sesi Ujian
+                       </span>
+                     </div>
+                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                       <button 
+                         type="button" 
+                         className="btn-action primary with-label"
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           setSelectedPeriodeId(p.id);
+                           setCurrentPageOfficial(1);
+                         }}
+                         style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 'bold' }}
+                       >
+                         <FiEye /> <span>Lihat Sesi</span>
+                       </button>
+                     </div>
+                   </div>
+                 ))}
+                 {renderPagination(periods.length, tpPeriods, dpPeriods, setCurrentPagePeriods, currentPagePeriods, isShowAllPeriods)}
+               </>
             ) : (
-              <>
-                <div className="jadwal-row jadwal-row-head">
-                  <div>Nama Ujian</div>
-                  <div>Token Akses</div>
-                  <div>Paket Soal</div>
-                  <div>Kelas & Waktu</div>
-                  <div>Keamanan</div>
-                  <div>Aksi</div>
-                </div>
+               <>
 
-                {paginatedOfficial.map((j) => (
-                  <div key={j.id} className="jadwal-row">
-                    <div className="col-main">
-                      <div className="jadwal-nama">
-                        {j.nama}
-                      </div>
-                      <div className="jadwal-meta-info">
-                        <FiClock size={12} /> Durasi: <strong>{j.durasi} Menit</strong>
-                      </div>
-                    </div>
+                 <div className="jadwal-row jadwal-row-head">
+                   <div>Mapel</div>
+                   <div>Token Akses</div>
+                   <div>Kelas</div>
+                   <div>Waktu</div>
+                   <div>Status Paket</div>
+                   <div>Aksi</div>
+                 </div>
 
-                    <div className="col-tokens">
-                      <div className="token-box in">
-                        <span>IN</span>
-                        <span className="token-value">{j.token}</span>
-                      </div>
-                      <div className="token-box out">
-                        <span>OUT</span>
-                        <span className="token-value">{j.tokenCheckOut}</span>
-                      </div>
-                    </div>
-
-                    <div className="col-mapel-paket">
-                      <div className="mapel-badge">
-                        {j.mataPelajaran?.namaMapel} ({j.mataPelajaran?.kodeMapel || '-'})
-                      </div>
-                      <div className="paket-badge">
-                        {j.paketUjianId ? (
-                           j.paketUjian?.guruId === myPakets?.[0]?.guruId ? ( 
-                             <span className="paket-owner own">• Milik Anda</span>
-                           ) : (
-                             <span className="paket-owner other">• Guru Lain</span>
-                           )
-                        ) : (
-                           <span className="paket-owner empty">• Belum Diisi</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="col-kelas-waktu">
-                       <div className="kelas-count">{j.kelasJadwal?.length || 0} Kelas Peserta</div>
-                       <div className="waktu-info">
-                         <div className="waktu-stack">
-                           <span>Mulai: {formatDate(j.mulai)}</span>
-                           <span>Selesai: {formatDate(j.selesai)}</span>
+                 {paginatedOfficial.length === 0 ? (
+                   <div className="empty-state">Tidak ada sesi ujian untuk periode ini.</div>
+                 ) : (
+                   paginatedOfficial.map((j) => (
+                     <div key={j.id} className="jadwal-row">
+                       <div className="col-main">
+                         <div className="jadwal-nama" style={{ fontSize: '0.95rem', fontWeight: '700', color: '#1e293b' }}>
+                           {j.mataPelajaran?.namaMapel}
+                         </div>
+                         <div className="jadwal-meta-info" style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px' }}>
+                           Kode: <strong>{j.mataPelajaran?.kodeMapel || '-'}</strong>
                          </div>
                        </div>
-                    </div>
 
-                    <div>
-                      {j.opsiKeamanan ? (
-                        <span className="status-badge aktif"><FiShield /> Kiosk On</span>
-                      ) : (
-                        <span className="status-badge warning"><FiXCircle /> Kiosk Off</span>
-                      )}
-                    </div>
+                       <div className="col-tokens">
+                         <div className="token-box in">
+                           <span>IN</span>
+                           <span className="token-value">{j.token}</span>
+                         </div>
+                         <div className="token-box out">
+                           <span>OUT</span>
+                           <span className="token-value">{j.tokenCheckOut}</span>
+                         </div>
+                       </div>
 
-                    <div className="col-actions">
-                       {j.paketUjianId && j.paketUjian?.guruId === myPakets?.[0]?.guruId ? (
-                           <button className="btn-action danger with-label" onClick={() => handleUnlinkPaket(j.id)} disabled={saving} title="Lepas Paket">
-                             <FiXCircle /> <span>Lepas</span>
-                           </button>
-                       ) : !j.paketUjianId ? (
-                           <button className="btn-action primary with-label" onClick={() => handleOpenPilihPaket(j.id)} disabled={saving}>
-                             <FiLink /> <span>Isi Paket</span>
-                           </button>
-                       ) : null}
-                    </div>
-                  </div>
-                ))}
-              </>
+                       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                          {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
+                            <div className="class-tooltip-container">
+                              <span 
+                                className="mapel-badge" 
+                                style={{ 
+                                  background: '#eff6ff', 
+                                  color: '#1e40af', 
+                                  border: '1px solid #bfdbfe', 
+                                  fontWeight: '700', 
+                                  padding: '4px 12px', 
+                                  borderRadius: '20px', 
+                                  fontSize: '0.85rem',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {j.kelasJadwal.length} Kelas
+                              </span>
+                              <div className="class-tooltip-bubble">
+                                <div style={{ 
+                                  display: 'grid', 
+                                  gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
+                                  gap: '8px', 
+                                  minWidth: j.kelasJadwal.length === 1 ? '100px' : '180px' 
+                                }}>
+                                  {j.kelasJadwal.map((kj, idx) => (
+                                    <span key={idx} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                      {getNamaKelasDisplay(kj.kelas)}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontStyle: 'italic' }}>Tidak ada kelas</span>
+                          )}
+                        </div>
+
+                       <div className="waktu-info" style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.8rem', color: '#475569', justifyContent: 'center', textAlign: 'center' }}>
+                         <div style={{ fontWeight: '700', color: '#0f172a' }}>{j.durasi} Menit</div>
+                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>M: {formatDate(j.mulai)}</div>
+                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>S: {formatDate(j.selesai)}</div>
+                       </div>
+
+                       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                         {j.paketUjianId ? (
+                           j.paketUjian?.guruId === myPakets?.[0]?.guruId ? ( 
+                             <span className="status-badge aktif" style={{ background: '#d1fae5', color: '#065f46', fontSize: '0.8rem', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                               Milik Anda
+                             </span>
+                           ) : (
+                             <span className="status-badge info" style={{ background: '#e0f2fe', color: '#075985', fontSize: '0.8rem', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                               Guru Lain
+                             </span>
+                           )
+                         ) : (
+                           <span className="status-badge warning" style={{ background: '#fee2e2', color: '#991b1b', fontSize: '0.8rem', padding: '4px 8px', borderRadius: '6px', fontWeight: '600' }}>
+                             Belum Terisi
+                           </span>
+                         )}
+                       </div>
+
+                       <div className="col-actions">
+                          {j.paketUjianId && j.paketUjian?.guruId === myPakets?.[0]?.guruId ? (
+                              <button className="btn-action danger with-label" onClick={() => handleUnlinkPaket(j.id)} disabled={saving} title="Lepas Paket">
+                                <FiXCircle /> <span>Lepas</span>
+                              </button>
+                          ) : !j.paketUjianId ? (
+                              <button className="btn-action primary with-label" onClick={() => handleOpenPilihPaket(j.id)} disabled={saving}>
+                                <FiLink /> <span>Isi Paket</span>
+                              </button>
+                          ) : null}
+                       </div>
+                     </div>
+                   ))
+                 )}
+                 {renderPagination(filteredOfficialJadwal.length, tpOfficial, dpOfficial, setCurrentPageOfficial, currentPageOfficial, isShowAllOfficial)}
+               </>
             )}
-            {renderPagination(officialJadwal.length, tpOfficial, dpOfficial, setCurrentPageOfficial, currentPageOfficial, isShowAllOfficial)}
           </div>
         ) : (
           /* CUSTOM TAB */
@@ -559,12 +1029,12 @@ export default function JadwalUjianGuru() {
                <div className="modal-body" style={{ maxHeight: '60vh', overflowY: 'auto', padding: '1.5rem 2rem' }}>
                  <div className="form-group" style={{display: 'flex', flexDirection: 'column', gap: '1.25rem'}}>
                     <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                      <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Judul Ulangan <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                      <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Judul Ulangan <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <input className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} placeholder="Misal: Ulangan Harian Bab 1" value={nama} onChange={(e) => setNama(e.target.value)} required />
                     </div>
 
                     <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                      <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Mata Pelajaran <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                      <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Mata Pelajaran <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <select className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={mataPelajaranId} onChange={(e) => setMataPelajaranId(e.target.value)} required>
                          <option value="">Pilih Mapel...</option>
                          {mapelList.map((m) => <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>)}
@@ -572,7 +1042,7 @@ export default function JadwalUjianGuru() {
                     </div>
 
                     <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                      <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Pilih Paket Ujian Anda <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                      <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Pilih Paket Ujian Anda <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <select className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={paketUjianId} onChange={(e) => setPaketUjianId(e.target.value)} required>
                          <option value="">Pilih Paket...</option>
                           {myPakets.filter(p => String(p.mataPelajaranId) === String(mataPelajaranId)).map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
@@ -582,11 +1052,11 @@ export default function JadwalUjianGuru() {
 
                     <div className="form-row" style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
                       <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                        <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Waktu Mulai <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                        <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Waktu Mulai <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                         <input type="datetime-local" className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={mulai} onChange={(e) => setMulai(e.target.value)} required />
                       </div>
                       <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                        <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Waktu Selesai <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                        <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Waktu Selesai <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                         <input type="datetime-local" className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={selesai} onChange={(e) => setSelesai(e.target.value)} required />
                       </div>
                     </div>
@@ -595,7 +1065,7 @@ export default function JadwalUjianGuru() {
                        <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: opsiKeamanan ? '#ecfdf5' : '#f8fafc', padding: '1.25rem', borderRadius: '12px', border: `1px solid ${opsiKeamanan ? '#10b981' : '#e2e8f0'}`, cursor: 'pointer' }}>
                          <input type="checkbox" checked={opsiKeamanan} onChange={(e) => setOpsiKeamanan(e.target.checked)} style={{transform: 'scale(1.5)', marginInline: '5px'}}/>
                          <div>
-                            <span style={{ fontWeight: 'bold', color: opsiKeamanan ? '#10b981' : '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontWeight: '700', color: opsiKeamanan ? '#10b981' : '#475569', display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <FiShield /> Aktifkan Opsi Keamanan Kiosk Mode
                             </span>
                             <p style={{fontSize: '0.75rem', color: '#64748b', margin: 0, fontWeight: 'normal'}}>Mencegah aplikasi keluar/pindah aplikasi saat ujian berlangsung.</p>
@@ -604,12 +1074,12 @@ export default function JadwalUjianGuru() {
                     </div>
 
                     <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                      <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Durasi Pengerjaan (Menit) <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                      <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Durasi Pengerjaan (Menit) <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <input type="number" min="1" className="input" style={{width: '100%', padding: '0.75rem 1rem', borderRadius: '10px', border: '1px solid #e2e8f0'}} value={durasi} onChange={(e) => setDurasi(e.target.value)} required />
                     </div>
 
                     <div className="field-wrapper" style={{display: 'flex', flexDirection: 'column', gap: '0.5rem'}}>
-                      <label className="label" style={{fontWeight: '600', fontSize: '0.9rem'}}>Pilih Kelas <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
+                      <label className="label" style={{fontWeight: '700', fontSize: '0.9rem'}}>Pilih Kelas <span className="label-required" style={{color: '#ef4444'}}>*</span></label>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', background: '#f8fafc', padding: '1.25rem', border: '1px solid #e2e8f0', borderRadius: '12px', maxHeight: '200px', overflowY: 'auto' }}>
                          {kelasList.map(k => {
                            const tingkatLabel = { X: '10', XI: '11', XII: '12', ALUMNI: 'Alumni', KI: 'KI' }[k.tingkat] || k.tingkat;
@@ -632,6 +1102,75 @@ export default function JadwalUjianGuru() {
                   </button>
                </div>
              </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {showConfirmModal && confirmData && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-confirm" style={{ padding: '1.5rem' }}>
+              <div className="modal-confirm-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="modal-confirm-icon-box danger" style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  fontSize: '1.5rem',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle />
+                </div>
+                <h3 className="modal-confirm-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                  {confirmData.title}
+                </h3>
+              </div>
+              <div className="modal-confirm-body" style={{ marginBottom: '1.5rem' }}>
+                <div className="modal-confirm-text" style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  {confirmData.message}
+                </div>
+                {confirmData.warning && (
+                  <div className="modal-confirm-warning" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    background: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.4'
+                  }}>
+                    <FiAlertCircle style={{ flexShrink: 0, marginTop: '0.15rem', fontSize: '1rem' }} />
+                    <span>{confirmData.warning}</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-confirm-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowConfirmModal(false)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmData.action} style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <FiTrash2 /> Ya, Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -234,9 +234,9 @@
 .form-group label {
   display: block;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.5rem;
-  color: #334155;
+  color: #0f172a;
 }
 
 .wizard-input {
@@ -288,13 +288,13 @@
   gap: 10px;
   padding: 1rem;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid #cbd5e1;
   background: white;
   cursor: pointer;
   transition: all 0.2s;
 }
 .selection-card:hover {
-  border-color: #cbd5e1;
+  border-color: #94a3b8;
   background: #f8fafc;
 }
 .selection-card.selected {
@@ -312,6 +312,14 @@
 .selection-card .details span {
   font-size: 0.8rem;
   color: #64748b;
+}
+
+.selection-card.disabled {
+  opacity: 0.35;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ============================================
@@ -525,7 +533,8 @@
 
 .class-grid-header {
   display: grid;
-  grid-template-columns: 28% 44% 28%;
+  grid-template-columns: 26% 40% 34%;
+  gap: 1.25rem;
   padding: 0 0 0.75rem 0;
   border-bottom: 2px solid #e2e8f0;
   margin-bottom: 0.5rem;
@@ -555,9 +564,9 @@
 
 .class-row {
   display: grid;
-  grid-template-columns: 28% 44% 28%;
+  grid-template-columns: 26% 40% 34%;
   align-items: center;
-  gap: 0;
+  gap: 1.25rem;
   padding: 0.625rem 0;
   border-bottom: 1px solid #f1f5f9;
   transition: background 0.15s;
@@ -612,10 +621,12 @@
 
 /* Row inputs */
 .row-input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.55rem 0.75rem;
   font-size: 0.875rem;
   border-radius: 8px;
-  margin-right: 0.75rem;
+  margin: 0;
 }
 
 .row-input.input-empty {

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiX, FiFolder, FiEye, FiCheck, FiSearch, FiArrowLeft, FiDownload } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiTrash2, FiUpload, FiX, FiFolder, FiEye, FiCheck, FiSearch, FiArrowLeft, FiDownload, FiHelpCircle, FiAlertCircle } from 'react-icons/fi';
 import api from '../../services/api';
 import { compressImageToWebP } from '../../utils/imageCompressor';
 import { useToast } from '../../context/ToastContext';
@@ -75,6 +75,9 @@ export default function BankSoalDetail() {
   const [mapelList, setMapelList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
   const [koleksiList, setKoleksiList] = useState([]);
+  const [koleksiDetail, setKoleksiDetail] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   const [importMapel, setImportMapel] = useState('');
   const [importTingkat, setImportTingkat] = useState('');
@@ -154,6 +157,18 @@ export default function BankSoalDetail() {
     }
   };
 
+  const loadKoleksiDetail = async () => {
+    if (!koleksiId) return;
+    try {
+      const res = await api.get(`/guru/bank-soal-koleksi/${koleksiId}`);
+      if (res.data?.success) {
+        setKoleksiDetail(res.data.data);
+      }
+    } catch (e) {
+      console.error('Gagal memuat detail koleksi:', e);
+    }
+  };
+
   useEffect(() => {
     loadOptions();
   }, []);
@@ -161,16 +176,44 @@ export default function BankSoalDetail() {
   useEffect(() => {
     setCurrentPage(1);
     loadSoal();
+    loadKoleksiDetail();
   }, [koleksiId]);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Yakin hapus soal ini?')) return;
+  const triggerDelete = (item) => {
+    setConfirmData({
+      id: item.id,
+      title: 'Hapus Soal?',
+      message: `Yakin ingin menghapus butir soal ini?`,
+      warning: 'Berkas gambar terkait soal ini di server backend akan ikut dibersihkan dan dihapus secara permanen.',
+      action: async () => {
+        try {
+          await api.delete(`/guru/bank-soal/${item.id}`);
+          showToast('Soal berhasil dihapus.', 'success');
+          loadSoal();
+        } catch (e) {
+          showToast(e?.response?.data?.message || 'Gagal menghapus soal', 'error');
+        } finally {
+          setShowConfirmModal(false);
+          setConfirmData(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleDownloadTemplate = async () => {
     try {
-      await api.delete(`/guru/bank-soal/${id}`);
-      showToast('Soal berhasil dihapus.', 'success');
-      loadSoal();
+      const res = await api.get('/guru/bank-soal/template', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Template_Bank_Soal.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (e) {
-      showToast(e?.response?.data?.message || 'Gagal menghapus soal', 'error');
+      showToast(e?.response?.data?.message || 'Gagal mengunduh template', 'error');
     }
   };
 
@@ -558,10 +601,10 @@ export default function BankSoalDetail() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      const data = res.data;
-      setImportResult(data);
+      const resultData = res.data?.data || res.data;
+      setImportResult(resultData);
 
-      if (data.failed === 0) {
+      if (resultData.failed === 0) {
         showToast('Seluruh soal berhasil diimpor!', 'success');
         loadSoal();
         setTimeout(() => {
@@ -570,7 +613,7 @@ export default function BankSoalDetail() {
           setImportResult(null);
         }, 1800);
       } else {
-        showToast(`Impor selesai sebagian. ${data.created} sukses, ${data.failed} gagal.`, 'error');
+        showToast(`Impor selesai sebagian. ${resultData.created || 0} sukses, ${resultData.failed || 0} gagal.`, 'error');
         loadSoal();
       }
     } catch (err) {
@@ -597,22 +640,34 @@ export default function BankSoalDetail() {
 
   const totalItems = filteredItems.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
-  const displayPage = Math.min(Math.max(1, currentPage), totalPages);
-  const startIndex = (displayPage - 1) * ITEMS_PER_PAGE;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const isShowAll = currentPage === 9999;
+  const displayPage = isShowAll ? 1 : Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = isShowAll ? 0 : (displayPage - 1) * ITEMS_PER_PAGE;
+  const paginatedItems = isShowAll ? filteredItems : filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery]);
 
   useEffect(() => {
-    if (currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages);
+    if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) {
+      setCurrentPage(totalPages);
+    }
   }, [totalPages, currentPage]);
 
-  const hasPrefilledCollection = items.length > 0;
+  const hasPrefilledCollection = items.length > 0 || (koleksiDetail && koleksiDetail.mataPelajaranId && koleksiDetail.tingkat);
 
   useEffect(() => {
-    if (items.length > 0) {
+    if (koleksiDetail && koleksiDetail.mataPelajaranId && koleksiDetail.tingkat) {
+      setImportMapel(koleksiDetail.mataPelajaranId ? String(koleksiDetail.mataPelajaranId) : '');
+      setImportTingkat(koleksiDetail.tingkat ? apiToTingkatDisplay(koleksiDetail.tingkat) : '');
+      setImportJurusan(koleksiDetail.jurusanId != null ? String(koleksiDetail.jurusanId) : '');
+      
+      // Prefill persistent ADD states
+      setAddMataPelajaranId(koleksiDetail.mataPelajaranId ? String(koleksiDetail.mataPelajaranId) : '');
+      setAddTingkat(koleksiDetail.tingkat ? apiToTingkatDisplay(koleksiDetail.tingkat) : '10');
+      setAddJurusanId(koleksiDetail.jurusanId != null ? String(koleksiDetail.jurusanId) : '');
+    } else if (items.length > 0) {
       const first = items[0];
       setImportMapel(first.mataPelajaranId ? String(first.mataPelajaranId) : '');
       setImportTingkat(first.tingkat ? apiToTingkatDisplay(first.tingkat) : '');
@@ -626,7 +681,7 @@ export default function BankSoalDetail() {
     if (koleksiId) {
       setImportKoleksiId(koleksiId);
     }
-  }, [items, koleksiId]);
+  }, [items, koleksiId, koleksiDetail]);
 
   return (
     <div className="bank-soal-page">
@@ -639,7 +694,7 @@ export default function BankSoalDetail() {
             Detail Bank Soal
             <span className="title-badge guru-badge">Guru</span>
           </h1>
-          <p className="page-subtitle">Kelola butir soal, import Excel, atau edit secara instan.</p>
+          <p className="page-subtitle">Manajemen butir soal, pembuatan soal baru, kunci jawaban, dan impor berkas Excel.</p>
         </div>
       </div>
 
@@ -652,12 +707,12 @@ export default function BankSoalDetail() {
             </div>
             
             <div className="import-modal-body">
-              <div className="import-modal-actions mb-4" style={{ marginBottom: '1.25rem' }}>
-                <a href="http://localhost:3000/guru/bank-soal/template" download className="btn-download-tpl">
+              <div className="import-modal-actions mb-4" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <button type="button" className="btn-download-template" onClick={handleDownloadTemplate}>
                   <FiDownload /> Download Template Excel
-                </a>
-                <button type="button" className="btn-secondary ml-2" onClick={() => setShowGuideModal(true)}>
-                  Baca Panduan Format
+                </button>
+                <button type="button" className="btn-guide" onClick={() => setShowGuideModal(true)}>
+                  <FiHelpCircle /> Baca Panduan Format
                 </button>
               </div>
 
@@ -936,7 +991,7 @@ export default function BankSoalDetail() {
                         <button type="button" className="btn-icon edit" onClick={() => handleOpenEdit(row)} title="Edit">
                           <FiEdit2 />
                         </button>
-                        <button type="button" className="btn-icon delete" onClick={() => handleDelete(row.id)} title="Hapus">
+                        <button type="button" className="btn-icon delete" onClick={() => triggerDelete(row)} title="Hapus">
                           <FiTrash2 />
                         </button>
                       </div>
@@ -952,47 +1007,71 @@ export default function BankSoalDetail() {
       {!loading && totalItems > 0 && (
         <div className="bank-soal-pagination">
           <span className="pagination-info">
-            Menampilkan {startIndex + 1}-{startIndex + paginatedItems.length} dari {totalItems} soal
+            {isShowAll 
+              ? `Menampilkan 1-${totalItems} dari ${totalItems} soal`
+              : `Menampilkan ${startIndex + 1}-${startIndex + paginatedItems.length} dari ${totalItems} soal`
+            }
           </span>
           <div className="pagination-controls">
             <button
               type="button"
               className="pagination-btn"
-              disabled={displayPage <= 1}
+              disabled={isShowAll || displayPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               aria-label="Halaman sebelumnya"
             >
               Sebelumnya
             </button>
             <div className="pagination-pages">
-              {getPaginationPages(totalPages, displayPage).map((item, idx) =>
-                item.type === 'ellipsis' ? (
-                  <span key={`ellipsis-${item.key}`} className="pagination-ellipsis" aria-hidden="true">
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item.value}
-                    type="button"
-                    className={`pagination-page ${item.value === displayPage ? 'active' : ''}`}
-                    onClick={() => setCurrentPage(item.value)}
-                    aria-label={`Halaman ${item.value}`}
-                    aria-current={item.value === displayPage ? 'page' : undefined}
-                  >
-                    {item.value}
-                  </button>
+              {isShowAll ? (
+                <button
+                  type="button"
+                  className="pagination-page active"
+                  onClick={() => setCurrentPage(1)}
+                  style={{ whiteSpace: 'nowrap' }}
+                >
+                  Tampilkan Per Halaman
+                </button>
+              ) : (
+                getPaginationPages(totalPages, displayPage).map((item, idx) =>
+                  item.type === 'ellipsis' ? (
+                    <span key={`ellipsis-${item.key}`} className="pagination-ellipsis" aria-hidden="true">
+                      …
+                    </span>
+                  ) : (
+                    <button
+                      key={item.value}
+                      type="button"
+                      className={`pagination-page ${item.value === displayPage ? 'active' : ''}`}
+                      onClick={() => setCurrentPage(item.value)}
+                      aria-label={`Halaman ${item.value}`}
+                      aria-current={item.value === displayPage ? 'page' : undefined}
+                    >
+                      {item.value}
+                    </button>
+                  )
                 )
               )}
             </div>
             <button
               type="button"
               className="pagination-btn"
-              disabled={displayPage >= totalPages}
+              disabled={isShowAll || displayPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               aria-label="Halaman berikutnya"
             >
               Berikutnya
             </button>
+            {!isShowAll && (
+              <button
+                type="button"
+                className="pagination-btn show-all"
+                onClick={() => setCurrentPage(9999)}
+                style={{ marginLeft: '0.5rem', whiteSpace: 'nowrap' }}
+              >
+                Tampilkan Semua
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1188,7 +1267,7 @@ export default function BankSoalDetail() {
                 </div>
 
                 <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
-                  <label style={{ fontWeight: 600 }}>{addKategoriSoal === 'pilgan_kategori' ? 'Pertanyaan (opsional)' : 'Pertanyaan *'}</label>
+                  <label style={{ fontWeight: 700 }}>{addKategoriSoal === 'pilgan_kategori' ? 'Pertanyaan (opsional)' : 'Pertanyaan *'}</label>
                   <textarea 
                     value={addSoalText} 
                     onChange={(e) => setAddSoalText(e.target.value)} 
@@ -1201,7 +1280,7 @@ export default function BankSoalDetail() {
 
                 {/* Tambah Gambar Soal */}
                 <div className="filter-group" style={{ margin: '0 0 1.5rem 0', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Gambar Soal (Opsional, Maks 3MB)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Gambar Soal (Opsional, Maks 3MB)</label>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input 
                       type="file" 
@@ -1238,7 +1317,7 @@ export default function BankSoalDetail() {
 
                 {/* Tambah Opsi A-E Mutually Exclusive */}
                 <div className="filter-group" style={{ margin: '0 0 1.5rem 0' }}>
-                  <label style={{ fontWeight: 600 }}>{addKategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–E)' : 'Opsi Jawaban (minimal 3)'}</label>
+                  <label style={{ fontWeight: 700 }}>{addKategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–E)' : 'Opsi Jawaban (minimal 3)'}</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     {['A', 'B', 'C', 'D', 'E'].map((letter) => {
                       const val = addKolom[letter] || '';
@@ -1420,7 +1499,7 @@ export default function BankSoalDetail() {
                 </div>
 
                 <div className="filter-group" style={{ margin: '0 0 1.25rem 0' }}>
-                  <label style={{ fontWeight: 600 }}>{editKategoriSoal === 'pilgan_kategori' ? 'Pertanyaan (opsional)' : 'Pertanyaan *'}</label>
+                  <label style={{ fontWeight: 700 }}>{editKategoriSoal === 'pilgan_kategori' ? 'Pertanyaan (opsional)' : 'Pertanyaan *'}</label>
                   <textarea 
                     value={editSoalText} 
                     onChange={(e) => setEditSoalText(e.target.value)} 
@@ -1433,7 +1512,7 @@ export default function BankSoalDetail() {
 
                 {/* Edit Gambar Soal */}
                 <div className="filter-group" style={{ margin: '0 0 1.5rem 0', background: '#f8fafc', padding: '1rem', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Gambar Soal (Opsional, Maks 3MB)</label>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 700 }}>Gambar Soal (Opsional, Maks 3MB)</label>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     <input 
                       type="file" 
@@ -1470,7 +1549,7 @@ export default function BankSoalDetail() {
 
                 {/* Edit Opsi A-E Mutually Exclusive */}
                 <div className="filter-group" style={{ margin: '0 0 1.5rem 0' }}>
-                  <label style={{ fontWeight: 600 }}>{editKategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–E)' : 'Opsi Jawaban (minimal 3)'}</label>
+                  <label style={{ fontWeight: 700 }}>{editKategoriSoal === 'pilgan_kategori' ? 'Pernyataan (isi di kolom A–E)' : 'Opsi Jawaban (minimal 3)'}</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     {['A', 'B', 'C', 'D', 'E'].map((letter) => {
                       const val = editKolom[letter] || '';
@@ -1595,6 +1674,75 @@ export default function BankSoalDetail() {
         </div>
       )}
 
+
+      {/* Confirm Delete Modal */}
+      {showConfirmModal && confirmData && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-confirm" style={{ padding: '1.5rem' }}>
+              <div className="modal-confirm-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="modal-confirm-icon-box danger" style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  fontSize: '1.5rem',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle />
+                </div>
+                <h3 className="modal-confirm-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                  {confirmData.title}
+                </h3>
+              </div>
+              <div className="modal-confirm-body" style={{ marginBottom: '1.5rem' }}>
+                <div className="modal-confirm-text" style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  {confirmData.message}
+                </div>
+                {confirmData.warning && (
+                  <div className="modal-confirm-warning" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    background: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.4'
+                  }}>
+                    <FiAlertCircle style={{ flexShrink: 0, marginTop: '0.15rem', fontSize: '1rem' }} />
+                    <span>{confirmData.warning}</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-confirm-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowConfirmModal(false)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmData.action} style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <FiTrash2 /> Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

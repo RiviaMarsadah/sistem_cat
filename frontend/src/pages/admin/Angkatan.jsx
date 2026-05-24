@@ -120,7 +120,7 @@ const Angkatan = () => {
           <h1 className="angkatan-title">
             <span className="title-text">Data Angkatan</span>
           </h1>
-          <p className="angkatan-subtitle">Manajemen data angkatan siswa</p>
+          <p className="angkatan-subtitle">Manajemen tahun angkatan masuk siswa untuk filter data akademik.</p>
         </div>
         <button className="btn-add-user" onClick={() => setShowAddModal(true)}>
           <FiPlus /> Tambah Angkatan

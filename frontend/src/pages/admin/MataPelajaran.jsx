@@ -181,7 +181,7 @@ export default function MataPelajaran() {
             <span className="title-text">Mata Pelajaran</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="mapel-subtitle">Kelola mata pelajaran</p>
+          <p className="mapel-subtitle">Manajemen daftar mata pelajaran kurikulum dan kategori bidang studi.</p>
         </div>
         <div className="mapel-meta">
           <div className="meta-card">

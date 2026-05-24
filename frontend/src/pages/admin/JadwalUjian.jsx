@@ -7,6 +7,22 @@ import '../guru/PaketUjian.css';
 import './JadwalUjian.css';
 import './User.css';
 
+const getTingkatLabel = (tingkat) => {
+  const map = {
+    'tingkat_10': 'X',
+    'tingkat_11': 'XI',
+    'tingkat_12': 'XII'
+  };
+  return map[tingkat] || tingkat;
+};
+
+const getNamaKelasDisplay = (kelas) => {
+  if (!kelas) return '-';
+  if (!kelas.tingkat || !kelas.jurusan || !kelas.inisial) return kelas.namaKelas || '-';
+  const kode = kelas.jurusan.kodeProdi || '';
+  return `${getTingkatLabel(kelas.tingkat)} ${kode} ${kelas.inisial}`;
+};
+
 export default function JadwalUjianAdmin() {
   const { showToast } = useToast();
   const [items, setItems] = useState([]);
@@ -371,18 +387,42 @@ export default function JadwalUjianAdmin() {
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '200px' }}>
-                      {j.kelasJadwal?.map((kj, idx) => {
-                          const tLabel = kj.kelas?.tingkat || '';
-                          const jLabel = kj.kelas?.jurusan?.idJurusan || '';
-                          const kName = `${tLabel} ${jLabel} ${kj.kelas?.inisial || ''}`;
-                          return (
-                            <span key={idx} style={{background: '#f8fafc', border: '1px solid #e2e8f0', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', color: '#475569', fontWeight: '600'}}>
-                              {kName.trim()}
-                            </span>
-                          );
-                      })}
-                      {(!j.kelasJadwal || j.kelasJadwal.length === 0) && <span style={{color: '#94a3b8', fontSize: '0.8rem'}}>-</span>}
+                    <div style={{ display: 'flex', justifyContent: 'left', alignItems: 'center' }}>
+                      {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
+                        <div className="class-tooltip-container">
+                          <span 
+                            className="mapel-badge" 
+                            style={{ 
+                              background: '#eff6ff', 
+                              color: '#1e40af', 
+                              border: '1px solid #bfdbfe', 
+                              fontWeight: '700', 
+                              padding: '4px 12px', 
+                              borderRadius: '20px', 
+                              fontSize: '0.85rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {j.kelasJadwal.length} Kelas
+                          </span>
+                          <div className="class-tooltip-bubble">
+                            <div style={{ 
+                              display: 'grid', 
+                              gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
+                              gap: '8px', 
+                              minWidth: j.kelasJadwal.length === 1 ? '100px' : '180px' 
+                            }}>
+                              {j.kelasJadwal.map((kj, idx) => (
+                                <span key={idx} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                                  {getNamaKelasDisplay(kj.kelas)}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>
+                      )}
                     </div>
                   </td>
                   <td>
@@ -433,7 +473,7 @@ export default function JadwalUjianAdmin() {
             <span className="title-text">Jadwal Ujian</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Pilih atau buat periode ujian untuk mengelola jadwal kelas.</p>
+          <p className="user-subtitle">Manajemen kalender periode ujian aktif dan slot waktu pelaksanaan tes.</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">

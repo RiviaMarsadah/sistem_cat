@@ -234,7 +234,7 @@ const AdminKelas = () => {
             <span className="title-text">Kelas</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="kelas-subtitle">Kelola data kelas (Tingkat, Jurusan, dan Inisial)</p>
+          <p className="kelas-subtitle">Manajemen data kelas, pembagian rombongan belajar, dan pemetaan tingkat kelas.</p>
         </div>
         <div className="kelas-meta">
           <div className="meta-card">

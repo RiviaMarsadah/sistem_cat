@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiEdit2, FiEye, FiPlus, FiTrash2, FiX, FiLock } from 'react-icons/fi';
+import { FiEdit2, FiEye, FiPlus, FiTrash2, FiX, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import api from '../../services/api';
@@ -37,6 +37,9 @@ export default function PaketUjian() {
   const [soalModalOpen, setSoalModalOpen] = useState(false);
   const [soalModalLoading, setSoalModalLoading] = useState(false);
   const [soalModalData, setSoalModalData] = useState(null);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   // Pagination
   const ITEMS_PER_PAGE = 10;
@@ -80,15 +83,26 @@ export default function PaketUjian() {
     load();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Yakin hapus paket ujian ini?')) return;
-    try {
-      await api.delete(`/guru/paket-ujian/${id}`);
-      showToast('Paket ujian berhasil dihapus', 'success');
-      load();
-    } catch (e) {
-      showToast(e?.response?.data?.message || 'Gagal menghapus paket ujian', 'error');
-    }
+  const triggerDelete = (item) => {
+    setConfirmData({
+      id: item.id,
+      title: 'Hapus Paket Ujian?',
+      message: `Yakin ingin menghapus paket ujian "${item.nama}"?`,
+      warning: 'Tindakan ini tidak dapat dibatalkan. Seluruh data paket ujian ini beserta relasinya akan dihapus.',
+      action: async () => {
+        try {
+          await api.delete(`/guru/paket-ujian/${item.id}`);
+          showToast('Paket ujian berhasil dihapus', 'success');
+          load();
+        } catch (e) {
+          showToast(e?.response?.data?.message || 'Gagal menghapus paket ujian', 'error');
+        } finally {
+          setShowConfirmModal(false);
+          setConfirmData(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
   };
 
   const openSoalModal = async (id) => {
@@ -119,7 +133,7 @@ export default function PaketUjian() {
             <span className="guru-title-text">Paket Ujian</span>
             <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="guru-subtitle">Buat dan kelola paket soal ujian (UH, UTS, UAS) yang siap dijadwalkan</p>
+          <p className="guru-subtitle">Penyusunan kumpulan paket soal ujian terstandar dari bank soal untuk diujikan.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -198,7 +212,7 @@ export default function PaketUjian() {
                           <button
                             type="button"
                             className="btn-icon delete"
-                            onClick={() => handleDelete(row.id)}
+                            onClick={() => triggerDelete(row)}
                             title="Hapus"
                           >
                             <FiTrash2 />
@@ -297,7 +311,7 @@ export default function PaketUjian() {
                               </span>
                             </td>
                             <td className="cell-soal-preview">
-                              {s.soal ? (s.soal.slice(0, 80) + (s.soal.length > 80 ? '…' : '')) : '(Pernyataan di kolom A-F)'}
+                              {s.soal ? (s.soal.slice(0, 80) + (s.soal.length > 80 ? '…' : '')) : '(Pernyataan di kolom A-E)'}
                             </td>
                             <td>{s.jawaban}</td>
                           </tr>
@@ -311,6 +325,75 @@ export default function PaketUjian() {
           </div>
         </div>
       )}
+      {/* Confirm Delete Modal */}
+      {showConfirmModal && confirmData && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-confirm" style={{ padding: '1.5rem' }}>
+              <div className="modal-confirm-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="modal-confirm-icon-box danger" style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  fontSize: '1.5rem',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle />
+                </div>
+                <h3 className="modal-confirm-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                  {confirmData.title}
+                </h3>
+              </div>
+              <div className="modal-confirm-body" style={{ marginBottom: '1.5rem' }}>
+                <div className="modal-confirm-text" style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  {confirmData.message}
+                </div>
+                {confirmData.warning && (
+                  <div className="modal-confirm-warning" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    background: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.4'
+                  }}>
+                    <FiAlertCircle style={{ flexShrink: 0, marginTop: '0.15rem', fontSize: '1rem' }} />
+                    <span>{confirmData.warning}</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-confirm-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowConfirmModal(false)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmData.action} style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <FiTrash2 /> Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

@@ -293,7 +293,7 @@ const AdminGuru = () => {
             <span className="title-text">Management Guru</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Kelola data guru pengajar (Akun & Identitas)</p>
+          <p className="user-subtitle">Manajemen biodata guru pengajar, hak akses instruktur, dan informasi akun masuk.</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">

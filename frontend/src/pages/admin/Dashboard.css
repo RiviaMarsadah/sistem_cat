@@ -74,7 +74,7 @@
    ================================================ */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
@@ -233,8 +233,9 @@
 
 .widgets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Widget Card */
@@ -569,11 +570,14 @@
    ================================================ */
 @media (max-width: 1024px) {
   .stats-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 900px) {
+  .widgets-grid {
+    grid-template-columns: 1fr;
+  }
   .charts-grid {
     grid-template-columns: 1fr;
   }
@@ -602,3 +606,110 @@
     font-size: 1.4rem;
   }
 }
+
+/* ================================================
+   COLORED WIDGET/CHART HEADERS
+   ================================================ */
+.widget-header.header-color-periode {
+  background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%) !important;
+}
+.widget-header.header-color-periode .widget-title {
+  color: #ffffff !important;
+}
+.widget-header.header-color-periode .widget-icon {
+  color: #ffffff !important;
+}
+.widget-header.header-color-periode .widget-icon-wrapper {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+.chart-header.header-color-angkatan {
+  background: linear-gradient(135deg, #0f766e 0%, #115e59 100%) !important;
+}
+.chart-header.header-color-angkatan .chart-title {
+  color: #ffffff !important;
+}
+
+.chart-header.header-color-tingkat {
+  background: linear-gradient(135deg, #6d28d9 0%, #5b21b6 100%) !important;
+}
+.chart-header.header-color-tingkat .chart-title {
+  color: #ffffff !important;
+}
+
+.chart-header.header-color-nilai {
+  background: linear-gradient(135deg, #c2410c 0%, #9a3412 100%) !important;
+}
+.chart-header.header-color-nilai .chart-title {
+  color: #ffffff !important;
+}
+
+.widget-header.header-color-sesi {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%) !important;
+}
+.widget-header.header-color-sesi .widget-title {
+  color: #ffffff !important;
+}
+.widget-header.header-color-sesi .widget-icon {
+  color: #ffffff !important;
+}
+.widget-header.header-color-sesi .widget-icon-wrapper {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Sesi Ujian Table Styling */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-widget-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.admin-widget-table th {
+  padding: 0.6rem 0.75rem;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.admin-widget-table td {
+  padding: 0.6rem 0.75rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  white-space: nowrap;
+}
+
+.admin-widget-table tr:hover td {
+  background: #f8fafc;
+}
+
+.status-badge-mini {
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-badge-mini.berlangsung {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge-mini.selesai {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge-mini.waiting {
+  background: #fef3c7;
+  color: #92400e;
+}
+

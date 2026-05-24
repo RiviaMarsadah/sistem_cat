@@ -291,7 +291,7 @@ export default function PaketUjianForm() {
           <span className="title-badge guru-badge">Guru</span>
         </h1>
         <p className="page-subtitle">
-          {isEdit ? 'Ubah data paket dan soal' : 'Isi nama, mapel, tingkat, tipe ujian, lalu pilih soal dari bank soal.'}
+          {isEdit ? 'Formulir pengeditan metadata paket ujian dan pemutakhiran daftar butir soal.' : 'Konfigurasi nama paket, mata pelajaran, tipe ujian, dan pemilihan butir soal.'}
         </p>
       </div>
 

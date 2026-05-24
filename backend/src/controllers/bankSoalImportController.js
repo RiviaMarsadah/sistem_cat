@@ -93,100 +93,127 @@ exports.importExcel = async (req, res) => {
     throw e;
   }
 
-  let bankSoalKoleksiId =
-    bankSoalKoleksiIdRaw != null && bankSoalKoleksiIdRaw !== '' && String(bankSoalKoleksiIdRaw).toLowerCase() !== 'null'
-      ? Number(bankSoalKoleksiIdRaw)
-      : null;
-
-  if (bankSoalKoleksiId) {
-    try {
-      const existing = await prisma.bankSoalKoleksi.findFirst({
-        where: { id: bankSoalKoleksiId, guruId },
-      });
-      if (!existing) {
-        return res.status(400).json({ success: false, message: 'Bank soal tidak ditemukan atau bukan milik Anda' });
-      }
-    } catch (e) {
-      return res.status(500).json({ success: false, message: 'Gagal memverifikasi Bank Soal' });
-    }
-  } else if (namaBankSoal) {
-    try {
-      let koleksi = await prisma.bankSoalKoleksi.findFirst({
-        where: { guruId, nama: namaBankSoal },
-      });
-      if (!koleksi) {
-        koleksi = await prisma.bankSoalKoleksi.create({
-          data: { guruId, nama: namaBankSoal },
-        });
-      }
-      bankSoalKoleksiId = koleksi.id;
-    } catch (e) {
-      return res.status(500).json({ success: false, message: 'Gagal memproses Nama Bank Soal' });
-    }
-  }
-
-  const defaults = {
-    mataPelajaranId,
-    tingkat,
-    jurusanId,
-    guruId,
-    bankSoalKoleksiId,
-  };
-
-  let workbook;
   try {
-    workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false });
-  } catch (e) {
-    return res.status(400).json({ success: false, message: 'File bukan format Excel yang valid' });
+    const result = await prisma.$transaction(async (tx) => {
+      let bankSoalKoleksiId =
+        bankSoalKoleksiIdRaw != null && bankSoalKoleksiIdRaw !== '' && String(bankSoalKoleksiIdRaw).toLowerCase() !== 'null'
+          ? Number(bankSoalKoleksiIdRaw)
+          : null;
+
+      if (bankSoalKoleksiId) {
+        const existing = await tx.bankSoalKoleksi.findFirst({
+          where: { id: bankSoalKoleksiId, guruId },
+        });
+        if (!existing) {
+          throw new Error('Bank soal tidak ditemukan atau bukan milik Anda');
+        }
+        
+        // Update metadata on existing collection if it is currently empty/null
+        if (!existing.mataPelajaranId || !existing.tingkat) {
+          await tx.bankSoalKoleksi.update({
+            where: { id: bankSoalKoleksiId },
+            data: {
+              mataPelajaranId: existing.mataPelajaranId || mataPelajaranId,
+              tingkat: existing.tingkat || tingkat,
+              jurusanId: existing.jurusanId || jurusanId
+            }
+          });
+        }
+      } else if (namaBankSoal) {
+        let koleksi = await tx.bankSoalKoleksi.findFirst({
+          where: { guruId, nama: namaBankSoal },
+        });
+        if (!koleksi) {
+          koleksi = await tx.bankSoalKoleksi.create({
+            data: { 
+              guruId, 
+              nama: namaBankSoal,
+              mataPelajaranId,
+              tingkat,
+              jurusanId
+            },
+          });
+        } else {
+          // Update metadata if the existing named collection is empty/null
+          if (!koleksi.mataPelajaranId || !koleksi.tingkat) {
+            await tx.bankSoalKoleksi.update({
+              where: { id: koleksi.id },
+              data: {
+                mataPelajaranId: koleksi.mataPelajaranId || mataPelajaranId,
+                tingkat: koleksi.tingkat || tingkat,
+                jurusanId: koleksi.jurusanId || jurusanId
+              }
+            });
+          }
+        }
+        bankSoalKoleksiId = koleksi.id;
+      }
+
+      const defaults = {
+        mataPelajaranId,
+        tingkat,
+        jurusanId,
+        guruId,
+        bankSoalKoleksiId,
+      };
+
+      let workbook;
+      try {
+        workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: false });
+      } catch (e) {
+        throw new Error('File bukan format Excel yang valid');
+      }
+
+      const sheetName = workbook.SheetNames[0] || 'Sheet1';
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
+      if (!rows.length) {
+        throw new Error('Tidak ada baris data di sheet pertama');
+      }
+
+      const createdSoalList = [];
+      for (let i = 0; i < rows.length; i++) {
+        const rowNum = i + 2;
+        const payload = rowToPayload(rows[i], { ...defaults });
+        const kategori = payload.kategoriSoal && String(payload.kategoriSoal).trim().toLowerCase().replace(/\s+/g, '_');
+        if (!kategori || !KATEGORI.includes(kategori)) {
+          throw new Error(`Error Baris ${rowNum}: Kategori harus pilgan, pilgan_kompleks, atau pilgan_kategori`);
+        }
+        payload.kategoriSoal = kategori;
+        if (kategori === 'pilgan_kategori' && payload.jawaban) {
+          payload.jawaban = normalizeJawabanBenarSalah(payload.jawaban);
+        }
+
+        const schema = getSchema(kategori);
+        const { guruId: _ignoredGuruId, ...validatePayload } = payload;
+        const { error, value } = schema.validate(validatePayload, { abortEarly: true });
+        if (error) {
+          throw new Error(`Error Baris ${rowNum}: ${error.details[0].message}`);
+        }
+        try {
+          const created = await tx.bankSoal.create({
+            data: normalizePayload({ ...value, guruId }),
+          });
+          createdSoalList.push(created);
+        } catch (e) {
+          throw new Error(`Error Baris ${rowNum}: Gagal menyimpan (${e.message})`);
+        }
+      }
+
+      return { createdCount: createdSoalList.length };
+    });
+
+    return res.json({
+      success: true,
+      message: `Impor sukses! Berhasil menambahkan ${result.createdCount} soal ke bank soal.`,
+      data: { created: result.createdCount, failed: 0, errors: [] },
+    });
+  } catch (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message || 'Gagal melakukan impor bank soal. Proses dibatalkan.',
+    });
   }
-
-  const sheetName = workbook.SheetNames[0] || 'Sheet1';
-  const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
-  if (!rows.length) {
-    return res.status(400).json({ success: false, message: 'Tidak ada baris data di sheet pertama' });
-  }
-
-  const results = { created: 0, failed: 0, errors: [] };
-  for (let i = 0; i < rows.length; i++) {
-    const rowNum = i + 2;
-    const payload = rowToPayload(rows[i], { ...defaults });
-    const kategori = payload.kategoriSoal && String(payload.kategoriSoal).trim().toLowerCase().replace(/\s+/g, '_');
-    if (!kategori || !KATEGORI.includes(kategori)) {
-      results.failed++;
-      results.errors.push({ row: rowNum, message: 'Kategori harus: pilgan, pilgan_kompleks, atau pilgan_kategori' });
-      continue;
-    }
-    payload.kategoriSoal = kategori;
-    if (kategori === 'pilgan_kategori' && payload.jawaban) {
-      payload.jawaban = normalizeJawabanBenarSalah(payload.jawaban);
-    }
-
-    // Jangan validasi field guruId di Joi schema (schema hanya mengenal baseSchema)
-    const schema = getSchema(kategori);
-    const { guruId: _ignoredGuruId, ...validatePayload } = payload;
-    const { error, value } = schema.validate(validatePayload, { abortEarly: true });
-    if (error) {
-      results.failed++;
-      results.errors.push({ row: rowNum, message: error.details[0].message });
-      continue;
-    }
-    try {
-      await prisma.bankSoal.create({
-        data: normalizePayload({ ...value, guruId }),
-      });
-      results.created++;
-    } catch (e) {
-      results.failed++;
-      results.errors.push({ row: rowNum, message: e.message || 'Gagal menyimpan' });
-    }
-  }
-
-  return res.json({
-    success: true,
-    message: `Import selesai: ${results.created} berhasil, ${results.failed} gagal`,
-    data: results,
-  });
 };
 
 /**

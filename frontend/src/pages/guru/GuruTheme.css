@@ -237,6 +237,22 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 }
 
+.guru-input {
+  width: 100%;
+  border: 1px solid var(--guru-border-soft);
+  border-radius: 10px;
+  padding: 0.72rem 0.92rem;
+  color: var(--guru-text-body);
+  background: var(--guru-bg-card);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guru-input:focus {
+  outline: 0;
+  border-color: var(--guru-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
 .guru-count-text {
   color: var(--guru-primary);
   font-size: 0.82rem;

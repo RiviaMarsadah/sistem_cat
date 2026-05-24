@@ -31,7 +31,11 @@ exports.listOfficial = async (req, res) => {
         periode: true,
         jurusan: true,
         kelasJadwal: {
-          include: { kelas: true }
+          include: {
+            kelas: {
+              include: { jurusan: true }
+            }
+          }
         }
       },
       orderBy: { mulai: 'desc' }
@@ -126,7 +130,11 @@ exports.listCustom = async (req, res) => {
         periode: true,
         jurusan: true,
         kelasJadwal: {
-          include: { kelas: true }
+          include: {
+            kelas: {
+              include: { jurusan: true }
+            }
+          }
         }
       },
       orderBy: { mulai: 'desc' }

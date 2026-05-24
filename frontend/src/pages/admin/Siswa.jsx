@@ -312,7 +312,7 @@ const AdminSiswa = () => {
             <span className="title-text">Management Siswa</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="user-subtitle">Kelola data siswa terpadu (Akun & Identitas)</p>
+          <p className="user-subtitle">Manajemen biodata lengkap siswa, status akademik, dan informasi akun masuk.</p>
         </div>
         <div className="user-meta">
           <div className="meta-card">

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX, FiCheck } from 'react-icons/fi';
+import { FiEdit2, FiFolder, FiPlus, FiTrash2, FiEye, FiUpload, FiDownload, FiHelpCircle, FiX, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
@@ -23,10 +23,16 @@ export default function BankSoal() {
   // Create Collection Modal States (Persistent Input)
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createNamaKoleksi, setCreateNamaKoleksi] = useState('');
+  const [createMapel, setCreateMapel] = useState('');
+  const [createTingkat, setCreateTingkat] = useState('');
+  const [createJurusan, setCreateJurusan] = useState('');
 
   // Edit Collection Modal States
   const [showEditModal, setShowEditModal] = useState(false);
   const [namaKoleksi, setNamaKoleksi] = useState('');
+  const [editMapel, setEditMapel] = useState('');
+  const [editTingkat, setEditTingkat] = useState('');
+  const [editJurusan, setEditJurusan] = useState('');
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -42,6 +48,9 @@ export default function BankSoal() {
   const [importLoading, setImportLoading] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   const [mapelList, setMapelList] = useState([]);
   const [jurusanList, setJurusanList] = useState([]);
@@ -104,26 +113,48 @@ export default function BankSoal() {
     load();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Yakin hapus bank soal (koleksi) ini? Seluruh soal di dalamnya bisa terhapus atau kehilangan referensi koleksi.')) return;
-    try {
-      await api.delete(`/guru/bank-soal-koleksi/${id}`);
-      showToast('Bank Soal berhasil dihapus.', 'success');
-      load();
-    } catch (e) {
-      showToast(e?.response?.data?.message || 'Gagal menghapus', 'error');
-    }
+  const triggerDelete = (item) => {
+    setConfirmData({
+      id: item.id,
+      title: 'Hapus Bank Soal?',
+      message: `Yakin ingin menghapus bank soal (koleksi) "${item.nama}"?`,
+      warning: 'Seluruh soal di dalam folder koleksi ini beserta gambarnya di backend akan ikut terhapus secara permanen.',
+      action: async () => {
+        try {
+          await api.delete(`/guru/bank-soal-koleksi/${item.id}`);
+          showToast('Bank Soal berhasil dihapus.', 'success');
+          load();
+        } catch (e) {
+          showToast(e?.response?.data?.message || 'Gagal menghapus', 'error');
+        } finally {
+          setShowConfirmModal(false);
+          setConfirmData(null);
+        }
+      }
+    });
+    setShowConfirmModal(true);
   };
 
   const handleCreateKoleksi = async (e) => {
     e.preventDefault();
-    if (!createNamaKoleksi.trim()) return;
+    if (!createNamaKoleksi.trim() || !createMapel || !createTingkat) {
+      showToast('Nama, Mata Pelajaran, dan Tingkat wajib diisi.', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      await api.post('/guru/bank-soal-koleksi', { nama: createNamaKoleksi.trim() });
+      await api.post('/guru/bank-soal-koleksi', { 
+        nama: createNamaKoleksi.trim(),
+        mataPelajaranId: Number(createMapel),
+        tingkat: createTingkat,
+        jurusanId: createJurusan ? Number(createJurusan) : null
+      });
       showToast('Bank Soal baru berhasil dibuat!', 'success');
       setShowCreateModal(false);
-      setCreateNamaKoleksi(''); // Clear state on success only!
+      setCreateNamaKoleksi(''); 
+      setCreateMapel('');
+      setCreateTingkat('');
+      setCreateJurusan('');
       load();
     } catch (e) {
       showToast(e?.response?.data?.message || 'Gagal membuat bank soal', 'error');
@@ -134,11 +165,19 @@ export default function BankSoal() {
 
   const handleSaveKoleksi = async (e) => {
     e.preventDefault();
-    if (!namaKoleksi || !editingId) return;
+    if (!namaKoleksi || !editingId || !editMapel || !editTingkat) {
+      showToast('Nama, Mata Pelajaran, dan Tingkat wajib diisi.', 'error');
+      return;
+    }
     setSaving(true);
     try {
-      await api.put(`/guru/bank-soal-koleksi/${editingId}`, { nama: namaKoleksi });
-      showToast('Nama Bank Soal berhasil diperbarui.', 'success');
+      await api.put(`/guru/bank-soal-koleksi/${editingId}`, { 
+        nama: namaKoleksi,
+        mataPelajaranId: Number(editMapel),
+        tingkat: editTingkat,
+        jurusanId: editJurusan ? Number(editJurusan) : null
+      });
+      showToast('Bank Soal berhasil diperbarui.', 'success');
       setShowEditModal(false);
       load();
     } catch (e) {
@@ -151,6 +190,16 @@ export default function BankSoal() {
   const openEdit = (item) => {
     setEditingId(item.id);
     setNamaKoleksi(item.nama);
+    
+    const mapelId = item.mataPelajaranId || item.bankSoal?.[0]?.mataPelajaranId;
+    setEditMapel(mapelId ? String(mapelId) : '');
+    
+    const tingkatCode = item.tingkat || item.bankSoal?.[0]?.tingkat;
+    setEditTingkat(tingkatCode || '');
+    
+    const jurusanId = item.jurusanId || item.bankSoal?.[0]?.jurusanId;
+    setEditJurusan(jurusanId ? String(jurusanId) : '');
+    
     setShowEditModal(true);
   };
 
@@ -167,6 +216,34 @@ export default function BankSoal() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       showToast(e?.response?.data?.message || 'Gagal mengunduh template', 'error');
+    }
+  };
+
+  const handleImportKoleksiChange = (val) => {
+    setImportKoleksiId(val);
+    if (val && val !== 'new') {
+      const selected = items.find((k) => String(k.id) === String(val));
+      if (selected) {
+        const mapelId = selected.mataPelajaranId || selected.bankSoal?.[0]?.mataPelajaranId;
+        setImportMapel(mapelId ? String(mapelId) : '');
+        
+        const tingkatCode = selected.tingkat || selected.bankSoal?.[0]?.tingkat;
+        let displayTingkat = '';
+        if (tingkatCode === 'X') displayTingkat = '10';
+        else if (tingkatCode === 'XI') displayTingkat = '11';
+        else if (tingkatCode === 'XII') displayTingkat = '12';
+        else if (tingkatCode === 'SEMUA') displayTingkat = '0';
+        else displayTingkat = tingkatCode || '';
+        setImportTingkat(displayTingkat);
+        
+        const jurusanId = selected.jurusanId || selected.bankSoal?.[0]?.jurusanId;
+        setImportJurusan(jurusanId ? String(jurusanId) : '');
+      }
+    } else {
+      setImportMapel('');
+      setImportTingkat('');
+      setImportJurusan('');
+      setImportNamaBankSoal('');
     }
   };
 
@@ -226,7 +303,7 @@ export default function BankSoal() {
             <span className="guru-title-text">Bank Soal</span>
             <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="guru-subtitle">Kelola kotak (koleksi) bank soal Anda, klik pada nama bank soal untuk mengelola butir soal.</p>
+          <p className="guru-subtitle">Manajemen koleksi folder bank soal berdasarkan mata pelajaran dan tingkat kesulitan.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -269,7 +346,7 @@ export default function BankSoal() {
                 <th>Nama Bank Soal</th>
                 <th>Jumlah Soal</th>
                 <th>Dibuat Pada</th>
-                <th>Aksi</th>
+                <th style={{ textAlign: 'center' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -305,7 +382,7 @@ export default function BankSoal() {
                         <button type="button" className="btn-icon edit" onClick={() => openEdit(row)} title="Rename Koleksi">
                           <FiEdit2 />
                         </button>
-                        <button type="button" className="btn-icon delete" onClick={() => handleDelete(row.id)} title="Hapus Koleksi">
+                        <button type="button" className="btn-icon delete" onClick={() => triggerDelete(row)} title="Hapus Koleksi">
                           <FiTrash2 />
                         </button>
                       </div>
@@ -372,6 +449,48 @@ export default function BankSoal() {
                     onChange={(e) => setCreateNamaKoleksi(e.target.value)}
                   />
                 </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Mata Pelajaran *</label>
+                  <select
+                    required
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={createMapel}
+                    onChange={(e) => setCreateMapel(e.target.value)}
+                  >
+                    <option value="">— Pilih Mata Pelajaran —</option>
+                    {mapelList.map((m) => (
+                      <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tingkat (Kelas) *</label>
+                  <select
+                    required
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={createTingkat}
+                    onChange={(e) => setCreateTingkat(e.target.value)}
+                  >
+                    <option value="">— Pilih Tingkat —</option>
+                    <option value="X">10 (X)</option>
+                    <option value="XI">11 (XI)</option>
+                    <option value="XII">12 (XII)</option>
+                    <option value="SEMUA">Semua Tingkat (SEMUA)</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Program Studi (Opsional)</label>
+                  <select
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={createJurusan}
+                    onChange={(e) => setCreateJurusan(e.target.value)}
+                  >
+                    <option value="">Semua Prodi (Jurusan)</option>
+                    {jurusanList.map((j) => (
+                      <option key={j.id} value={j.id}>{j.namaProdi}</option>
+                    ))}
+                  </select>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
                   <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: '10px 16px', background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>
                     Batal
@@ -391,13 +510,13 @@ export default function BankSoal() {
         <div className="modal-overlay" role="dialog" aria-modal="true">
           <div className="modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title">Ubah Nama Bank Soal</h3>
+              <h3 className="modal-title">Ubah Nama / Detail Bank Soal</h3>
               <button className="modal-close" onClick={() => setShowEditModal(false)} aria-label="Tutup"><FiX /></button>
             </div>
             <div className="modal-body">
               <form onSubmit={handleSaveKoleksi}>
                 <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nama Bank Soal</label>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Nama Bank Soal *</label>
                   <input
                     type="text"
                     required
@@ -405,6 +524,48 @@ export default function BankSoal() {
                     value={namaKoleksi}
                     onChange={(e) => setNamaKoleksi(e.target.value)}
                   />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Mata Pelajaran *</label>
+                  <select
+                    required
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={editMapel}
+                    onChange={(e) => setEditMapel(e.target.value)}
+                  >
+                    <option value="">— Pilih Mata Pelajaran —</option>
+                    {mapelList.map((m) => (
+                      <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tingkat (Kelas) *</label>
+                  <select
+                    required
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={editTingkat}
+                    onChange={(e) => setEditTingkat(e.target.value)}
+                  >
+                    <option value="">— Pilih Tingkat —</option>
+                    <option value="X">10 (X)</option>
+                    <option value="XI">11 (XI)</option>
+                    <option value="XII">12 (XII)</option>
+                    <option value="SEMUA">Semua Tingkat (SEMUA)</option>
+                  </select>
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Program Studi (Opsional)</label>
+                  <select
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', background: 'white' }}
+                    value={editJurusan}
+                    onChange={(e) => setEditJurusan(e.target.value)}
+                  >
+                    <option value="">Semua Prodi (Jurusan)</option>
+                    {jurusanList.map((j) => (
+                      <option key={j.id} value={j.id}>{j.namaProdi}</option>
+                    ))}
+                  </select>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1.5rem' }}>
                   <button type="button" onClick={() => setShowEditModal(false)} style={{ padding: '10px 16px', background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontWeight: 'bold' }}>
@@ -451,7 +612,7 @@ export default function BankSoal() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div className="filter-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
                     <label>Pilih Bank Soal</label>
-                    <select value={importKoleksiId} onChange={(e) => setImportKoleksiId(e.target.value)}>
+                    <select value={importKoleksiId} onChange={(e) => handleImportKoleksiChange(e.target.value)}>
                       <option value="">— Masukkan Koleksi —</option>
                       {items.map((k) => (
                         <option key={k.id} value={k.id}>{k.nama}</option>
@@ -473,7 +634,12 @@ export default function BankSoal() {
                   )}
                   <div className="filter-group" style={{ margin: 0 }}>
                     <label>Mata Pelajaran *</label>
-                    <select value={importMapel} onChange={(e) => setImportMapel(e.target.value)} required>
+                    <select 
+                      value={importMapel} 
+                      onChange={(e) => setImportMapel(e.target.value)} 
+                      disabled={!!importKoleksiId && importKoleksiId !== 'new' && !!importMapel}
+                      required
+                    >
                       <option value="">— Pilih Mapel —</option>
                       {mapelList.map((m) => (
                         <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
@@ -482,7 +648,12 @@ export default function BankSoal() {
                   </div>
                   <div className="filter-group" style={{ margin: 0 }}>
                     <label>Tingkat (Kelas) *</label>
-                    <select value={importTingkat} onChange={(e) => setImportTingkat(e.target.value)} required>
+                    <select 
+                      value={importTingkat} 
+                      onChange={(e) => setImportTingkat(e.target.value)} 
+                      disabled={!!importKoleksiId && importKoleksiId !== 'new' && !!importTingkat}
+                      required
+                    >
                       <option value="">— Pilih Tingkat —</option>
                       {TINGKAT_OPTIONS.map((o) => (
                         <option key={o.value} value={o.value}>{o.label}</option>
@@ -491,7 +662,11 @@ export default function BankSoal() {
                   </div>
                   <div className="filter-group" style={{ margin: 0 }}>
                     <label>Program Studi (Opsional)</label>
-                    <select value={importJurusan} onChange={(e) => setImportJurusan(e.target.value)}>
+                    <select 
+                      value={importJurusan} 
+                      onChange={(e) => setImportJurusan(e.target.value)}
+                      disabled={!!importKoleksiId && importKoleksiId !== 'new' && !!importJurusan}
+                    >
                       <option value="">Semua Prodi</option>
                       {jurusanList.map((j) => (
                         <option key={j.id} value={j.id}>{j.namaProdi}</option>
@@ -575,6 +750,75 @@ export default function BankSoal() {
         </div>
       )}
 
+
+      {/* Confirm Delete Modal */}
+      {showConfirmModal && confirmData && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-confirm" style={{ padding: '1.5rem' }}>
+              <div className="modal-confirm-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="modal-confirm-icon-box danger" style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  fontSize: '1.5rem',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle />
+                </div>
+                <h3 className="modal-confirm-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                  {confirmData.title}
+                </h3>
+              </div>
+              <div className="modal-confirm-body" style={{ marginBottom: '1.5rem' }}>
+                <div className="modal-confirm-text" style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  {confirmData.message}
+                </div>
+                {confirmData.warning && (
+                  <div className="modal-confirm-warning" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    background: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.4'
+                  }}>
+                    <FiAlertCircle style={{ flexShrink: 0, marginTop: '0.15rem', fontSize: '1rem' }} />
+                    <span>{confirmData.warning}</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-confirm-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowConfirmModal(false)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmData.action} style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <FiTrash2 /> Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

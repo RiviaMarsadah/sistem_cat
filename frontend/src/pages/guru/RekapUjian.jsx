@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiBook, FiClock, FiCheckCircle, FiFileText, FiFilter, FiEye, FiTrash2 } from 'react-icons/fi';
+import { FiBook, FiClock, FiCheckCircle, FiFileText, FiFilter, FiEye, FiTrash2, FiDownload, FiSearch, FiAlertCircle, FiX } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
@@ -16,10 +16,13 @@ export default function RekapUjianGuru() {
   const [selectedKelas, setSelectedKelas] = useState('all');
   const [results, setResults] = useState([]);
   const [stats, setStats] = useState({ total: 0, finished: 0, average: 0, highest: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Pagination
   const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   const totalItems = results.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / ITEMS_PER_PAGE));
@@ -65,14 +68,14 @@ export default function RekapUjianGuru() {
     try {
       const res = await api.get(`/guru/rekap/results?jadwalId=${selectedExam}&kelasId=${selectedKelas}`);
       const data = res.data?.data || [];
-      setResults(data);
+      const finishedData = data.filter(r => r.status === 'selesai');
+      setResults(finishedData);
 
       // Calculate stats
-      const finished = data.filter(r => r.status === 'selesai');
-      const scores = finished.map(r => Number(r.nilaiAkhir));
+      const scores = finishedData.map(r => Number(r.nilaiAkhir));
       setStats({
-        total: data.length,
-        finished: finished.length,
+        total: finishedData.length,
+        finished: finishedData.length,
         average: scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : 0,
         highest: scores.length > 0 ? Math.max(...scores).toFixed(1) : 0
       });
@@ -84,6 +87,25 @@ export default function RekapUjianGuru() {
     }
   };
 
+  const filteredExams = exams.filter(e => {
+    const query = searchQuery.toLowerCase();
+    const examName = (e.nama || '').toLowerCase();
+    const mapelName = (e.mataPelajaran?.namaMapel || '').toLowerCase();
+    const mapelKode = (e.mataPelajaran?.kodeMapel || '').toLowerCase();
+    const packetName = (e.paketUjian?.nama || '').toLowerCase();
+    return examName.includes(query) || mapelName.includes(query) || mapelKode.includes(query) || packetName.includes(query);
+  });
+
+  useEffect(() => {
+    if (searchQuery) {
+      const isSelectedInFiltered = filteredExams.some(e => String(e.id) === String(selectedExam));
+      if (!isSelectedInFiltered && filteredExams.length > 0) {
+        setSelectedExam(filteredExams[0].id);
+        setSelectedKelas('all');
+      }
+    }
+  }, [searchQuery]);
+
   useEffect(() => { fetchData(); }, []);
   useEffect(() => { fetchResults(); }, [selectedExam, selectedKelas]);
 
@@ -91,17 +113,69 @@ export default function RekapUjianGuru() {
     navigate(`/guru/rekap-ujian/review/${id}`);
   };
 
-  const handleDeleteResult = async (id, studentName) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus hasil ujian dari ${studentName}? Tindakan ini tidak dapat dibatalkan.`)) {
-      try {
-        await api.delete(`/guru/rekap/results/${id}`);
-        showToast('Hasil ujian berhasil dihapus', 'success');
-        fetchResults(); // Refresh list
-      } catch (error) {
-        console.error('Delete result error:', error);
-        showToast('Gagal menghapus hasil ujian', 'error');
+  const handleDeleteResult = (id, studentName) => {
+    setConfirmData({
+      id,
+      title: 'Hapus Hasil Ujian?',
+      message: `Apakah Anda yakin ingin menghapus hasil ujian dari ${studentName}?`,
+      warning: 'Tindakan ini tidak dapat dibatalkan. Seluruh lembar jawaban dan data nilai siswa terkait ujian ini akan dihapus secara permanen.',
+      action: async () => {
+        try {
+          await api.delete(`/guru/rekap/results/${id}`);
+          showToast('Hasil ujian berhasil dihapus', 'success');
+          fetchResults(); // Refresh list
+        } catch (error) {
+          console.error('Delete result error:', error);
+          showToast('Gagal menghapus hasil ujian', 'error');
+        } finally {
+          setShowConfirmModal(false);
+          setConfirmData(null);
+        }
       }
-    }
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleExportCSV = () => {
+    if (results.length === 0) return;
+
+    const currentExam = exams.find(e => String(e.id) === String(selectedExam));
+    const examName = currentExam ? currentExam.nama : 'ujian';
+    const cleanExamName = examName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    // Headers (separated by semicolon to automatically split into columns in Indonesian Excel)
+    const headers = ['No', 'Nama Siswa', 'Email', 'Kelas', 'Jawaban Benar', 'Nilai Akhir'];
+
+    // Rows
+    const rows = results.map((r, idx) => {
+      const nama = r.siswa?.user?.namaLengkap || '-';
+      const email = r.siswa?.user?.email || '-';
+      const kelas = r.siswa?.kelas ? `${r.siswa.kelas.tingkat} ${r.siswa.kelas.jurusan?.namaProdi || ''} ${r.siswa.kelas.inisial || ''}` : '-';
+      const jawabanBenar = `${r.benar} dari ${r.totalSoal}`;
+      const nilai = r.status === 'selesai' ? Number(r.nilaiAkhir).toFixed(1) : '-';
+
+      return [
+        idx + 1,
+        nama,
+        email,
+        kelas,
+        jawabanBenar,
+        nilai
+      ];
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `rekap_nilai_${cleanExamName}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Rekapitulasi berhasil diekspor', 'success');
   };
 
   const availableClasses = results.reduce((acc, current) => {
@@ -121,7 +195,7 @@ export default function RekapUjianGuru() {
             <span className="guru-title-text">Rekap Hasil</span>
             <span className="guru-title-badge">Ujian</span>
           </h1>
-          <p className="guru-subtitle">Pantau perkembangan dan hasil ujian siswa Anda secara mendalam.</p>
+          <p className="guru-subtitle">Rekapitulasi nilai akhir, status kelulusan, dan unduh laporan hasil ujian.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -143,7 +217,20 @@ export default function RekapUjianGuru() {
         <div className="guru-card-header">
           <h2 className="guru-card-title">Filter Pencarian</h2>
         </div>
-        <div className="guru-form-grid">
+        <div className="rekap-filter-grid">
+          <div className="filter-item">
+            <label className="guru-form-label">
+              <FiSearch /> Cari Ujian / Paket Soal
+            </label>
+            <input
+              type="text"
+              className="guru-input"
+              placeholder="Cari kata kunci..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              disabled={loading}
+            />
+          </div>
           <div className="filter-item">
             <label className="guru-form-label">
               <FiBook /> Pilih Ujian
@@ -154,8 +241,8 @@ export default function RekapUjianGuru() {
               onChange={(e) => { setSelectedExam(e.target.value); setSelectedKelas('all'); }}
               disabled={loading}
             >
-              {exams.length === 0 ? <option>Tidak ada ujian</option> : null}
-              {exams.map(e => (
+              {filteredExams.length === 0 ? <option value="">Tidak ada ujian cocok</option> : null}
+              {filteredExams.map(e => (
                 <option key={e.id} value={e.id}>{e.nama} - {e.mataPelajaran?.namaMapel} ({e.mataPelajaran?.kodeMapel || '-'})</option>
               ))}
             </select>
@@ -185,8 +272,13 @@ export default function RekapUjianGuru() {
       </div>
 
       <div className="guru-card">
-        <div className="guru-card-header">
+        <div className="guru-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h2 className="guru-card-title">Daftar Hasil Peserta</h2>
+          {results.length > 0 && (
+            <button className="btn-export-rekap" onClick={handleExportCSV}>
+              <FiDownload /> Ekspor CSV
+            </button>
+          )}
         </div>
 
         {fetchingResults ? (
@@ -198,7 +290,7 @@ export default function RekapUjianGuru() {
             <div className="rekap-row rekap-head">
               <div>Siswa</div>
               <div>Nama Kelas</div>
-              <div>Status</div>
+              <div style={{ textAlign: 'center' }}>Jawaban Benar</div>
               <div style={{ textAlign: 'center' }}>Nilai Akhir</div>
               <div style={{ textAlign: 'center' }}>Aksi</div>
             </div>
@@ -221,16 +313,14 @@ export default function RekapUjianGuru() {
                     {r.siswa?.kelas?.tingkat} {r.siswa?.kelas?.jurusan?.namaProdi || 'N/A'}
                   </div>
                 </div>
-                <div>
-                  {r.status === 'selesai' ? (
-                    <span className="status-badge aktif"><FiCheckCircle /> Selesai</span>
-                  ) : (
-                    <span className="status-badge progress"><FiClock /> Aktif</span>
-                  )}
+                <div style={{ textAlign: 'center' }}>
+                  <span className="benar-badge">
+                    {r.benar} / {r.totalSoal}
+                  </span>
                 </div>
                 <div className="nilai-col">
                   <span className={`score-display ${Number(r.nilaiAkhir) >= 80 ? 'high' : 'med'}`}>
-                    {r.status === 'selesai' ? Number(r.nilaiAkhir).toFixed(1) : '-'}
+                    {Number(r.nilaiAkhir).toFixed(1)}
                   </span>
                 </div>
                 <div className="aksi-col">
@@ -282,6 +372,75 @@ export default function RekapUjianGuru() {
           </div>
         )}
       </div>
+      {/* Confirm Delete Modal */}
+      {showConfirmModal && confirmData && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+            <div className="modal-confirm" style={{ padding: '1.5rem' }}>
+              <div className="modal-confirm-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="modal-confirm-icon-box danger" style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: '#fef2f2',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#dc2626',
+                  fontSize: '1.5rem',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle />
+                </div>
+                <h3 className="modal-confirm-title" style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>
+                  {confirmData.title}
+                </h3>
+              </div>
+              <div className="modal-confirm-body" style={{ marginBottom: '1.5rem' }}>
+                <div className="modal-confirm-text" style={{ fontSize: '0.95rem', color: '#475569', marginBottom: '0.75rem', lineHeight: '1.5' }}>
+                  {confirmData.message}
+                </div>
+                {confirmData.warning && (
+                  <div className="modal-confirm-warning" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    background: '#fffbeb',
+                    border: '1px solid #fef3c7',
+                    borderRadius: '8px',
+                    padding: '0.75rem',
+                    color: '#b45309',
+                    fontSize: '0.85rem',
+                    lineHeight: '1.4'
+                  }}>
+                    <FiAlertCircle style={{ flexShrink: 0, marginTop: '0.15rem', fontSize: '1rem' }} />
+                    <span>{confirmData.warning}</span>
+                  </div>
+                )}
+              </div>
+              <div className="modal-confirm-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                <button type="button" className="btn-secondary" onClick={() => setShowConfirmModal(false)} style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: 600 }}>
+                  Batal
+                </button>
+                <button type="button" className="btn-danger" onClick={confirmData.action} style={{
+                  padding: '0.5rem 1.25rem',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <FiTrash2 /> Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

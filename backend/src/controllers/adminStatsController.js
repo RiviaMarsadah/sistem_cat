@@ -12,7 +12,7 @@ exports.getDashboardStats = async (req, res) => {
     });
 
     // --- 2. Periode Aktif (yang sedang berjalan) ---
-    const periodeAktif = await prisma.periodeUjian.findFirst({
+    const periodeAktif = await prisma.periodeUjian.findMany({
       where: {
         mulai: { lte: now },
         selesai: { gte: now }
@@ -41,18 +41,35 @@ exports.getDashboardStats = async (req, res) => {
       take: 5
     });
 
+    // --- 5. 5 Sesi Ujian Terbaru ---
+    const sesiUjianTerbaru = await prisma.ujianSiswa.findMany({
+      include: {
+        siswa: {
+          include: {
+            user: { select: { namaLengkap: true } },
+            kelas: { select: { namaKelas: true } }
+          }
+        },
+        jadwalUjian: {
+          select: { nama: true }
+        }
+      },
+      orderBy: { mulaiPada: 'desc' },
+      take: 5
+    });
+
     return res.json({
       success: true,
       data: {
         totalUjianDijalankan,
-        periodeAktif: periodeAktif ? {
-          id: periodeAktif.id,
-          nama: periodeAktif.nama,
-          semester: periodeAktif.semester,
-          tahunAjaran: periodeAktif.tahunAjaran,
-          mulai: periodeAktif.mulai,
-          selesai: periodeAktif.selesai
-        } : null,
+        periodeAktif: periodeAktif.map(p => ({
+          id: p.id,
+          nama: p.nama,
+          semester: p.semester,
+          tahunAjaran: p.tahunAjaran,
+          mulai: p.mulai,
+          selesai: p.selesai
+        })),
         jadwalTerbaru: jadwalTerbaru.map(j => ({
           id: j.id,
           nama: j.nama,
@@ -67,6 +84,15 @@ exports.getDashboardStats = async (req, res) => {
           nis: s.nis || '-',
           kelas: s.kelas?.namaKelas || '-',
           createdAt: s.createdAt
+        })),
+        sesiUjianTerbaru: sesiUjianTerbaru.map(s => ({
+          id: s.id,
+          siswa: s.siswa?.user?.namaLengkap || '-',
+          kelas: s.siswa?.kelas?.namaKelas || '-',
+          namaUjian: s.jadwalUjian?.nama || '-',
+          status: s.status,
+          mulai: s.mulaiPada,
+          selesai: s.selesaiPada
         }))
       }
     });

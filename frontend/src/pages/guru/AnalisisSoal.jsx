@@ -80,6 +80,19 @@ export default function AnalisisSoal() {
     }
   };
 
+  const getKategoriLabel = (kat) => {
+    switch (kat) {
+      case 'pilgan': 
+        return <span style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap' }}>Pilgan</span>;
+      case 'pilgan_kompleks': 
+        return <span style={{ background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap' }}>PG Kompleks</span>;
+      case 'pilgan_kategori': 
+        return <span style={{ background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap' }}>PG Kategori</span>;
+      default: 
+        return <span style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', whiteSpace: 'nowrap' }}>{kat || '-'}</span>;
+    }
+  };
+
   const mudahCount  = analysisData?.analysis?.filter(a => a.difficulty === 'Mudah').length  || 0;
   const sedangCount = analysisData?.analysis?.filter(a => a.difficulty === 'Sedang').length || 0;
   const sulitCount  = analysisData?.analysis?.filter(a => a.difficulty === 'Sulit').length  || 0;
@@ -94,7 +107,7 @@ export default function AnalisisSoal() {
             <span className="guru-title-text">Analisis Butir</span>
             <span className="guru-title-badge">Soal</span>
           </h1>
-          <p className="guru-subtitle">Evaluasi tingkat kesulitan soal berdasarkan performa pengerjaan siswa.</p>
+          <p className="guru-subtitle">Analisis butir soal, indeks kesukaran, dan validitas soal hasil ujian.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -181,6 +194,7 @@ export default function AnalisisSoal() {
             <div className="analisis-row analisis-head">
               <div>No</div>
               <div>Pertanyaan</div>
+              <div>Kategori</div>
               <div>Penjawab</div>
               <div>Benar</div>
               <div>% Benar</div>
@@ -192,6 +206,9 @@ export default function AnalisisSoal() {
               <div key={item.bankSoalId} className="analisis-row">
                 <div className="soal-num">#{startIndex + index + 1}</div>
                 <div className="soal-text-cell" dangerouslySetInnerHTML={{ __html: item.soal }} />
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {getKategoriLabel(item.kategori)}
+                </div>
                 <div className="stat-cell">
                   <span className="stat-val">{item.respondents}</span>
                   <span className="stat-lbl">siswa</span>

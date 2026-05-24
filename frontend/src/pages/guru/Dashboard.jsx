@@ -61,7 +61,7 @@ const GuruDashboard = () => {
           totalNamaBankSoal: allKoleksi.length,
           totalSoalDiBankSoal: allSoal.length,
           totalPaketUjian: paketRes.data?.data?.length || 0,
-          totalJadwalUjian: jadwalCustomRes.data?.data?.length || 0,
+          totalJadwalUjian: allJadwal.length,
         });
 
         // Widget: Jadwal Terbaru (Top 4)
@@ -75,9 +75,9 @@ const GuruDashboard = () => {
           else if (s.kategoriSoal === 'pilgan_kategori') kategori++;
         });
         const tipeSoal = [];
-        if (pilgan > 0) tipeSoal.push({ name: 'Pilihan Ganda', value: pilgan });
-        if (kompleks > 0) tipeSoal.push({ name: 'PG Kompleks', value: kompleks });
-        if (kategori > 0) tipeSoal.push({ name: 'PG Kategori', value: kategori });
+        if (pilgan > 0) tipeSoal.push({ name: 'Pilihan Ganda Sederhana', value: pilgan });
+        if (kompleks > 0) tipeSoal.push({ name: 'Pilihan Ganda Kompleks', value: kompleks });
+        if (kategori > 0) tipeSoal.push({ name: 'Pilihan Ganda Kategori', value: kategori });
 
         // Chart 2: Kerapatan Butir Soal per Koleksi
         const soalPerKoleksiMap = {};
@@ -137,7 +137,7 @@ const GuruDashboard = () => {
             <span className="guru-title-text">Dashboard</span>
             <span className="guru-title-badge">Guru</span>
           </h1>
-          <p className="guru-subtitle">Ringkasan data ujian dan akses cepat menu utama</p>
+          <p className="guru-subtitle">Analisis performa kelas, sebaran nilai siswa, dan ringkasan aset bank soal Anda.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -170,7 +170,7 @@ const GuruDashboard = () => {
         <div className="widgets-grid">
           {/* Widget: Jadwal Ujian Terbaru */}
           <div className="widget-card">
-            <div className="widget-header">
+            <div className="widget-header header-color-ujian">
               <div className="widget-icon-wrapper">
                 <FiActivity className="widget-icon" />
               </div>
@@ -223,7 +223,7 @@ const GuruDashboard = () => {
           <div className="charts-grid">
             {/* Chart: Distribusi Tipe Soal (Pie Chart) */}
             <div className="chart-card">
-              <div className="chart-header">
+              <div className="chart-header header-color-tipe">
                 <h3 className="chart-title">Distribusi Tipe Soal</h3>
               </div>
               <div className="chart-body">
@@ -255,7 +255,7 @@ const GuruDashboard = () => {
                         <div key={item.name} className="legend-item">
                           <span className="legend-dot" style={{ background: PIE_COLORS[index % PIE_COLORS.length] }} />
                           <span className="legend-label">{item.name}</span>
-                          <span className="legend-value">{item.value}</span>
+                          <span className="legend-value">: {item.value} butir</span>
                         </div>
                       ))}
                     </div>
@@ -268,7 +268,7 @@ const GuruDashboard = () => {
 
             {/* Chart: Jumlah Soal per Koleksi (Bar Chart) */}
             <div className="chart-card">
-              <div className="chart-header">
+              <div className="chart-header header-color-koleksi">
                 <h3 className="chart-title">Kerapatan Koleksi Soal (Top 5)</h3>
               </div>
               <div className="chart-body">

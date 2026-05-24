@@ -197,7 +197,7 @@ const AdminJurusan = () => {
             <span className="title-text">Jurusan</span>
             <span className="title-badge">Admin</span>
           </h1>
-          <p className="jurusan-subtitle">Kelola data jurusan (hanya nama jurusan)</p>
+          <p className="jurusan-subtitle">Manajemen data program studi (jurusan) dan pemetaan kompetensi keahlian.</p>
         </div>
         <div className="jurusan-meta">
           <div className="meta-card">

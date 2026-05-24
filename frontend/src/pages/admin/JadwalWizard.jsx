@@ -124,6 +124,11 @@ export default function JadwalWizard() {
              showToast(`Pilih Mata Pelajaran untuk ${className} di Sesi ${sess.id}.`, 'error');
              return;
            }
+           if (!cls.ruangan || !cls.ruangan.trim()) {
+             const className = masterKelas.find(k => String(k.id) === String(cls.kelasId))?.inisial || 'Kelas';
+             showToast(`Tentukan ruangan ujian untuk ${className} di Sesi ${sess.id}.`, 'error');
+             return;
+           }
         }
       }
     }
@@ -155,30 +160,51 @@ export default function JadwalWizard() {
   };
   
   const selectAllKelasFilter = () => {
-    const relevant = masterKelas.filter(k => selectedJurusans.includes(String(k.jurusanId)));
+    const relevant = masterKelas.filter(k => selectedJurusans.includes(String(k.jurusanId)) && k.tingkat !== 'ALUMNI');
     setSelectedKelas(relevant.map(k => String(k.id)));
   };
 
   // Step 4 Handlers (Sessions)
   const addEmptySession = () => {
-    let baseDate = new Date().toISOString().split('T')[0];
-    
-    if (isNewPeriode && periodeMulai) {
-       baseDate = periodeMulai;
-    } else if (!isNewPeriode && selectedPeriodeId) {
-       const p = periodes.find(per => String(per.id) === String(selectedPeriodeId));
-       if (p && p.mulai) {
-          baseDate = new Date(p.mulai).toISOString().split('T')[0];
-       }
+    let defaultMulai = '';
+    let defaultSelesai = '';
+    const defaultDurasi = 90;
+
+    if (sessions.length > 0) {
+      const lastSession = sessions[sessions.length - 1];
+      if (lastSession && lastSession.selesai) {
+        defaultMulai = lastSession.selesai;
+        const start = new Date(defaultMulai);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + defaultDurasi * 60000);
+          const offset = end.getTimezoneOffset() * 60000;
+          const localEnd = new Date(end.getTime() - offset);
+          defaultSelesai = localEnd.toISOString().substring(0, 16);
+        }
+      }
+    }
+
+    if (!defaultMulai) {
+      let baseDate = new Date().toISOString().split('T')[0];
+      if (isNewPeriode && periodeMulai) {
+         baseDate = periodeMulai;
+      } else if (!isNewPeriode && selectedPeriodeId) {
+         const p = periodes.find(per => String(per.id) === String(selectedPeriodeId));
+         if (p && p.mulai) {
+            baseDate = new Date(p.mulai).toISOString().split('T')[0];
+         }
+      }
+      defaultMulai = `${baseDate}T07:30`;
+      defaultSelesai = `${baseDate}T09:00`;
     }
 
     const nextId = sessions.length > 0 ? Math.max(...sessions.map(s => s.id)) + 1 : 1;
     
     setSessions([...sessions, {
       id: nextId,
-      mulai: `${baseDate}T07:30`,
-      durasi: 90,
-      selesai: `${baseDate}T09:00`,
+      mulai: defaultMulai,
+      durasi: defaultDurasi,
+      selesai: defaultSelesai,
       classSettings: selectedKelas.map(kId => ({
         kelasId: kId,
         mapelId: '',
@@ -191,6 +217,14 @@ export default function JadwalWizard() {
     setSessions(prev => prev.map(s => {
       if (s.id === id) {
         let updated = { ...s, [field]: value };
+        if (field === 'mulai') {
+          const oldDateStr = s.mulai ? s.mulai.split('T')[0] : '';
+          const newDateStr = value ? value.split('T')[0] : '';
+          if (oldDateStr && newDateStr && oldDateStr !== newDateStr) {
+            // Date changed! Force start time to 07:30
+            updated.mulai = `${newDateStr}T07:30`;
+          }
+        }
         if (field === 'mulai' || field === 'durasi') {
            // Auto calc selesai
            const start = new Date(updated.mulai);
@@ -305,7 +339,7 @@ export default function JadwalWizard() {
        <div className="wizard-header">
           <button className="back-link" onClick={() => navigate('/admin/jadwal-ujian')}>&larr; Kembali ke Daftar Jadwal</button>
           <h2>Penjadwalan Terpusat</h2>
-          <p>Ikuti langkah-langkah berikut untuk meng-generate jadwal ujian skalabel secara tertib.</p>
+          <p>Langkah terpandu pembuatan jadwal ujian massal berdasarkan prodi dan kelas.</p>
        </div>
 
        <div className="stepper">
@@ -446,10 +480,24 @@ export default function JadwalWizard() {
                           </h4>
                           <div className="grid-list">
                             {classesInJurusan.map(k => {
-                               const tLabel = k.tingkat === 'X' ? 'Kelas 10' : k.tingkat === 'XI' ? 'Kelas 11' : 'Kelas 12';
+                               const isAlumni = k.tingkat === 'ALUMNI';
+                               const tLabel = isAlumni 
+                                 ? 'Alumni' 
+                                 : k.tingkat === 'X' 
+                                   ? 'Kelas 10' 
+                                   : k.tingkat === 'XI' 
+                                     ? 'Kelas 11' 
+                                     : k.tingkat === 'XII' 
+                                       ? 'Kelas 12' 
+                                       : k.tingkat;
                                return (
-                                 <label key={k.id} className={`selection-card ${selectedKelas.includes(String(k.id)) ? 'selected' : ''}`}>
-                                    <input type="checkbox" checked={selectedKelas.includes(String(k.id))} onChange={() => toggleKelas(String(k.id))} />
+                                 <label key={k.id} className={`selection-card ${selectedKelas.includes(String(k.id)) ? 'selected' : ''} ${isAlumni ? 'disabled' : ''}`}>
+                                    <input 
+                                      type="checkbox" 
+                                      checked={selectedKelas.includes(String(k.id))} 
+                                      onChange={() => !isAlumni && toggleKelas(String(k.id))}
+                                      disabled={isAlumni} 
+                                    />
                                     <div className="details">
                                        <strong>{tLabel} {k.jurusan?.kodeProdi} {k.inisial}</strong>
                                     </div>
@@ -541,14 +589,16 @@ export default function JadwalWizard() {
                        <div className="class-grid-header">
                          <div className="col-kelas">Kelas</div>
                          <div className="col-mapel">Mata Pelajaran <span className="col-required">*</span></div>
-                         <div className="col-ruangan">Ruangan <span className="col-optional">(Opsional)</span></div>
+                         <div className="col-ruangan">Ruangan <span className="col-required">*</span></div>
                        </div>
                        <div className="class-rows">
                          {sess.classSettings.map((cls, cIdx) => {
                            const kInfo = masterKelas.find(k => String(k.id) === String(cls.kelasId));
                            const hasMapel = !!cls.mapelId;
+                           const hasRuangan = !!cls.ruangan && !!cls.ruangan.trim();
+                           const isDone = hasMapel && hasRuangan;
                            return (
-                             <div key={cls.kelasId} className={`class-row ${hasMapel ? 'row-done' : 'row-empty'}`}>
+                             <div key={cls.kelasId} className={`class-row ${isDone ? 'row-done' : 'row-empty'}`}>
                                <div className="col-kelas">
                                  <div className="kelas-badge">
                                    <span className="kelas-tingkat">{kInfo?.tingkat}</span>
@@ -571,7 +621,7 @@ export default function JadwalWizard() {
                                    placeholder="Misal: Lab 1 / Ruang 12"
                                    value={cls.ruangan}
                                    onChange={(e) => updateClassInSession(sess.id, cls.kelasId, 'ruangan', e.target.value)}
-                                   className="wizard-input row-input"
+                                   className={`wizard-input row-input ${!hasRuangan ? 'input-empty' : ''}`}
                                  />
                                </div>
                              </div>

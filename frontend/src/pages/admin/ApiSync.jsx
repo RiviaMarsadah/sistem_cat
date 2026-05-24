@@ -102,7 +102,7 @@ const ApiSync = () => {
           <h1 className="user-title">
             <span className="title-text">Sinkronisasi API SIJUWAN</span>
           </h1>
-          <p className="user-subtitle">Sinkronkan data lokal dengan server eksternal secara otomatis</p>
+          <p className="user-subtitle">Sinkronisasi database lokal dengan server pusat eksternal secara terintegrasi.</p>
         </div>
         <button
           className={`btn-add-user ${analyzing ? 'btn-loading' : ''}`}
