@@ -158,35 +158,76 @@
 .sync-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(8px);
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
 }
 
-.loader-circles {
+.sync-loader {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  max-width: 440px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
   display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 1.5rem;
+  flex-direction: column;
+  align-items: center;
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.loader-circles div {
-  width: 14px;
-  height: 14px;
-  background: #3b82f6;
+.sync-loader h3 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 1.25rem 0 0.5rem 0;
+  letter-spacing: -0.025em;
+}
+
+.sync-loader p {
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Premium Color-Shifting Rotating Spinner */
+.loader-spinner {
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
-  animation: loader-bounce 0.6s infinite alternate;
+  position: relative;
+  background: conic-gradient(from 0deg, transparent 20%, #6366f1, #3b82f6);
+  animation: rotateSpinner 0.8s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
 }
 
-.loader-circles div:nth-child(2) { animation-delay: 0.2s; }
-.loader-circles div:nth-child(3) { animation-delay: 0.4s; }
+.loader-spinner::before {
+  content: '';
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  border-radius: 50%;
+}
 
-@keyframes loader-bounce {
-  from { transform: translateY(0); }
-  to { transform: translateY(-12px); }
+@keyframes rotateSpinner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .spin {

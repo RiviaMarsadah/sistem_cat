@@ -9,18 +9,25 @@ import './User.css';
 
 const getTingkatLabel = (tingkat) => {
   const map = {
-    'tingkat_10': 'X',
-    'tingkat_11': 'XI',
-    'tingkat_12': 'XII'
+    'tingkat_10': '10',
+    'tingkat_11': '11',
+    'tingkat_12': '12',
+    'X': '10',
+    'XI': '11',
+    'XII': '12',
+    'ALUMNI': 'Alumni',
+    'KI': 'KI'
   };
   return map[tingkat] || tingkat;
 };
 
 const getNamaKelasDisplay = (kelas) => {
   if (!kelas) return '-';
-  if (!kelas.tingkat || !kelas.jurusan || !kelas.inisial) return kelas.namaKelas || '-';
-  const kode = kelas.jurusan.kodeProdi || '';
-  return `${getTingkatLabel(kelas.tingkat)} ${kode} ${kelas.inisial}`;
+  const tingkatLabel = getTingkatLabel(kelas.tingkat);
+  const prodiLabel = kelas.jurusan?.namaProdi || '';
+  const romanTingkat = kelas.tingkat || '';
+  const kodeProdi = kelas.jurusan?.kodeProdi || '';
+  return `${tingkatLabel} ${prodiLabel} (${romanTingkat} ${kodeProdi})`;
 };
 
 export default function JadwalUjianAdmin() {
@@ -48,6 +55,19 @@ export default function JadwalUjianAdmin() {
   const [showEditPeriodeModal, setShowEditPeriodeModal] = useState(false);
   const [editPeriodeData, setEditPeriodeData] = useState({ id: '', nama: '', mulai: '', selesai: '', semester: 'Gasal', tahunAjaran: '' });
 
+  // Edit Jadwal State
+  const [showEditJadwalModal, setShowEditJadwalModal] = useState(false);
+  const [masterMapel, setMasterMapel] = useState([]);
+  const [editJadwalData, setEditJadwalData] = useState({
+    id: '',
+    mulai: '',
+    selesai: '',
+    durasi: 90,
+    ruangan: '',
+    opsiKeamanan: false,
+    mataPelajaranId: ''
+  });
+
   const filteredPeriodes = useMemo(() => {
     return periodes.filter(p => 
       p.nama.toLowerCase().includes(search.toLowerCase()) || 
@@ -71,14 +91,17 @@ export default function JadwalUjianAdmin() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [resJadwal, resPeriode] = await Promise.all([
+      const [resJadwal, resPeriode, resMapel] = await Promise.all([
         api.get('/admin/jadwal-ujian/admin'),
-        api.get('/admin/periode')
+        api.get('/admin/periode'),
+        api.get('/admin/mata-pelajaran')
       ]);
       setItems(resJadwal.data?.data || []);
-      setPeriodes(resPeriode.data?.data || []);
+      const fetchedPeriodes = resPeriode.data?.data || [];
+      setPeriodes(fetchedPeriodes);
+      setMasterMapel(resMapel.data?.data || []);
     } catch (e) {
-      showToast('Gagal memuat jadwal. ' + (e?.response?.data?.message || ''), 'error');
+      showToast('Gagal memuat data jadwal. ' + (e?.response?.data?.message || ''), 'error');
     } finally {
       setLoading(false);
     }
@@ -108,6 +131,65 @@ export default function JadwalUjianAdmin() {
       await loadData();
     } catch (err) {
       showToast(err?.response?.data?.message || 'Gagal menghapus jadwal', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditJadwal = (j) => {
+    const startLocal = j.mulai ? new Date(j.mulai) : new Date();
+    const offsetStart = startLocal.getTimezoneOffset() * 60000;
+    const localStartISO = new Date(startLocal.getTime() - offsetStart).toISOString().substring(0, 16);
+
+    const endLocal = j.selesai ? new Date(j.selesai) : new Date();
+    const offsetEnd = endLocal.getTimezoneOffset() * 60000;
+    const localEndISO = new Date(endLocal.getTime() - offsetEnd).toISOString().substring(0, 16);
+
+    setEditJadwalData({
+      id: j.id,
+      mulai: localStartISO,
+      selesai: localEndISO,
+      durasi: j.durasi || 90,
+      ruangan: j.ruangan || '',
+      opsiKeamanan: j.opsiKeamanan || false,
+      mataPelajaranId: j.mataPelajaranId || ''
+    });
+    setShowEditJadwalModal(true);
+  };
+
+  const handleEditJadwalFieldChange = (field, value) => {
+    setEditJadwalData(prev => {
+      let updated = { ...prev, [field]: value };
+      if (field === 'mulai' || field === 'durasi') {
+        const start = new Date(updated.mulai);
+        if (!isNaN(start.getTime())) {
+          const end = new Date(start.getTime() + Number(updated.durasi) * 60000);
+          const offset = end.getTimezoneOffset() * 60000;
+          const localEnd = new Date(end.getTime() - offset);
+          updated.selesai = localEnd.toISOString().substring(0, 16);
+        }
+      }
+      return updated;
+    });
+  };
+
+  const submitEditJadwal = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.put(`/admin/jadwal-ujian/${editJadwalData.id}`, {
+        mulai: editJadwalData.mulai,
+        selesai: editJadwalData.selesai,
+        durasi: Number(editJadwalData.durasi),
+        ruangan: editJadwalData.ruangan,
+        opsiKeamanan: editJadwalData.opsiKeamanan,
+        mataPelajaranId: Number(editJadwalData.mataPelajaranId)
+      });
+      showToast('Jadwal berhasil diperbarui', 'success');
+      setShowEditJadwalModal(false);
+      await loadData();
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal memperbarui jadwal', 'error');
     } finally {
       setSaving(false);
     }
@@ -353,112 +435,190 @@ export default function JadwalUjianAdmin() {
             </tbody>
           </table>
         ) : (
-          <table className="paket-ujian-table">
-            <thead>
-              <tr>
-                <th>Hari dan Tanggal Ujian</th>
-                <th>Waktu Ujian</th>
-                <th>Kelas</th>
-                <th>Ruangan</th>
-                <th>Mata Pelajaran</th>
-                <th>Status Paket</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map(j => {
-                const tglObj = new Date(j.mulai);
-                const hariTanggal = tglObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                const waktuMulai = tglObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
-                const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
-
-                return (
-                <tr key={j.id}>
-                  <td>
-                    <div style={{fontWeight: '600', color: '#1e293b'}}>
-                      {hariTanggal}
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{fontSize: '0.9rem', color: '#334155'}}>
-                        <FiClock style={{marginRight: '0.25rem', verticalAlign: 'text-bottom'}} />
-                        {waktuMulai} - {waktuSelesai}
-                        <div style={{fontSize: '0.75rem', color: '#64748b', marginTop: '2px'}}>({j.durasi} Menit)</div>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', justifyContent: 'left', alignItems: 'center' }}>
-                      {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
-                        <div className="class-tooltip-container">
-                          <span 
-                            className="mapel-badge" 
-                            style={{ 
-                              background: '#eff6ff', 
-                              color: '#1e40af', 
-                              border: '1px solid #bfdbfe', 
-                              fontWeight: '700', 
-                              padding: '4px 12px', 
-                              borderRadius: '20px', 
-                              fontSize: '0.85rem',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {j.kelasJadwal.length} Kelas
+            <table className="paket-ujian-table">
+             <thead>
+               <tr>
+                 <th className="text-left">Hari dan Tanggal Ujian</th>
+                 <th className="text-left">Waktu Ujian</th>
+                 <th className="text-center">Kelas</th>
+                 <th className="text-center">Ruangan</th>
+                 <th className="text-center">Token IN / OUT</th>
+                 <th className="text-left">Mata Pelajaran</th>
+                 <th className="text-center">Status Paket</th>
+                 <th className="text-center">Aksi</th>
+               </tr>
+             </thead>
+             <tbody>
+               {filteredItems.map((j, idx) => {
+                 const tglObj = new Date(j.mulai);
+                 const hariTanggal = tglObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                 const waktuMulai = tglObj.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+                 const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+                 const isEven = idx % 2 === 1;
+                 const rowClass = isEven ? 'session-row-even' : 'session-row-odd';
+ 
+                 return (
+                 <tr key={j.id} className={rowClass}>
+                   <td className="text-left">
+                     <div style={{fontWeight: '600', color: '#1e293b'}}>
+                       {hariTanggal}
+                     </div>
+                   </td>
+                   <td className="text-left">
+                     <div style={{fontSize: '0.9rem', color: '#334155'}}>
+                         <FiClock style={{marginRight: '0.25rem', verticalAlign: 'text-bottom'}} />
+                         {waktuMulai} - {waktuSelesai}
+                         <div style={{fontSize: '0.75rem', color: '#64748b', marginTop: '2px'}}>({j.durasi} Menit)</div>
+                     </div>
+                   </td>
+                   <td className="text-center">
+                     <div style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
+                       {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
+                         <div className="class-tooltip-container">
+                           <span 
+                             className="mapel-badge" 
+                             style={{ 
+                               background: '#eff6ff', 
+                               color: '#1e40af', 
+                               border: '1px solid #bfdbfe', 
+                               fontWeight: '700', 
+                               padding: '4px 12px', 
+                               borderRadius: '20px', 
+                               fontSize: '0.85rem',
+                               cursor: 'pointer'
+                             }}
+                           >
+                             {j.kelasJadwal.length} Kelas
+                           </span>
+                           <div className={`class-tooltip-bubble ${j.kelasJadwal.length > 10 ? 'scrollable' : ''}`}>
+                             <div style={{ 
+                               display: 'grid', 
+                               gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
+                               gap: '8px', 
+                               width: 'max-content'
+                             }}>
+                               {j.kelasJadwal.map((kj, idx2) => (
+                                 <span key={idx2} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: '1.3' }}>
+                                   {getNamaKelasDisplay(kj.kelas)}
+                                 </span>
+                               ))}
+                             </div>
+                           </div>
+                         </div>
+                       ) : (
+                         <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>
+                       )}
+                     </div>
+                   </td>
+                   <td className="text-center">
+                     <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '600' }}>
+                       {j.ruangan || '-'}
+                     </span>
+                   </td>
+                   <td className="text-center">
+                     <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           navigator.clipboard.writeText(j.token);
+                           showToast('Token Check-In disalin: ' + j.token, 'success');
+                         }}
+                         title="Klik untuk menyalin Token Check-In"
+                         style={{ 
+                           display: 'inline-flex', 
+                           alignItems: 'center', 
+                           justifyContent: 'center',
+                           gap: '6px', 
+                           background: '#ecfdf5', 
+                           color: '#047857', 
+                           border: '1px solid #a7f3d0', 
+                           padding: '5px 12px', 
+                           borderRadius: '8px', 
+                           fontSize: '0.8rem', 
+                           fontWeight: '700',
+                           cursor: 'pointer',
+                           transition: 'all 0.2s',
+                           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                           width: '105px'
+                         }}
+                         onMouseEnter={(e) => { e.currentTarget.style.background = '#d1fae5'; }}
+                         onMouseLeave={(e) => { e.currentTarget.style.background = '#ecfdf5'; }}
+                       >
+                         <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#065f46', marginRight: '2px' }}>IN:</span>
+                         <span>{j.token || '-'}</span>
+                       </button>
+                       <button 
+                         type="button"
+                         onClick={() => {
+                           navigator.clipboard.writeText(j.tokenCheckOut);
+                           showToast('Token Check-Out disalin: ' + j.tokenCheckOut, 'success');
+                         }}
+                         title="Klik untuk menyalin Token Check-Out"
+                         style={{ 
+                           display: 'inline-flex', 
+                           alignItems: 'center', 
+                           justifyContent: 'center',
+                           gap: '6px', 
+                           background: '#fef2f2', 
+                           color: '#b91c1c', 
+                           border: '1px solid #fecaca', 
+                           padding: '5px 12px', 
+                           borderRadius: '8px', 
+                           fontSize: '0.8rem', 
+                           fontWeight: '700',
+                           cursor: 'pointer',
+                           transition: 'all 0.2s',
+                           boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                           width: '105px'
+                         }}
+                         onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
+                         onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                       >
+                         <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#991b1b', marginRight: '2px' }}>OUT:</span>
+                         <span>{j.tokenCheckOut || '-'}</span>
+                       </button>
+                     </div>
+                   </td>
+                   <td className="text-left">
+                     <div className="user-role-badge status-aktif" style={{display: 'inline-flex', whiteSpace: 'nowrap'}}>
+                         <FiBook style={{marginRight: '0.25rem'}} />
+                         {j.mataPelajaran?.namaMapel}
+                     </div>
+                   </td>
+                   <td className="text-center">
+                      {j.paketUjianId ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <span className="user-status-badge status-aktif" style={{ whiteSpace: 'nowrap' }}>
+                            <FiCheckCircle /> Siap Ujian
                           </span>
-                          <div className="class-tooltip-bubble">
-                            <div style={{ 
-                              display: 'grid', 
-                              gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
-                              gap: '8px', 
-                              minWidth: j.kelasJadwal.length === 1 ? '100px' : '180px' 
-                            }}>
-                              {j.kelasJadwal.map((kj, idx) => (
-                                <span key={idx} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                                  {getNamaKelasDisplay(kj.kelas)}
-                                </span>
-                              ))}
-                            </div>
+                          <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#1e293b', whiteSpace: 'nowrap', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis' }} title={j.paketUjian?.nama}>
+                            {j.paketUjian?.nama}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+                            Oleh: {j.paketUjian?.guru?.user?.namaLengkap || 'Admin'}
                           </div>
                         </div>
                       ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>
+                        <span className="user-status-badge status-nonaktif" style={{whiteSpace: 'nowrap'}}>
+                          <FiXCircle /> Belum Diisi Paket
+                        </span>
                       )}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '0.9rem', color: '#334155', fontWeight: '600' }}>
-                      {j.ruangan || '-'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="user-role-badge status-aktif" style={{display: 'inline-flex', whiteSpace: 'nowrap'}}>
-                        <FiBook style={{marginRight: '0.25rem'}} />
-                        {j.mataPelajaran?.namaMapel}
-                    </div>
-                  </td>
-                  <td>
-                    {j.paketUjianId ? (
-                      <span className="user-status-badge status-aktif" style={{whiteSpace: 'nowrap'}}>
-                        <FiCheckCircle /> Siap Ujian
-                      </span>
-                    ) : (
-                      <span className="user-status-badge status-nonaktif" style={{whiteSpace: 'nowrap'}}>
-                        <FiXCircle /> Belum Diisi Paket
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button className="btn-action btn-delete" onClick={() => confirmDelete(j)} title="Hapus Jadwal">
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                  </td>
-                </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                    </td>
+                   <td className="text-center">
+                        <div style={{ display: 'inline-flex', gap: '8px' }}>
+                          <button className="btn-action primary" style={{ background: "#3b82f6", color: "white" }} onClick={() => handleEditJadwal(j)} title="Edit Jadwal">
+                            <FiEdit2 />
+                          </button>
+                          <button className="btn-action btn-delete" onClick={() => confirmDelete(j)} title="Hapus Jadwal">
+                            <FiTrash2 />
+                          </button>
+                        </div>
+                   </td>
+                 </tr>
+                 )
+               })}
+             </tbody>
+           </table>
         )}
         </div>
       </div>
@@ -598,6 +758,97 @@ export default function JadwalUjianAdmin() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Edit Jadwal Ujian */}
+      {showEditJadwalModal && (
+        <div className="modal-overlay">
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px' }}>
+            <form onSubmit={submitEditJadwal}>
+              <div className="modal-header">
+                <h3>Edit Detail Jadwal Ujian</h3>
+                <button type="button" className="modal-close" onClick={() => setShowEditJadwalModal(false)}>&times;</button>
+              </div>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div className="form-group">
+                  <label className="label">Mata Pelajaran <span className="label-required">*</span></label>
+                  <select 
+                    className="input" 
+                    required 
+                    value={editJadwalData.mataPelajaranId} 
+                    onChange={(e) => handleEditJadwalFieldChange('mataPelajaranId', e.target.value)}
+                  >
+                    <option value="">-- Pilih Mata Pelajaran --</option>
+                    {masterMapel.map(m => (
+                      <option key={m.id} value={m.id}>{m.namaMapel} ({m.kodeMapel || '-'})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="label">Ruangan <span className="label-required">*</span></label>
+                    <input 
+                      type="text" 
+                      className="input" 
+                      required 
+                      placeholder="Misal: Lab 1" 
+                      value={editJadwalData.ruangan} 
+                      onChange={(e) => handleEditJadwalFieldChange('ruangan', e.target.value)} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Durasi (Menit) <span className="label-required">*</span></label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      required 
+                      min="10" 
+                      value={editJadwalData.durasi} 
+                      onChange={(e) => handleEditJadwalFieldChange('durasi', parseInt(e.target.value) || 0)} 
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="label">Waktu Mulai <span className="label-required">*</span></label>
+                    <input 
+                      type="datetime-local" 
+                      className="input" 
+                      required 
+                      value={editJadwalData.mulai} 
+                      onChange={(e) => handleEditJadwalFieldChange('mulai', e.target.value)} 
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Waktu Selesai (Otomatis)</label>
+                    <div className="input" style={{ background: '#f8fafc', color: '#64748b', display: 'flex', alignItems: 'center', border: '1px solid #e2e8f0', minHeight: '42px', fontSize: '0.9rem', fontWeight: '500' }}>
+                      {editJadwalData.selesai ? editJadwalData.selesai.replace('T', ' ') : '—'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f0f9ff', border: '1px solid #bae6fd', padding: '12px 16px', borderRadius: '10px', marginTop: '4px' }}>
+                  <input 
+                    type="checkbox" 
+                    id="editJadwalKiosk" 
+                    checked={editJadwalData.opsiKeamanan} 
+                    onChange={(e) => handleEditJadwalFieldChange('opsiKeamanan', e.target.checked)} 
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="editJadwalKiosk" style={{ fontSize: '0.9rem', color: '#0369a1', fontWeight: '600', cursor: 'pointer', userSelect: 'none' }}>
+                    Aktifkan Kiosk Mode (Keamanan Mobile / Browser Terkunci)
+                  </label>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="modal-btn modal-btn-cancel" onClick={() => setShowEditJadwalModal(false)}>Batal</button>
+                <button type="submit" className="modal-btn modal-btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan Perubahan'}</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

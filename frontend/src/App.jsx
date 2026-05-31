@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
+import RegisSiswa from './pages/RegisSiswa';
 import DashboardLayout from './layout/DashboardLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminJurusan from './pages/admin/Jurusan';
@@ -26,6 +27,15 @@ import GuruRekapUjian from './pages/guru/RekapUjian';
 import GuruAnalisisSoal from './pages/guru/AnalisisSoal';
 import ReviewHasilGuru from './pages/guru/ReviewHasil';
 
+// Admin Monitoring Views (Data Menu Guru)
+import AdminGuruJadwal from './pages/admin/AdminGuruJadwal';
+import AdminGuruBankSoal from './pages/admin/AdminGuruBankSoal';
+import AdminGuruBankSoalDetail from './pages/admin/AdminGuruBankSoalDetail';
+import AdminGuruPaketUjian from './pages/admin/AdminGuruPaketUjian';
+import AdminGuruRekapUjian from './pages/admin/AdminGuruRekapUjian';
+import AdminGuruReviewHasil from './pages/admin/AdminGuruReviewHasil';
+import AdminGuruAnalisisSoal from './pages/admin/AdminGuruAnalisisSoal';
+
 
 function App() {
   return (
@@ -36,6 +46,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth/callback" element={<Login />} />
+          <Route path="/regis-siswa" element={<RegisSiswa />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<DashboardLayout role="admin" />}>
@@ -51,6 +62,16 @@ function App() {
             <Route path="ujian-siswa" element={<AdminUjianSiswa />} />
             <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
             <Route path="jadwal-ujian/wizard" element={<AdminJadwalWizard />} />
+            
+            {/* View-Only Guru Monitoring Routes */}
+            <Route path="guru/jadwal-ujian" element={<AdminGuruJadwal />} />
+            <Route path="guru/bank-soal" element={<AdminGuruBankSoal />} />
+            <Route path="guru/bank-soal/detail/:koleksiId" element={<AdminGuruBankSoalDetail />} />
+            <Route path="guru/paket-ujian" element={<AdminGuruPaketUjian />} />
+            <Route path="guru/rekap-ujian" element={<AdminGuruRekapUjian />} />
+            <Route path="guru/rekap-ujian/review/:id" element={<AdminGuruReviewHasil />} />
+            <Route path="guru/analisis-soal" element={<AdminGuruAnalisisSoal />} />
+
             <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 

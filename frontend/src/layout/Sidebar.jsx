@@ -72,6 +72,16 @@ const Sidebar = ({ role, user }) => {
         { path: '/admin/jadwal-ujian', label: 'Jadwal Ujian', icon: FiCalendar, disabled: false },
         { path: '/admin/ujian-siswa', label: 'Ujian Siswa', icon: FiFileText, disabled: false },
       ]
+    },
+    {
+      category: 'DATA MENU GURU',
+      items: [
+        { path: '/admin/guru/jadwal-ujian', label: 'Jadwal Ujian Guru', icon: FiCalendar, disabled: false },
+        { path: '/admin/guru/bank-soal', label: 'Bank Soal Guru', icon: FiFileText, disabled: false },
+        { path: '/admin/guru/paket-ujian', label: 'Paket Ujian Guru', icon: FiPackage, disabled: false },
+        { path: '/admin/guru/rekap-ujian', label: 'Rekap Hasil Ujian', icon: FiEye, disabled: false },
+        { path: '/admin/guru/analisis-soal', label: 'Analisis Soal Guru', icon: FiBarChart2, disabled: false },
+      ]
     }
   ];
 

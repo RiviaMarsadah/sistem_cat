@@ -1,6 +1,6 @@
 .wizard-page {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
   color: #1e293b;
@@ -533,7 +533,7 @@
 
 .class-grid-header {
   display: grid;
-  grid-template-columns: 26% 40% 34%;
+  grid-template-columns: 4.1fr 3.3fr 2.6fr;
   gap: 1.25rem;
   padding: 0 0 0.75rem 0;
   border-bottom: 2px solid #e2e8f0;
@@ -564,7 +564,7 @@
 
 .class-row {
   display: grid;
-  grid-template-columns: 26% 40% 34%;
+  grid-template-columns: 4.1fr 3.3fr 2.6fr;
   align-items: center;
   gap: 1.25rem;
   padding: 0.625rem 0;
@@ -597,7 +597,7 @@
   gap: 0.5rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 0.35rem 0.65rem;
+  padding: 0.25rem 0.5rem;
   background: #f8fafc;
   transition: all 0.2s;
 }
@@ -614,7 +614,7 @@
 }
 
 .kelas-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #1e293b;
 }
@@ -623,8 +623,8 @@
 .row-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.55rem 0.75rem;
-  font-size: 0.875rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
   border-radius: 8px;
   margin: 0;
 }
@@ -752,3 +752,169 @@
   color: white;
 }
 .btn-wizard-nav.finish:hover { opacity: 0.9; }
+
+/* Custom Reset Confirmation Modal Styles */
+.wizard-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1.5rem;
+  animation: wizardFadeIn 0.25s ease-out;
+}
+
+.wizard-modal-container {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(15, 23, 42, 0.05);
+  max-width: 480px;
+  width: 100%;
+  overflow: hidden;
+  animation: wizardModalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid #f1f5f9;
+}
+
+@keyframes wizardFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes wizardModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.wizard-modal-header {
+  padding: 1.5rem 1.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.wizard-modal-icon-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizard-modal-alert-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.wizard-modal-header h3 {
+  font-size: 1.2rem;
+  font-weight: 750;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.wizard-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.wizard-modal-close:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.wizard-modal-body {
+  padding: 1.5rem 1.75rem;
+}
+
+.wizard-modal-body p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.975rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.wizard-modal-body .wizard-modal-subtext {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 450;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.wizard-modal-footer {
+  padding: 1.25rem 1.75rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-modal-cancel {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-modal-cancel:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.btn-modal-confirm {
+  padding: 0.625rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.btn-modal-confirm:hover {
+  background: #dc2626;
+  box-shadow: 0 8px 12px -1px rgba(220, 38, 38, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-modal-confirm:active {
+  transform: translateY(0);
+}

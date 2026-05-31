@@ -9,6 +9,7 @@ import './JadwalUjian.css';
 import './BankSoal.css';
 
 const KOLOM_LABELS = ['A', 'B', 'C', 'D', 'E'];
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
 
 const KATEGORI_OPTIONS = [
   { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
@@ -59,16 +60,38 @@ export default function BankSoalForm() {
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
 
-  const [modeKoleksi, setModeKoleksi] = useState('pilih');
-  const [bankSoalKoleksiId, setBankSoalKoleksiId] = useState('');
-  const [namaKoleksiBaru, setNamaKoleksiBaru] = useState('');
-  const [mataPelajaranId, setMataPelajaranId] = useState('');
-  const [tingkat, setTingkat] = useState('10');
-  const [jurusanId, setJurusanId] = useState('');
-  const [kategoriSoal, setKategoriSoal] = useState('pilgan');
-  const [soal, setSoal] = useState('');
-  const [kolom, setKolom] = useState(emptyKolom());
-  const [jawaban, setJawaban] = useState({ single: '', multi: [], benarSalah: emptyKolom() });
+  const [modeKoleksi, setModeKoleksi] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_mode_koleksi')) || 'pilih';
+  });
+  const [bankSoalKoleksiId, setBankSoalKoleksiId] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_koleksi_id')) || '';
+  });
+  const [namaKoleksiBaru, setNamaKoleksiBaru] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_nama_koleksi_baru')) || '';
+  });
+  const [mataPelajaranId, setMataPelajaranId] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_mapel_id')) || '';
+  });
+  const [tingkat, setTingkat] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_tingkat')) || '10';
+  });
+  const [jurusanId, setJurusanId] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_jurusan_id')) || '';
+  });
+  const [kategoriSoal, setKategoriSoal] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_kategori')) || 'pilgan';
+  });
+  const [soal, setSoal] = useState(() => {
+    return (!isEdit && localStorage.getItem('cat_soal_teks')) || '';
+  });
+  const [kolom, setKolom] = useState(() => {
+    const saved = !isEdit && localStorage.getItem('cat_soal_kolom');
+    return saved ? JSON.parse(saved) : emptyKolom();
+  });
+  const [jawaban, setJawaban] = useState(() => {
+    const saved = !isEdit && localStorage.getItem('cat_soal_jawaban');
+    return saved ? JSON.parse(saved) : { single: '', multi: [], benarSalah: emptyKolom() };
+  });
   const [gambar, setGambar] = useState('');
 
   // Queue states for image uploads
@@ -76,6 +99,61 @@ export default function BankSoalForm() {
   const [gambarPreview, setGambarPreview] = useState('');
   const [kolomGambarFile, setKolomGambarFile] = useState({ A: null, B: null, C: null, D: null, E: null });
   const [kolomGambarPreview, setKolomGambarPreview] = useState({ A: '', B: '', C: '', D: '', E: '' });
+
+  // Sync to localStorage in Create Mode
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_mode_koleksi', modeKoleksi);
+  }, [modeKoleksi, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_koleksi_id', bankSoalKoleksiId);
+  }, [bankSoalKoleksiId, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_nama_koleksi_baru', namaKoleksiBaru);
+  }, [namaKoleksiBaru, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_mapel_id', mataPelajaranId);
+  }, [mataPelajaranId, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_tingkat', tingkat);
+  }, [tingkat, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_jurusan_id', jurusanId);
+  }, [jurusanId, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_kategori', kategoriSoal);
+  }, [kategoriSoal, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_teks', soal);
+  }, [soal, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_kolom', JSON.stringify(kolom));
+  }, [kolom, isEdit]);
+
+  useEffect(() => {
+    if (!isEdit) localStorage.setItem('cat_soal_jawaban', JSON.stringify(jawaban));
+  }, [jawaban, isEdit]);
+
+  // Clean all local storage question states
+  const clearSoalStorage = () => {
+    localStorage.removeItem('cat_soal_mode_koleksi');
+    localStorage.removeItem('cat_soal_koleksi_id');
+    localStorage.removeItem('cat_soal_nama_koleksi_baru');
+    localStorage.removeItem('cat_soal_mapel_id');
+    localStorage.removeItem('cat_soal_tingkat');
+    localStorage.removeItem('cat_soal_jurusan_id');
+    localStorage.removeItem('cat_soal_kategori');
+    localStorage.removeItem('cat_soal_teks');
+    localStorage.removeItem('cat_soal_kolom');
+    localStorage.removeItem('cat_soal_jawaban');
+  };
 
   useEffect(() => {
     const loadOptions = async () => {
@@ -331,6 +409,7 @@ export default function BankSoalForm() {
         await api.put(`/guru/bank-soal/${id}`, payload);
       } else {
         await api.post('/guru/bank-soal', payload);
+        clearSoalStorage();
       }
       navigate('/guru/bank-soal');
     } catch (err) {
@@ -365,9 +444,28 @@ export default function BankSoalForm() {
   return (
     <div className="bank-soal-page bank-soal-form-page">
       <div className="bank-soal-form-header">
-        <button type="button" className="btn-back" onClick={() => navigate('/guru/bank-soal')}>
-          <FiArrowLeft /> Kembali ke Daftar
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', width: '100%' }}>
+          <button type="button" className="btn-back" style={{ margin: 0 }} onClick={() => navigate('/guru/bank-soal')}>
+            <FiArrowLeft /> Kembali ke Daftar
+          </button>
+          {!isEdit && (
+            <button 
+              type="button" 
+              className="btn-secondary" 
+              style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#fff', color: '#64748b', fontWeight: '600', transition: 'all 0.2s' }}
+              onClick={() => {
+                if (window.confirm('Apakah Anda yakin ingin menyetel ulang (reset) draf soal ini? Semua pertanyaan dan jawaban yang terisi akan dihapus.')) {
+                  clearSoalStorage();
+                  window.location.reload();
+                }
+              }}
+              onMouseEnter={(e) => { e.target.style.background = '#f1f5f9'; e.target.style.color = '#334155'; }}
+              onMouseLeave={(e) => { e.target.style.background = '#fff'; e.target.style.color = '#64748b'; }}
+            >
+              🔄 Reset Draf
+            </button>
+          )}
+        </div>
         <h1 className="page-title guru-title">
           <span className="title-text">{isEdit ? 'Edit Soal' : 'Tambah Soal'}</span>
           <span className="title-badge guru-badge">Guru</span>
@@ -522,7 +620,7 @@ export default function BankSoalForm() {
               {gambarPreview && (
                 <div style={{ position: 'relative', display: 'inline-block' }}>
                   <img 
-                    src={gambarPreview.endsWith('.webp') ? `http://localhost:3000/uploads/${gambarPreview}` : gambarPreview} 
+                    src={gambarPreview.endsWith('.webp') ? `${BASE_URL}/uploads/${gambarPreview}` : gambarPreview} 
                     alt="Preview Soal" 
                     style={{ maxHeight: '120px', borderRadius: '8px', border: '1px solid #cbd5e1' }} 
                   />
@@ -625,7 +723,7 @@ export default function BankSoalForm() {
                       {hasImage && (
                         <div style={{ position: 'relative', display: 'inline-block', marginTop: '0.25rem' }}>
                           <img 
-                            src={kolomGambarPreview[letter].endsWith('.webp') ? `http://localhost:3000/uploads/${kolomGambarPreview[letter]}` : kolomGambarPreview[letter]} 
+                            src={kolomGambarPreview[letter].endsWith('.webp') ? `${BASE_URL}/uploads/${kolomGambarPreview[letter]}` : kolomGambarPreview[letter]} 
                             alt={`Preview Opsi ${letter}`} 
                             style={{ maxHeight: '90px', borderRadius: '6px', border: '1px solid #cbd5e1' }} 
                           />

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiEdit2, FiPlus, FiSave, FiTrash2, FiX, FiCheckCircle, FiAlertCircle, FiChevronLeft, FiChevronRight, FiUsers } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import '../guru/PaketUjian.css';
@@ -60,6 +60,14 @@ const AdminKelas = () => {
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmData, setConfirmData] = useState(null);
 
+  // Student popup modal states
+  const [showSiswaModal, setShowSiswaModal] = useState(false);
+  const [siswaLoading, setSiswaLoading] = useState(false);
+  const [selectedKelas, setSelectedKelas] = useState(null);
+  const [siswaList, setSiswaList] = useState([]);
+  const [siswaSearch, setSiswaSearch] = useState('');
+  const [allSiswaList, setAllSiswaList] = useState([]);
+
   const filteredItems = useMemo(() => {
     return items.filter(k => {
       const namaKelas = getNamaKelasDisplay(k).toLowerCase();
@@ -106,8 +114,12 @@ const AdminKelas = () => {
   const load = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/admin/kelas');
-      setItems(res.data.data || []);
+      const [resKelas, resSiswa] = await Promise.all([
+        api.get('/admin/kelas'),
+        api.get('/admin/siswa')
+      ]);
+      setItems(resKelas.data.data || []);
+      setAllSiswaList(resSiswa.data.data || []);
     } catch (e) {
       showToast(e?.response?.data?.message || 'Gagal memuat data kelas', 'error');
     } finally {
@@ -119,6 +131,35 @@ const AdminKelas = () => {
     loadJurusan();
     load();
   }, []);
+
+  const openSiswaModal = async (kelasItem) => {
+    setSelectedKelas(kelasItem);
+    setShowSiswaModal(true);
+    setSiswaLoading(true);
+    setSiswaSearch('');
+    try {
+      const res = await api.get('/admin/siswa');
+      const allSiswa = res.data.data || [];
+      setAllSiswaList(allSiswa);
+      const filtered = allSiswa.filter(s => s.kelasId === kelasItem.id);
+      setSiswaList(filtered);
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal memuat daftar siswa', 'error');
+    } finally {
+      setSiswaLoading(false);
+    }
+  };
+
+  const filteredSiswa = useMemo(() => {
+    if (!siswaSearch.trim()) return siswaList;
+    const query = siswaSearch.toLowerCase();
+    return siswaList.filter(s => 
+      s.user.namaLengkap.toLowerCase().includes(query) ||
+      s.user.email.toLowerCase().includes(query) ||
+      (s.nis && s.nis.toLowerCase().includes(query)) ||
+      (s.nisn && s.nisn.toLowerCase().includes(query))
+    );
+  }, [siswaList, siswaSearch]);
 
   const handleOpenAddModal = () => {
     setTingkat('');
@@ -274,15 +315,19 @@ const AdminKelas = () => {
           <div className="kelas-table-wrap">
             <style>{`
                .clickable-row:hover { background-color: #f8fafc !important; }
+               .kelas-table th.text-center,
+               .kelas-table td.text-center {
+                 text-align: center !important;
+               }
             `}</style>
             <table className="kelas-table">
               <thead>
                 <tr>
-                  <th>Nama Kelas</th>
                   <th>Tingkat</th>
                   <th>Jurusan</th>
                   <th>Inisial</th>
-                  <th style={{ width: '150px' }}>Aksi</th>
+                  <th className="text-center" style={{ width: '100px' }}>Siswa</th>
+                  <th className="text-center" style={{ width: '150px' }}>Aksi</th>
                 </tr>
               </thead>
               <tbody>
@@ -290,22 +335,6 @@ const AdminKelas = () => {
                   const isEditing = editingId === item.id;
                   return (
                     <tr key={item.id} className="clickable-row">
-                      <td style={{ verticalAlign: 'middle' }}>
-                        {isEditing ? (
-                          <div className="nama-preview">
-                            {editingTingkat && editingJurusanId && editingInisial.trim() 
-                              ? getNamaKelasDisplay({ 
-                                  tingkat: editingTingkat, 
-                                  inisial: editingInisial.trim(), 
-                                  jurusan: jurusanList.find(j => j.id === parseInt(editingJurusanId)) 
-                                })
-                              : '-'
-                            }
-                          </div>
-                        ) : (
-                          <div className="nama-text" style={{ fontWeight: '700', color: '#1e293b' }}>{getNamaKelasDisplay(item)}</div>
-                        )}
-                      </td>
                       <td style={{ verticalAlign: 'middle' }}>
                         {isEditing ? (
                           <select
@@ -366,8 +395,20 @@ const AdminKelas = () => {
                           <div className="inisial-text">{item.inisial}</div>
                         )}
                       </td>
-                      <td style={{ verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                      <td className="text-center" style={{ verticalAlign: 'middle' }}>
+                        <span style={{ 
+                          fontWeight: '700', 
+                          color: '#4f46e5', 
+                          background: '#e0e7ff', 
+                          padding: '4px 10px', 
+                          borderRadius: '999px',
+                          fontSize: '0.85rem'
+                        }}>
+                          {allSiswaList.filter(s => s.kelasId === item.id).length}
+                        </span>
+                      </td>
+                      <td className="text-center" style={{ verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                           {isEditing ? (
                             <>
                               <button className="btn-action primary" type="button" onClick={saveEdit} disabled={saving || !editingTingkat || !editingJurusanId || !editingInisial.trim()} title="Simpan" style={{ background: '#10b981', color: 'white' }}>
@@ -379,6 +420,10 @@ const AdminKelas = () => {
                             </>
                           ) : (
                             <>
+                              <button className="btn-action" type="button" onClick={() => openSiswaModal(item)} disabled={saving} title="Daftar Siswa" style={{ background: '#8b5cf6', color: 'white', display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 8px', width: 'auto', borderRadius: '6px' }}>
+                                <FiUsers />
+                                <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>List</span>
+                              </button>
                               <button className="btn-action primary" type="button" onClick={() => startEdit(item)} disabled={saving} title="Edit" style={{ background: '#3b82f6', color: 'white' }}>
                                 <FiEdit2 />
                               </button>
@@ -620,6 +665,102 @@ const AdminKelas = () => {
                   )}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Student List Modal Popup */}
+      {showSiswaModal && (
+        <div className="modal-overlay" style={{ zIndex: 10000 }}>
+          <div className="modal-container modal-form" style={{ maxWidth: '650px', width: '100%' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
+              <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FiUsers style={{ color: '#8b5cf6' }} />
+                <span>Siswa Kelas: {selectedKelas ? getNamaKelasDisplay(selectedKelas) : ''}</span>
+              </h3>
+              <button className="modal-close" onClick={() => setShowSiswaModal(false)}>
+                <FiX />
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '1.5rem 2rem' }}>
+              <div className="search-box" style={{ width: '100%', marginBottom: '1.25rem' }}>
+                <input 
+                  type="text" 
+                  placeholder="Cari nama, email, NIS, atau NISN siswa..." 
+                  value={siswaSearch}
+                  onChange={(e) => setSiswaSearch(e.target.value)}
+                  className="input"
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem 1rem', 
+                    borderRadius: '8px', 
+                    border: '2px solid #e2e8f0',
+                    outline: 'none',
+                    fontSize: '0.9rem'
+                  }}
+                />
+              </div>
+
+              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '10px', background: '#ffffff' }}>
+                {siswaLoading ? (
+                  <div style={{ padding: '3rem 1rem', textAlign: 'center', color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="spinner" style={{ borderColor: '#e2e8f0', borderTopColor: '#8b5cf6', width: '28px', height: '28px' }}></span>
+                    <span>Memuat data siswa...</span>
+                  </div>
+                ) : filteredSiswa.length === 0 ? (
+                  <div style={{ padding: '3rem 1rem', textAlign: 'center', color: '#64748b' }}>
+                    {siswaSearch ? 'Tidak ada siswa yang cocok dengan pencarian' : 'Belum ada siswa terdaftar di kelas ini'}
+                  </div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                        <th style={{ padding: '12px 16px', fontWeight: '700', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>No</th>
+                        <th style={{ padding: '12px 16px', fontWeight: '700', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Nama</th>
+                        <th style={{ padding: '12px 16px', fontWeight: '700', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase' }}>Identitas</th>
+                        <th style={{ padding: '12px 16px', fontWeight: '700', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', textAlign: 'center' }}>JK</th>
+                        <th style={{ padding: '12px 16px', fontWeight: '700', color: '#475569', fontSize: '0.8rem', textTransform: 'uppercase', textAlign: 'center' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSiswa.map((siswa, idx) => (
+                        <tr key={siswa.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '12px 16px', color: '#64748b' }}>{idx + 1}</td>
+                          <td style={{ padding: '12px 16px' }}>
+                            <div style={{ fontWeight: '700', color: '#1e293b' }}>{siswa.user.namaLengkap}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{siswa.user.email}</div>
+                          </td>
+                          <td style={{ padding: '12px 16px', fontFamily: 'monospace', fontSize: '0.82rem', color: '#475569' }}>
+                            <div>NIS: {siswa.nis || '-'}</div>
+                            <div>NISN: {siswa.nisn || '-'}</div>
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', color: '#475569', fontWeight: '600' }}>{siswa.jk || '-'}</td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '3px 8px',
+                              borderRadius: '999px',
+                              fontSize: '0.75rem',
+                              fontWeight: '700',
+                              background: siswa.user.status === 'aktif' ? '#dcfce7' : '#fee2e2',
+                              color: siswa.user.status === 'aktif' ? '#15803d' : '#b91c1c',
+                              textTransform: 'capitalize'
+                            }}>
+                              {siswa.user.status === 'aktif' ? 'Aktif' : 'Nonaktif'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer" style={{ padding: '1.25rem 2rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', marginTop: 0 }}>
+              <button className="btn" type="button" onClick={() => setShowSiswaModal(false)} style={{ background: '#64748b', color: 'white', border: 'none', borderRadius: '8px' }}>
+                Tutup
+              </button>
             </div>
           </div>
         </div>

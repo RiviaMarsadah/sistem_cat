@@ -24,6 +24,8 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'CAT Backend API is running',
+    timezone: process.env.TZ,
+    serverTime: new Date().toString(),
     timestamp: new Date().toISOString()
   });
 });
@@ -73,6 +75,7 @@ app.get('/api/debug-db', async (req, res) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/public', require('./routes/public'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/guru', require('./routes/guru'));
 app.use('/api/siswa', require('./routes/siswa'));

@@ -24,7 +24,13 @@ exports.list = async (req, res) => {
       },
       include: {
         mataPelajaran: true,
-        paketUjian: true,
+        paketUjian: {
+          include: {
+            guru: {
+              include: { user: true }
+            }
+          }
+        },
         periode: true,
         jurusan: true,
         kelasJadwal: {
@@ -136,4 +142,34 @@ exports.listAll = async (req, res) => {
    } catch(e) {
       return res.status(500).json({ success: false, message: 'Error loading all schedules' });
    }
-}
+};
+
+exports.update = async (req, res) => {
+  const id = Number(req.params.id);
+  const { mulai, selesai, durasi, ruangan, opsiKeamanan, mataPelajaranId } = req.body;
+  
+  if (!id) {
+    return res.status(400).json({ success: false, message: 'ID jadwal tidak valid' });
+  }
+
+  try {
+    const updateData = {};
+    if (mataPelajaranId) updateData.mataPelajaranId = Number(mataPelajaranId);
+    if (ruangan !== undefined) updateData.ruangan = ruangan;
+    if (mulai) updateData.mulai = new Date(mulai);
+    if (selesai) updateData.selesai = new Date(selesai);
+    if (durasi) updateData.durasi = Number(durasi);
+    if (opsiKeamanan !== undefined) updateData.opsiKeamanan = Boolean(opsiKeamanan);
+
+    const updated = await prisma.jadwalUjian.update({
+      where: { id },
+      data: updateData
+    });
+
+    return res.json({ success: true, message: 'Jadwal berhasil diperbarui', data: updated });
+  } catch (error) {
+    console.error('Error updating jadwal:', error);
+    return res.status(500).json({ success: false, message: 'Gagal memperbarui jadwal ujian' });
+  }
+};
+

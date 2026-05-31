@@ -8,21 +8,42 @@ import './JadwalWizard.css';
 export default function JadwalWizard() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [showConfirmDeleteSessionModal, setShowConfirmDeleteSessionModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState(null);
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = localStorage.getItem('cat_wizard_step');
+    return saved ? Number(saved) : 1;
+  });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Step 1: Periode
   const [periodes, setPeriodes] = useState([]);
-  const [isNewPeriode, setIsNewPeriode] = useState(false);
-  const [selectedPeriodeId, setSelectedPeriodeId] = useState('');
+  const [isNewPeriode, setIsNewPeriode] = useState(() => {
+    const saved = localStorage.getItem('cat_wizard_is_new_periode');
+    return saved ? saved === 'true' : false;
+  });
+  const [selectedPeriodeId, setSelectedPeriodeId] = useState(() => {
+    return localStorage.getItem('cat_wizard_selected_periode_id') || '';
+  });
   
   // New Periode Data
-  const [periodeNama, setPeriodeNama] = useState('');
-  const [periodeSemester, setPeriodeSemester] = useState('Gasal');
-  const [periodeTahun, setPeriodeTahun] = useState('2026/2027');
-  const [periodeMulai, setPeriodeMulai] = useState('');
-  const [periodeSelesai, setPeriodeSelesai] = useState('');
+  const [periodeNama, setPeriodeNama] = useState(() => {
+    return localStorage.getItem('cat_wizard_periode_nama') || '';
+  });
+  const [periodeSemester, setPeriodeSemester] = useState(() => {
+    return localStorage.getItem('cat_wizard_periode_semester') || 'Gasal';
+  });
+  const [periodeTahun, setPeriodeTahun] = useState(() => {
+    return localStorage.getItem('cat_wizard_periode_tahun') || '2026/2027';
+  });
+  const [periodeMulai, setPeriodeMulai] = useState(() => {
+    return localStorage.getItem('cat_wizard_periode_mulai') || '';
+  });
+  const [periodeSelesai, setPeriodeSelesai] = useState(() => {
+    return localStorage.getItem('cat_wizard_periode_selesai') || '';
+  });
 
   // Step 2 & 3: Master Data
   const [masterJurusan, setMasterJurusan] = useState([]);
@@ -33,11 +54,103 @@ export default function JadwalWizard() {
   const [selectedJurusans, setSelectedJurusans] = useState([]);
   
   // Step 3 Selections
-  const [selectedKelas, setSelectedKelas] = useState([]);
+  const [selectedKelas, setSelectedKelas] = useState(() => {
+    const saved = localStorage.getItem('cat_wizard_selected_kelas');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Step 4 Settings
-  const [globalKioskMode, setGlobalKioskMode] = useState(true);
-  const [sessions, setSessions] = useState([]);
+  const [globalKioskMode, setGlobalKioskMode] = useState(() => {
+    const saved = localStorage.getItem('cat_wizard_global_kiosk');
+    return saved ? saved === 'true' : true;
+  });
+  const [sessions, setSessions] = useState(() => {
+    const saved = localStorage.getItem('cat_wizard_sessions');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const getTingkatLabel = (tingkat) => {
+    const map = {
+      'tingkat_10': '10',
+      'tingkat_11': '11',
+      'tingkat_12': '12',
+      'X': '10',
+      'XI': '11',
+      'XII': '12',
+      'ALUMNI': 'Alumni',
+      'KI': 'KI'
+    };
+    return map[tingkat] || tingkat;
+  };
+
+  const getNamaKelasDisplay = (kelas) => {
+    if (!kelas) return '-';
+    const tingkatLabel = getTingkatLabel(kelas.tingkat);
+    const prodiLabel = kelas.jurusan?.namaProdi || '';
+    const romanTingkat = kelas.tingkat || '';
+    const kodeProdi = kelas.jurusan?.kodeProdi || '';
+    return `${tingkatLabel} ${prodiLabel} (${romanTingkat} ${kodeProdi})`;
+  };
+
+  // Synchronize wizard states to localStorage
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_step', String(currentStep));
+  }, [currentStep]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_is_new_periode', String(isNewPeriode));
+  }, [isNewPeriode]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_selected_periode_id', selectedPeriodeId);
+  }, [selectedPeriodeId]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_periode_nama', periodeNama);
+  }, [periodeNama]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_periode_semester', periodeSemester);
+  }, [periodeSemester]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_periode_tahun', periodeTahun);
+  }, [periodeTahun]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_periode_mulai', periodeMulai);
+  }, [periodeMulai]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_periode_selesai', periodeSelesai);
+  }, [periodeSelesai]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_selected_kelas', JSON.stringify(selectedKelas));
+  }, [selectedKelas]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_global_kiosk', String(globalKioskMode));
+  }, [globalKioskMode]);
+
+  useEffect(() => {
+    localStorage.setItem('cat_wizard_sessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  // Clean all local storage wizard states
+  const clearWizardStorage = () => {
+    localStorage.removeItem('cat_wizard_step');
+    localStorage.removeItem('cat_wizard_is_new_periode');
+    localStorage.removeItem('cat_wizard_selected_periode_id');
+    localStorage.removeItem('cat_wizard_periode_nama');
+    localStorage.removeItem('cat_wizard_periode_semester');
+    localStorage.removeItem('cat_wizard_periode_tahun');
+    localStorage.removeItem('cat_wizard_periode_mulai');
+    localStorage.removeItem('cat_wizard_periode_selesai');
+    localStorage.removeItem('cat_wizard_selected_kelas');
+    localStorage.removeItem('cat_wizard_global_kiosk');
+    localStorage.removeItem('cat_wizard_sessions');
+  };
 
   useEffect(() => {
     loadMasterData();
@@ -78,21 +191,11 @@ export default function JadwalWizard() {
         }
       }
     } else if (currentStep === 2) {
-      if (selectedJurusans.length === 0) {
-        showToast('Pilih minimal satu program studi/jurusan.', 'error');
-        return;
-      }
-      // Keep only selectedKelas that belong to currently selected jurusans
-      const availableClassIds = masterKelas
-        .filter(k => selectedJurusans.includes(String(k.jurusanId)))
-        .map(k => String(k.id));
-      setSelectedKelas(prev => prev.filter(id => availableClassIds.includes(id)));
-    } else if (currentStep === 3) {
        if (selectedKelas.length === 0) {
          showToast('Pilih minimal satu kelas.', 'error');
          return;
        }
-       // Prepare slots for Step 4
+       // Prepare slots for Step 3
        if (sessions.length === 0) {
           addEmptySession();
        } else {
@@ -108,11 +211,11 @@ export default function JadwalWizard() {
             };
           }));
        }
-    } else if (currentStep === 4) {
+    } else if (currentStep === 3) {
       if (sessions.length === 0) {
          showToast('Tentukan minimal satu sesi ujian.', 'error');
          return;
-      }
+       }
       for (const sess of sessions) {
         if (!sess.mulai || !sess.durasi) {
           showToast('Tentukan waktu mulai dan durasi untuk tiap sesi.', 'error');
@@ -120,12 +223,12 @@ export default function JadwalWizard() {
         }
         for (const cls of sess.classSettings) {
            if (!cls.mapelId) {
-             const className = masterKelas.find(k => String(k.id) === String(cls.kelasId))?.inisial || 'Kelas';
+             const className = getNamaKelasDisplay(masterKelas.find(k => String(k.id) === String(cls.kelasId)));
              showToast(`Pilih Mata Pelajaran untuk ${className} di Sesi ${sess.id}.`, 'error');
              return;
            }
            if (!cls.ruangan || !cls.ruangan.trim()) {
-             const className = masterKelas.find(k => String(k.id) === String(cls.kelasId))?.inisial || 'Kelas';
+             const className = getNamaKelasDisplay(masterKelas.find(k => String(k.id) === String(cls.kelasId)));
              showToast(`Tentukan ruangan ujian untuk ${className} di Sesi ${sess.id}.`, 'error');
              return;
            }
@@ -160,7 +263,7 @@ export default function JadwalWizard() {
   };
   
   const selectAllKelasFilter = () => {
-    const relevant = masterKelas.filter(k => selectedJurusans.includes(String(k.jurusanId)) && k.tingkat !== 'ALUMNI');
+    const relevant = masterKelas.filter(k => k.tingkat !== 'ALUMNI');
     setSelectedKelas(relevant.map(k => String(k.id)));
   };
 
@@ -242,8 +345,18 @@ export default function JadwalWizard() {
     }));
   };
   
-  const removeSession = (id) => {
-     setSessions(prev => prev.filter(s => s.id !== id));
+  const triggerRemoveSession = (session) => {
+    setSessionToDelete(session);
+    setShowConfirmDeleteSessionModal(true);
+  };
+
+  const handleConfirmDeleteSession = () => {
+    if (sessionToDelete) {
+      setSessions(prev => prev.filter(s => s.id !== sessionToDelete.id));
+      setShowConfirmDeleteSessionModal(false);
+      setSessionToDelete(null);
+      showToast('Sesi berhasil dihapus', 'success');
+    }
   };
 
   const updateClassInSession = (sessionId, kelasId, field, value) => {
@@ -272,6 +385,18 @@ export default function JadwalWizard() {
     }));
   };
 
+  const bulkApplyRuangan = (sessionId, ruangan) => {
+    setSessions(prev => prev.map(s => {
+      if (s.id === sessionId) {
+        return {
+          ...s,
+          classSettings: s.classSettings.map(c => ({ ...c, ruangan }))
+        };
+      }
+      return s;
+    }));
+  };
+
 
   // Final Submit
   const handleGenerate = async () => {
@@ -293,12 +418,20 @@ export default function JadwalWizard() {
       const payloadSlots = [];
       
       for (const sess of sessions) {
-        // Find set of unique (mapelId, ruangan) in this session
+        // Find set of unique (mapelId, ruangan) in this session with normalized trimming
         const uniqueConfigs = [];
         sess.classSettings.forEach(cs => {
-          const configStr = `${cs.mapelId}-${cs.ruangan}`;
+          const trimmedRuangan = cs.ruangan ? cs.ruangan.trim() : '';
+          const normalizedRuangan = trimmedRuangan.toLowerCase();
+          const configStr = `${cs.mapelId}-${normalizedRuangan}`;
+          
           if (!uniqueConfigs.find(u => u.key === configStr)) {
-            uniqueConfigs.push({ key: configStr, mapelId: cs.mapelId, ruangan: cs.ruangan, kelasIds: [] });
+            uniqueConfigs.push({ 
+              key: configStr, 
+              mapelId: cs.mapelId, 
+              ruangan: trimmedRuangan, 
+              kelasIds: [] 
+            });
           }
           uniqueConfigs.find(u => u.key === configStr).kelasIds.push(cs.kelasId);
         });
@@ -322,6 +455,7 @@ export default function JadwalWizard() {
       });
 
       showToast('Jadwal berhasil digenerate', 'success');
+      clearWizardStorage();
       navigate('/admin/jadwal-ujian');
 
     } catch (err) {
@@ -336,26 +470,37 @@ export default function JadwalWizard() {
 
   return (
     <div className="wizard-page">
-       <div className="wizard-header">
-          <button className="back-link" onClick={() => navigate('/admin/jadwal-ujian')}>&larr; Kembali ke Daftar Jadwal</button>
-          <h2>Penjadwalan Terpusat</h2>
-          <p>Langkah terpandu pembuatan jadwal ujian massal berdasarkan prodi dan kelas.</p>
-       </div>
+        <div className="wizard-header">
+           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', width: '100%' }}>
+             <button className="back-link" style={{ margin: 0 }} onClick={() => navigate('/admin/jadwal-ujian')}>&larr; Kembali ke Daftar Jadwal</button>
+             <button 
+               type="button" 
+               className="btn-secondary" 
+               style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid #cbd5e1', cursor: 'pointer', background: '#fff', color: '#64748b', fontWeight: '600', transition: 'all 0.2s' }}
+               onClick={() => setShowResetModal(true)}
+               onMouseEnter={(e) => { e.target.style.background = '#f1f5f9'; e.target.style.color = '#334155'; }}
+               onMouseLeave={(e) => { e.target.style.background = '#fff'; e.target.style.color = '#64748b'; }}
+             >
+               🔄 Reset Wizard
+             </button>
+           </div>
+           <h2>Penjadwalan Terpusat</h2>
+           <p>Langkah terpandu pembuatan jadwal ujian massal berdasarkan prodi dan kelas.</p>
+        </div>
 
-       <div className="stepper">
-          {[
-            {num: 1, label: 'Periode'},
-            {num: 2, label: 'Prodi'},
-            {num: 3, label: 'Kelas'},
-            {num: 4, label: 'Tentukan Waktu & Kelas'},
-            {num: 5, label: 'Tinjauan'}
-          ].map((step) => (
-             <div key={step.num} className={`step-item ${currentStep === step.num ? 'active' : currentStep > step.num ? 'completed' : ''}`}>
-                <div className="step-circle">{currentStep > step.num ? <FiCheck /> : step.num}</div>
-                <div className="step-label">{step.label}</div>
-             </div>
-          ))}
-       </div>
+        <div className="stepper">
+           {[
+             {num: 1, label: 'Periode'},
+             {num: 2, label: 'Pilih Kelas'},
+             {num: 3, label: 'Tentukan Waktu & Kelas'},
+             {num: 4, label: 'Tinjauan'}
+           ].map((step) => (
+              <div key={step.num} className={`step-item ${currentStep === step.num ? 'active' : currentStep > step.num ? 'completed' : ''}`}>
+                 <div className="step-circle">{currentStep > step.num ? <FiCheck /> : step.num}</div>
+                 <div className="step-label">{step.label}</div>
+              </div>
+           ))}
+        </div>
 
        <div className="wizard-content">
           {/* STEP 1: PERIODE */}
@@ -431,100 +576,76 @@ export default function JadwalWizard() {
              </div>
           )}
 
-          {/* STEP 2: PRODI */}
-          {currentStep === 2 && (
-             <div className="step-panel">
-               <h3>Langkah 2: Pilih Program Studi (Jurusan)</h3>
-               <p className="hint">Pilih jurusan mana saja yang akan mengikuti masa ujian di periode ini.</p>
-               <div className="action-row">
-                 <button className="btn-small" onClick={selectAllJurusan}>Pilih Semua</button>
-                 <button className="btn-small btn-ghost" onClick={deselectAllJurusan}>Hapus Pilihan</button>
-               </div>
-               <div className="grid-list">
-                 {masterJurusan.map(j => (
-                    <label key={j.id} className={`selection-card ${selectedJurusans.includes(String(j.id)) ? 'selected' : ''}`}>
-                       <input type="checkbox" checked={selectedJurusans.includes(String(j.id))} onChange={() => toggleJurusan(String(j.id))} />
-                       <div className="details">
-                          <strong>{j.kodeProdi}</strong>
-                          <span>{j.namaProdi}</span>
-                       </div>
-                    </label>
-                 ))}
-               </div>
-             </div>
-          )}
+          {/* STEP 2: PILIH KELAS */}
+           {currentStep === 2 && (
+              <div className="step-panel">
+                <h3>Langkah 2: Pilih Kelas Peserta</h3>
+                <p className="hint">Pilih kelas yang akan mengikuti ujian (Alumni otomatis dikecualikan).</p>
+                <div className="action-row">
+                  <button className="btn-small" onClick={selectAllKelasFilter}>Pilih Semua</button>
+                  <button className="btn-small btn-ghost" onClick={() => setSelectedKelas([])}>Hapus Pilihan</button>
+                </div>
+                
+                <div className="kelas-groups-container" style={{display: 'flex', flexDirection: 'column', gap: '2rem'}}>
+                  {masterJurusan.map(jurusan => {
+                     const classesInJurusan = masterKelas.filter(k => String(k.jurusanId) === String(jurusan.id) && k.tingkat !== 'ALUMNI');
+                     if (classesInJurusan.length === 0) return null;
+                     
+                     return (
+                        <div key={jurusan.id} className="kelas-group">
+                           <h4 style={{marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #e2e8f0', color: '#1e293b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700'}}>
+                             <span style={{background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)', color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px'}}>
+                                {jurusan?.kodeProdi || 'PRODI'}
+                             </span>
+                             {jurusan?.namaProdi || 'Program Studi'}
+                           </h4>
+                           <div className="kelas-list-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              {classesInJurusan.map(k => {
+                                const isSelected = selectedKelas.includes(String(k.id));
+                                return (
+                                  <label 
+                                    key={k.id} 
+                                    className={`kelas-list-item ${isSelected ? 'selected' : ''}`}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '12px',
+                                      padding: '12px 18px',
+                                      background: isSelected ? '#f0f7ff' : '#ffffff',
+                                      border: isSelected ? '1px solid #3b82f6' : '1px solid #e2e8f0',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                      boxShadow: isSelected ? '0 2px 4px rgba(59, 130, 246, 0.05)' : 'none'
+                                    }}
+                                  >
+                                     <input 
+                                       type="checkbox" 
+                                       checked={isSelected} 
+                                       onChange={() => toggleKelas(String(k.id))}
+                                       style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#3b82f6' }}
+                                     />
+                                     <span style={{ fontSize: '0.95rem', fontWeight: isSelected ? '700' : '500', color: isSelected ? '#1e40af' : '#334155' }}>
+                                        {getNamaKelasDisplay(k)}
+                                     </span>
+                                  </label>
+                                );
+                              })}
+                           </div>
+                        </div>
+                     );
+                  })}
+                </div>
+              </div>
+           )}
 
-          {/* STEP 3: KELAS */}
+           {/* STEP 4: SESSION SCHEDULING */}
           {currentStep === 3 && (
-             <div className="step-panel">
-               <h3>Langkah 3: Pilih Kelas Peserta</h3>
-               <p className="hint">Pilih kelas yang akan mengikuti ujian. Daftar sudah dikelompokkan berdasarkan program studi yang Anda pilih di Langkah 2.</p>
-               <div className="action-row">
-                 <button className="btn-small" onClick={selectAllKelasFilter}>Pilih Semua</button>
-                 <button className="btn-small btn-ghost" onClick={() => setSelectedKelas([])}>Hapus Pilihan</button>
-               </div>
-               
-               <div className="kelas-groups-container" style={{display: 'flex', flexDirection: 'column', gap: '2rem'}}>
-                 {selectedJurusans.map(jurusanId => {
-                    const jurusan = masterJurusan.find(j => String(j.id) === String(jurusanId));
-                    const classesInJurusan = masterKelas.filter(k => String(k.jurusanId) === String(jurusanId));
-                    if (classesInJurusan.length === 0) return null;
-                    
-                    return (
-                       <div key={jurusanId} className="kelas-group">
-                          <h4 style={{marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '2px solid #e2e8f0', color: '#1e293b', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '700'}}>
-                            <span style={{background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)', color: 'white', padding: '3px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '800', letterSpacing: '0.5px'}}>
-                               {jurusan?.kodeProdi || 'PRODI'}
-                            </span>
-                            {jurusan?.namaProdi || 'Program Studi'}
-                          </h4>
-                          <div className="grid-list">
-                            {classesInJurusan.map(k => {
-                               const isAlumni = k.tingkat === 'ALUMNI';
-                               const tLabel = isAlumni 
-                                 ? 'Alumni' 
-                                 : k.tingkat === 'X' 
-                                   ? 'Kelas 10' 
-                                   : k.tingkat === 'XI' 
-                                     ? 'Kelas 11' 
-                                     : k.tingkat === 'XII' 
-                                       ? 'Kelas 12' 
-                                       : k.tingkat;
-                               return (
-                                 <label key={k.id} className={`selection-card ${selectedKelas.includes(String(k.id)) ? 'selected' : ''} ${isAlumni ? 'disabled' : ''}`}>
-                                    <input 
-                                      type="checkbox" 
-                                      checked={selectedKelas.includes(String(k.id))} 
-                                      onChange={() => !isAlumni && toggleKelas(String(k.id))}
-                                      disabled={isAlumni} 
-                                    />
-                                    <div className="details">
-                                       <strong>{tLabel} {k.jurusan?.kodeProdi} {k.inisial}</strong>
-                                    </div>
-                                 </label>
-                               );
-                            })}
-                          </div>
-                       </div>
-                    );
-                 })}
-               </div>
-               {selectedJurusans.length === 0 && (
-                 <div className="empty-state" style={{marginTop: '2rem'}}>
-                    Anda belum memilih program studi. Mundur ke Langkah 2 terlebih dahulu.
-                 </div>
-               )}
-             </div>
-          )}
-
-
-          {/* STEP 4: SESSION SCHEDULING */}
-          {currentStep === 4 && (
              <div className="step-panel step-fullscreen">
                <div className="step4-header">
                  <div>
-                   <h3>Langkah 4: Rancangan Distribusi Sesi Ujian</h3>
-                   <p className="hint">Tentukan jadwal untuk tiap sesi. Setiap sesi secara otomatis berisi seluruh kelas yang Anda pilih pada Langkah 3.</p>
+                   <h3>Langkah 3: Rancangan Distribusi Sesi Ujian</h3>
+                   <p className="hint">Tentukan jadwal untuk tiap sesi. Setiap sesi secara otomatis berisi seluruh kelas yang Anda pilih pada Langkah 2.</p>
                  </div>
                  <button className="btn-add-slot" onClick={addEmptySession}>
                    <span>＋</span> Tambah Sesi Ujian
@@ -577,18 +698,90 @@ export default function JadwalWizard() {
                            </div>
                          </div>
                        </div>
+                          <button className="btn-remove-session" title="Hapus Sesi" onClick={() => triggerRemoveSession(sess)}>
+                           ✕
+                         </button>
+                      </div>
 
-                       <button className="btn-remove-session" title="Hapus Sesi" onClick={() => removeSession(sess.id)}>
-                         ✕
-                       </button>
-                     </div>
+                      {/* Bulk Actions Bar */}
+                      <div className="session-bulk-actions">
+                        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', alignItems: 'center', flexGrow: 1 }}>
+                          {/* Bulk Mapel */}
+                          <div className="bulk-group">
+                            <span className="bulk-label">Mapel Sesi:</span>
+                            <select 
+                              className="wizard-input bulk-select" 
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  bulkApplyMapel(sess.id, e.target.value);
+                                  e.target.value = "";
+                                }
+                              }}
+                            >
+                              <option value="">-- Mapel untuk Semua Kelas --</option>
+                              {masterMapel.map(m => (
+                                <option key={m.id} value={m.id}>
+                                  {m.namaMapel} ({m.kodeMapel || '-'})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
 
+                          {/* Bulk Ruangan */}
+                          <div className="bulk-group">
+                            <span className="bulk-label">Ruangan Sesi:</span>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '280px' }}>
+                              <input 
+                                type="text"
+                                placeholder="Misal: Lab Komputer"
+                                className="wizard-input"
+                                style={{ padding: '0.45rem 0.75rem', fontSize: '0.85rem', borderRadius: '8px' }}
+                                id={`bulk-ruangan-${sess.id}`}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const val = e.target.value.trim();
+                                    if (val) {
+                                      bulkApplyRuangan(sess.id, val);
+                                      showToast(`Ruangan "${val}" diterapkan ke semua kelas di Sesi ${sess.id}`, 'success');
+                                    }
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="btn-small"
+                                style={{ padding: '6px 12px', whiteSpace: 'nowrap', borderRadius: '8px', background: '#3b82f6', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                                onClick={() => {
+                                  const input = document.getElementById(`bulk-ruangan-${sess.id}`);
+                                  if (input) {
+                                    const val = input.value.trim();
+                                    if (val) {
+                                      bulkApplyRuangan(sess.id, val);
+                                      showToast(`Ruangan "${val}" diterapkan ke semua kelas di Sesi ${sess.id}`, 'success');
+                                    } else {
+                                      showToast('Masukkan nama ruangan terlebih dahulu', 'error');
+                                    }
+                                  }
+                                }}
+                              >
+                                Terapkan
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="session-meta">
+                          <span className="kelas-count-badge">
+                            🏫 {sess.classSettings.length} Kelas Terdaftar
+                          </span>
+                        </div>
+                      </div>
 
                      {/* Class Settings Grid */}
                      <div className="session-class-grid">
                        <div className="class-grid-header">
                          <div className="col-kelas">Kelas</div>
-                         <div className="col-mapel">Mata Pelajaran <span className="col-required">*</span></div>
+                         <div className="col-mapel">Mata  <span className="col-required">*</span></div>
                          <div className="col-ruangan">Ruangan <span className="col-required">*</span></div>
                        </div>
                        <div className="class-rows">
@@ -645,7 +838,7 @@ export default function JadwalWizard() {
           )}
 
           {/* STEP 5: TINJAUAN */}
-          {currentStep === 5 && (
+          {currentStep === 4 && (
              <div className="step-panel">
                <h3>Tinjauan Akhir sebelum Meng-Generate Data</h3>
                <div className="summary-box">
@@ -679,7 +872,7 @@ export default function JadwalWizard() {
              <button className="btn-wizard-nav back" onClick={handlePrevStep} disabled={saving}><FiChevronLeft /> Sebelumnya</button>
           ) : <div></div>}
 
-          {currentStep < 5 ? (
+          {currentStep < 4 ? (
              <button className="btn-wizard-nav next" onClick={handleNextStep}>Selanjutnya <FiChevronRight /></button>
           ) : (
              <button className="btn-wizard-nav finish" onClick={handleGenerate} disabled={saving}>
@@ -687,6 +880,94 @@ export default function JadwalWizard() {
              </button>
           )}
        </div>
+
+      {/* Custom Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="wizard-modal-overlay">
+          <div className="wizard-modal-container">
+            <div className="wizard-modal-header">
+              <div className="wizard-modal-icon-title">
+                <div className="wizard-modal-alert-icon">
+                  <FiAlertCircle size={28} />
+                </div>
+                <h3>Konfirmasi Reset</h3>
+              </div>
+              <button className="wizard-modal-close" onClick={() => setShowResetModal(false)}>&times;</button>
+            </div>
+            <div className="wizard-modal-body">
+              <p>Apakah Anda yakin ingin menyetel ulang (reset) semua isian formulir?</p>
+              <p className="wizard-modal-subtext">Semua progres penjadwalan Anda yang tersimpan dalam penyimpanan lokal akan dihapus secara permanen.</p>
+            </div>
+            <div className="wizard-modal-footer">
+              <button 
+                className="btn-modal-cancel" 
+                onClick={() => setShowResetModal(false)}
+              >
+                Batal
+              </button>
+              <button 
+                className="btn-modal-confirm" 
+                onClick={() => {
+                  clearWizardStorage();
+                  setShowResetModal(false);
+                  window.location.reload();
+                }}
+              >
+                Ya, Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Delete Session Confirmation Modal */}
+      {showConfirmDeleteSessionModal && sessionToDelete && (
+        <div className="wizard-modal-overlay">
+          <div className="wizard-modal-container">
+            <div className="wizard-modal-header">
+              <div className="wizard-modal-icon-title">
+                <div className="wizard-modal-alert-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>
+                  <FiAlertCircle size={28} />
+                </div>
+                <h3>Hapus Sesi Ujian</h3>
+              </div>
+              <button className="wizard-modal-close" onClick={() => {
+                setShowConfirmDeleteSessionModal(false);
+                setSessionToDelete(null);
+              }}>&times;</button>
+            </div>
+            <div className="wizard-modal-body">
+              <p>Apakah Anda yakin ingin menghapus <strong>Sesi {sessionToDelete.id}</strong>?</p>
+              {sessionToDelete.mulai && (
+                <p className="wizard-modal-subtext" style={{ marginTop: '6px', fontWeight: '500' }}>
+                  Waktu Mulai: {sessionToDelete.mulai.replace('T', ' ')} ({sessionToDelete.durasi} Menit)
+                </p>
+              )}
+              <p className="wizard-modal-subtext" style={{ color: '#ef4444', fontWeight: '500', marginTop: '8px' }}>
+                Seluruh pengaturan mata pelajaran dan ruangan kelas untuk sesi ini akan dihapus secara permanen dari draf.
+              </p>
+            </div>
+            <div className="wizard-modal-footer">
+              <button 
+                className="btn-modal-cancel" 
+                onClick={() => {
+                  setShowConfirmDeleteSessionModal(false);
+                  setSessionToDelete(null);
+                }}
+              >
+                Batal
+              </button>
+              <button 
+                className="btn-modal-confirm" 
+                style={{ background: '#ef4444' }}
+                onClick={handleConfirmDeleteSession}
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

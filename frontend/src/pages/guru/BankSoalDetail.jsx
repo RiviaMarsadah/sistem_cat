@@ -8,6 +8,8 @@ import './GuruTheme.css';
 import './JadwalUjian.css';
 import './BankSoal.css';
 
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+
 const KATEGORI_OPTIONS = [
   { value: 'pilgan', label: 'Pilihan Ganda Sederhana' },
   { value: 'pilgan_kompleks', label: 'Pilihan Ganda Kompleks' },
@@ -935,7 +937,7 @@ export default function BankSoalDetail() {
                     <td>
                       {row.gambar ? (
                         <img 
-                          src={row.gambar.endsWith('.webp') ? `http://localhost:3000/uploads/${row.gambar}` : row.gambar} 
+                          src={row.gambar.endsWith('.webp') ? `${BASE_URL}/uploads/${row.gambar}` : row.gambar} 
                           alt="Soal" 
                           style={{ maxHeight: '40px', borderRadius: '4px', maxWidth: '80px', objectFit: 'contain' }} 
                         />
@@ -945,35 +947,35 @@ export default function BankSoalDetail() {
                     </td>
                     <td>
                       {isImageFile(row.kolomA) ? (
-                        <img src={`http://localhost:3000/uploads/${row.kolomA}`} alt="Opsi A" style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                        <img src={`${BASE_URL}/uploads/${row.kolomA}`} alt="Opsi A" style={{ maxHeight: '40px', borderRadius: '4px' }} />
                       ) : (
                         row.kolomA || '-'
                       )}
                     </td>
                     <td>
                       {isImageFile(row.kolomB) ? (
-                        <img src={`http://localhost:3000/uploads/${row.kolomB}`} alt="Opsi B" style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                        <img src={`${BASE_URL}/uploads/${row.kolomB}`} alt="Opsi B" style={{ maxHeight: '40px', borderRadius: '4px' }} />
                       ) : (
                         row.kolomB || '-'
                       )}
                     </td>
                     <td>
                       {isImageFile(row.kolomC) ? (
-                        <img src={`http://localhost:3000/uploads/${row.kolomC}`} alt="Opsi C" style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                        <img src={`${BASE_URL}/uploads/${row.kolomC}`} alt="Opsi C" style={{ maxHeight: '40px', borderRadius: '4px' }} />
                       ) : (
                         row.kolomC || '-'
                       )}
                     </td>
                     <td>
                       {isImageFile(row.kolomD) ? (
-                        <img src={`http://localhost:3000/uploads/${row.kolomD}`} alt="Opsi D" style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                        <img src={`${BASE_URL}/uploads/${row.kolomD}`} alt="Opsi D" style={{ maxHeight: '40px', borderRadius: '4px' }} />
                       ) : (
                         row.kolomD || '-'
                       )}
                     </td>
                     <td>
                       {isImageFile(row.kolomE) ? (
-                        <img src={`http://localhost:3000/uploads/${row.kolomE}`} alt="Opsi E" style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                        <img src={`${BASE_URL}/uploads/${row.kolomE}`} alt="Opsi E" style={{ maxHeight: '40px', borderRadius: '4px' }} />
                       ) : (
                         row.kolomE || '-'
                       )}
@@ -1113,7 +1115,7 @@ export default function BankSoalDetail() {
                 <div style={{ marginBottom: '1.25rem' }}>
                   <h4 style={{ margin: '0 0 0.5rem 0', color: '#475569', fontSize: '0.875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gambar</h4>
                   <img 
-                    src={selectedSoalForPreview.gambar.endsWith('.webp') ? `http://localhost:3000/uploads/${selectedSoalForPreview.gambar}` : selectedSoalForPreview.gambar} 
+                    src={selectedSoalForPreview.gambar.endsWith('.webp') ? `${BASE_URL}/uploads/${selectedSoalForPreview.gambar}` : selectedSoalForPreview.gambar} 
                     alt="Soal" 
                     style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'contain', border: '1px solid #cbd5e1' }} 
                   />
@@ -1145,7 +1147,7 @@ export default function BankSoalDetail() {
                         <div key={letter} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
                           <span style={{ fontWeight: 600, color: '#1e293b', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
                             {letter}. {isOptionImg ? (
-                              <img src={`http://localhost:3000/uploads/${optionText}`} alt={`Opsi ${letter}`} style={{ maxHeight: '60px', borderRadius: '4px' }} />
+                              <img src={`${BASE_URL}/uploads/${optionText}`} alt={`Opsi ${letter}`} style={{ maxHeight: '60px', borderRadius: '4px' }} />
                             ) : (
                               optionText
                             )}
@@ -1171,7 +1173,7 @@ export default function BankSoalDetail() {
                       >
                         <span style={{ marginRight: '0.5rem', fontWeight: 700 }}>{letter}.</span>
                         {isOptionImg ? (
-                          <img src={`http://localhost:3000/uploads/${optionText}`} alt={`Opsi ${letter}`} style={{ maxHeight: '60px', borderRadius: '4px' }} />
+                          <img src={`${BASE_URL}/uploads/${optionText}`} alt={`Opsi ${letter}`} style={{ maxHeight: '60px', borderRadius: '4px' }} />
                         ) : (
                           <span>{optionText}</span>
                         )}
@@ -1530,7 +1532,7 @@ export default function BankSoalDetail() {
                     {editGambarPreview && (
                       <div style={{ position: 'relative', display: 'inline-block' }}>
                         <img 
-                          src={editGambarPreview.endsWith('.webp') ? `http://localhost:3000/uploads/${editGambarPreview}` : editGambarPreview} 
+                          src={editGambarPreview.endsWith('.webp') ? `${BASE_URL}/uploads/${editGambarPreview}` : editGambarPreview} 
                           alt="Preview Soal" 
                           style={{ maxHeight: '100px', borderRadius: '6px', border: '1px solid #e2e8f0' }} 
                         />
@@ -1634,7 +1636,7 @@ export default function BankSoalDetail() {
                             {hasImage && (
                               <div style={{ position: 'relative', display: 'inline-block', marginTop: '0.25rem' }}>
                                 <img
-                                  src={editKolomGambarPreview[letter].endsWith('.webp') ? `http://localhost:3000/uploads/${editKolomGambarPreview[letter]}` : editKolomGambarPreview[letter]}
+                                  src={editKolomGambarPreview[letter].endsWith('.webp') ? `${BASE_URL}/uploads/${editKolomGambarPreview[letter]}` : editKolomGambarPreview[letter]}
                                   alt={`Preview Opsi ${letter}`}
                                   style={{ maxHeight: '80px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                                 />

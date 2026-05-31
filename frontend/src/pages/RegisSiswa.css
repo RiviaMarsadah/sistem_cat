@@ -1,0 +1,1064 @@
+/* ==========================================================================
+   🎨 PREMIUM STYLE FOR REGISTRASI SISWA MANDIRI — RIVIA CAT
+   ========================================================================== */
+
+/* 1. Page Container & Premium Background */
+.regis-page-container {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f4f8; /* Soft blue-gray background */
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 40px 20px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Glowing Decorative Circles */
+.decor-circle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 1;
+  opacity: 0.15;
+}
+
+.decor-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #3b82f6 0%, rgba(59, 130, 246, 0) 70%);
+  top: -150px;
+  left: -150px;
+}
+
+.decor-2 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, #001F3F 0%, rgba(0, 31, 63, 0) 70%);
+  bottom: -200px;
+  right: -100px;
+}
+
+/* 2. Main Wrapper Card with Soft Shadow */
+.regis-card-wrapper {
+  width: 100%;
+  max-width: 800px;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(0, 31, 63, 0.05), 0 1px 3px rgba(0, 31, 63, 0.02);
+  z-index: 10;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 3. Brand Header */
+.regis-brand-header {
+  padding: 40px 40px 30px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: linear-gradient(135deg, #001F3F 0%, #1E40AF 100%);
+  color: #ffffff;
+}
+
+.regis-icon-logo {
+  width: 60px;
+  height: 60px;
+  background: #ffffff;
+  box-shadow: 0 8px 16px rgba(15, 31, 61, 0.15);
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.regis-logo-img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.regis-title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.regis-main-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}
+
+.regis-sub-title {
+  margin: 4px 0 0 0;
+  font-size: 14px;
+  color: #8a9bbe;
+  font-weight: 500;
+}
+
+/* 4. Elegant Tabs System */
+/* 4. Segmented Button Control */
+.regis-tabs-container {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 14px;
+  padding: 6px;
+  margin: 25px 40px 0 40px;
+  gap: 6px;
+}
+
+.regis-tab-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  background-color: transparent;
+  font-size: 15px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.regis-tab-btn:hover {
+  color: #0f1f3d;
+  background-color: rgba(15, 31, 61, 0.04);
+}
+
+.regis-tab-btn.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  font-weight: 800;
+  box-shadow: 0 6px 15px rgba(59, 130, 246, 0.3);
+}
+
+.regis-tab-btn.active .tab-icon {
+  color: #ffffff;
+  transform: scale(1.15);
+}
+
+.regis-tab-btn.active::after {
+  display: none;
+}
+
+.tab-icon {
+  font-size: 16px;
+  transition: all 0.3s ease;
+  color: #94a3b8;
+}
+
+/* 5. Card Body */
+.regis-card-body {
+  padding: 40px;
+  background-color: #ffffff;
+}
+
+.section-tab-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #001F3F;
+  margin: 0 0 8px 0;
+}
+
+.section-tab-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 30px 0;
+}
+
+/* 6. TAB: SEARCH STYLES */
+.search-form-centered {
+  margin-bottom: 40px;
+}
+
+.search-input-group {
+  display: flex;
+  align-items: center;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 8px 8px 8px 20px;
+  transition: all 0.3s ease;
+}
+
+.search-input-group:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  background: #ffffff;
+}
+
+.search-bar-icon {
+  font-size: 20px;
+  color: #94a3b8;
+  margin-right: 15px;
+}
+
+.search-main-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #001F3F;
+  outline: none;
+  font-family: inherit;
+  padding: 10px 0;
+}
+
+.search-main-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-submit-btn {
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+}
+
+.search-submit-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.3);
+}
+
+.search-submit-btn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Loading Spinner Search */
+.search-loading-spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  color: #64748b;
+  gap: 15px;
+}
+
+.loading-spinner-regis {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f1f5f9;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Alerts and Banners */
+.error-alert-banner,
+.info-alert-banner,
+.success-alert-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+.error-alert-banner {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+}
+
+.info-alert-banner {
+  background-color: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #2563eb;
+}
+
+.success-alert-banner {
+  background-color: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: #16a34a;
+}
+
+.alert-banner-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* 7. Student Detail Card (Premium Overlapping Banner & Floating Avatar Style) */
+.search-result-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 15px 35px rgba(0, 31, 63, 0.05);
+  margin-top: 30px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.result-card-banner {
+  height: 90px;
+  background: linear-gradient(135deg, #001F3F 0%, #1E40AF 100%);
+  position: relative;
+}
+
+.result-header-floating {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  padding: 0 35px 25px;
+  margin-top: -45px; /* Overlaps with the banner */
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  z-index: 2;
+}
+
+.avatar-floating {
+  width: 80px;
+  height: 80px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #3b82f6;
+  border: 4px solid #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 31, 63, 0.08);
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.result-header-text {
+  flex: 1;
+  padding-bottom: 5px;
+}
+
+.result-header-text h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 850;
+  color: #ffffff; /* White color (sits on dark cover banner) */
+  letter-spacing: -0.3px;
+  text-shadow: 0 2px 4px rgba(0, 31, 63, 0.35);
+}
+
+.result-header-text p {
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.email-icon-inline {
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 30px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+.status-badge.aktif {
+  background-color: #f0fdf4;
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 148, 0.15);
+}
+
+.status-badge.nonaktif {
+  background-color: #fef2f2;
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.result-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 35px;
+  background-color: #fafbfc;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  padding: 16px 20px;
+  border-radius: 16px;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.detail-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 31, 63, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.detail-icon-box {
+  width: 44px;
+  height: 44px;
+  background-color: #f0f4f8;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #3b82f6;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.detail-item:hover .detail-icon-box {
+  background-color: #001F3F;
+  color: #ffffff;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.detail-value {
+  font-size: 15px;
+  color: #001F3F;
+  font-weight: 700;
+}
+
+/* 8. TAB: REGISTRATION FORM STYLES */
+.register-grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.form-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-span-2 {
+  grid-column: span 2;
+}
+
+.form-field-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  letter-spacing: 0.2px;
+}
+
+.form-input-icon-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 0 16px;
+  transition: all 0.3s ease;
+}
+
+.form-input-icon-wrapper:focus-within {
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+.input-field-icon {
+  font-size: 18px;
+  color: #94a3b8;
+  margin-right: 12px;
+}
+
+.form-main-input,
+.form-main-select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  color: #001F3F;
+  font-family: inherit;
+  padding: 14px 0;
+  width: 100%;
+}
+
+.form-main-select {
+  cursor: pointer;
+}
+
+.form-main-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Button Submit Pendaftaran */
+.form-btn-submit-container {
+  margin-top: 15px;
+}
+
+.form-register-submit-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  color: #ffffff;
+  border: none;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 800;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-register-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(59, 130, 246, 0.25);
+}
+
+.form-register-submit-btn:active {
+  transform: translateY(0);
+}
+
+.form-register-submit-btn:disabled {
+  background: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 9. Card Footer */
+.regis-card-footer {
+  padding: 24px;
+  text-align: center;
+  background-color: #fafbfc;
+  border-top: 1px solid #f1f5f9;
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.footer-login-link {
+  color: #3b82f6;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.footer-login-link:hover {
+  color: #1b3a6b;
+  text-decoration: underline;
+}
+
+/* 10. OTP VERIFICATION MODAL DIALOG */
+.otp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 31, 61, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.otp-modal-box {
+  width: 100%;
+  max-width: 440px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 31, 63, 0.25);
+  box-sizing: border-box;
+}
+
+.otp-modal-icon-wrapper {
+  width: 72px;
+  height: 72px;
+  background-color: #f0f4f8;
+  color: #3b82f6;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 24px;
+  border: 2px solid #e2e8f0;
+}
+
+.otp-mailbox-icon {
+  font-size: 32px;
+}
+
+.otp-modal-box h3 {
+  margin: 0 0 10px 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #001F3F;
+}
+
+.otp-modal-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 25px 0;
+}
+
+.otp-digits-input {
+  width: 100%;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  font-size: 32px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 12px;
+  padding: 14px;
+  color: #001F3F;
+  outline: none;
+  font-family: monospace;
+  box-sizing: border-box;
+  margin-bottom: 25px;
+  transition: all 0.3s ease;
+}
+
+.otp-digits-input:focus {
+  border-color: #3b82f6;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.08);
+}
+
+.otp-modal-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.otp-cancel-btn,
+.otp-verify-btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.otp-cancel-btn {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.otp-cancel-btn:hover {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.otp-verify-btn {
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.otp-verify-btn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.otp-verify-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   🔄 ANIMATIONS & TRANSITIONS
+   ========================================================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ==========================================================================
+   📱 RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .regis-page-container {
+    padding: 12px 8px;
+  }
+
+  .regis-card-wrapper {
+    border-radius: 16px;
+  }
+
+  .regis-brand-header {
+    padding: 24px 16px;
+    flex-direction: column;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .regis-main-title {
+    font-size: 22px;
+  }
+
+  .regis-sub-title {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+
+  .regis-tabs-container {
+    margin: 20px 14px 0 14px;
+    padding: 4px;
+    border-radius: 12px;
+    gap: 4px;
+  }
+
+  .regis-tab-btn {
+    padding: 12px 6px;
+    font-size: 13.5px;
+    border-radius: 8px;
+  }
+
+  .regis-card-body {
+    padding: 20px 16px;
+  }
+
+  .register-grid-form {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .grid-span-2 {
+    grid-column: span 1;
+  }
+
+  .result-details-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 20px 16px;
+  }
+
+  .result-header-floating {
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: -40px;
+    padding: 0 16px 16px;
+  }
+
+  .result-header-text h3 {
+    color: #001F3F !important;
+    text-shadow: none !important;
+  }
+
+  .status-badge {
+    margin-top: 10px;
+    margin-bottom: 0;
+  }
+
+  /* Modal responsiveness for mobile */
+  .confirm-modal-box {
+    padding: 24px 16px;
+    border-radius: 20px;
+    width: 94%;
+    max-width: 440px;
+    margin: 10px;
+  }
+
+  .otp-modal-box {
+    padding: 28px 16px;
+    border-radius: 20px;
+    width: 94%;
+    max-width: 400px;
+    margin: 10px;
+  }
+
+  .confirm-table-container {
+    padding: 12px;
+    margin-bottom: 20px;
+  }
+
+  .confirm-row {
+    padding: 8px 0;
+  }
+
+  .confirm-label {
+    font-size: 11px;
+  }
+
+  .confirm-value {
+    font-size: 13px;
+    max-width: 65%;
+  }
+
+  .confirm-modal-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .confirm-back-btn,
+  .confirm-submit-btn,
+  .otp-verify-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 14.5px;
+  }
+}
+
+/* Mobile search inputs stacked layout */
+@media (max-width: 576px) {
+  .search-input-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 16px;
+  }
+
+  .search-bar-icon {
+    display: none;
+  }
+
+  .search-main-input {
+    text-align: center;
+    padding: 6px 0;
+    font-size: 14.5px;
+    width: 100%;
+  }
+
+  .search-submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 14.5px;
+  }
+}
+
+/* ==========================================================================
+   📝 CONFIRMATION MODAL STYLE
+   ========================================================================== */
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 31, 63, 0.45);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.confirm-modal-box {
+  width: 100%;
+  max-width: 500px;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 35px;
+  box-shadow: 0 25px 50px -12px rgba(0, 31, 63, 0.25);
+  box-sizing: border-box;
+}
+
+.confirm-modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.confirm-modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #001F3F;
+}
+
+.confirm-modal-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  line-height: 1.6;
+  text-align: center;
+  margin: 8px 0 20px 0;
+}
+
+.confirm-table-container {
+  background-color: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 16px;
+  margin-bottom: 25px;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.confirm-row:last-child {
+  border-bottom: none;
+}
+
+.confirm-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.confirm-value {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #001F3F;
+  text-align: right;
+  word-break: break-all;
+  max-width: 60%;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.confirm-back-btn,
+.confirm-submit-btn {
+  flex: 1;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
+}
+
+.confirm-back-btn {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.confirm-back-btn:hover {
+  background-color: #e2e8f0;
+  color: #475569;
+}
+
+.confirm-submit-btn {
+  background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);
+  color: #ffffff;
+  border: none;
+}
+
+.confirm-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
+}
+
+.confirm-submit-btn:active {
+  transform: translateY(0);
+}
+

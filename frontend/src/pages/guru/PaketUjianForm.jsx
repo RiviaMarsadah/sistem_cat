@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import './PaketUjian.css';
 
 const isImageFile = (str) => typeof str === 'string' && str.trim().endsWith('.webp');
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
 
 const TINGKAT_OPTIONS = [
   { value: 'X', label: '10' },
@@ -598,7 +599,7 @@ export default function PaketUjianForm() {
                       <td>
                         {soal.gambar ? (
                           <img 
-                            src={soal.gambar.endsWith('.webp') ? `http://localhost:3000/uploads/${soal.gambar}` : soal.gambar} 
+                            src={soal.gambar.endsWith('.webp') ? `${BASE_URL}/uploads/${soal.gambar}` : soal.gambar} 
                             alt="Soal" 
                             style={{ maxHeight: '40px', borderRadius: '4px', maxWidth: '80px', objectFit: 'contain' }} 
                             onClick={(e) => e.stopPropagation()}
@@ -609,35 +610,35 @@ export default function PaketUjianForm() {
                       </td>
                       <td>
                         {isImageFile(soal.kolomA) ? (
-                          <img src={`http://localhost:3000/uploads/${soal.kolomA}`} alt="Opsi A" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
+                          <img src={`${BASE_URL}/uploads/${soal.kolomA}`} alt="Opsi A" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
                         ) : (
                           soal.kolomA || '-'
                         )}
                       </td>
                       <td>
                         {isImageFile(soal.kolomB) ? (
-                          <img src={`http://localhost:3000/uploads/${soal.kolomB}`} alt="Opsi B" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
+                          <img src={`${BASE_URL}/uploads/${soal.kolomB}`} alt="Opsi B" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
                         ) : (
                           soal.kolomB || '-'
                         )}
                       </td>
                       <td>
                         {isImageFile(soal.kolomC) ? (
-                          <img src={`http://localhost:3000/uploads/${soal.kolomC}`} alt="Opsi C" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
+                          <img src={`${BASE_URL}/uploads/${soal.kolomC}`} alt="Opsi C" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
                         ) : (
                           soal.kolomC || '-'
                         )}
                       </td>
                       <td>
                         {isImageFile(soal.kolomD) ? (
-                          <img src={`http://localhost:3000/uploads/${soal.kolomD}`} alt="Opsi D" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
+                          <img src={`${BASE_URL}/uploads/${soal.kolomD}`} alt="Opsi D" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
                         ) : (
                           soal.kolomD || '-'
                         )}
                       </td>
                       <td>
                         {isImageFile(soal.kolomE) ? (
-                          <img src={`http://localhost:3000/uploads/${soal.kolomE}`} alt="Opsi E" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
+                          <img src={`${BASE_URL}/uploads/${soal.kolomE}`} alt="Opsi E" style={{ maxHeight: '40px', borderRadius: '4px' }} onClick={(e) => e.stopPropagation()} />
                         ) : (
                           soal.kolomE || '-'
                         )}
@@ -797,7 +798,7 @@ export default function PaketUjianForm() {
                       {soal.gambar && (
                         <div style={{ marginTop: '4px' }}>
                           <img
-                            src={soal.gambar.endsWith('.webp') ? `http://localhost:3000/uploads/${soal.gambar}` : soal.gambar}
+                            src={soal.gambar.endsWith('.webp') ? `${BASE_URL}/uploads/${soal.gambar}` : soal.gambar}
                             alt="Soal"
                             style={{ maxHeight: '120px', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                           />
@@ -837,7 +838,7 @@ export default function PaketUjianForm() {
                               </strong>
                               <div style={{ flex: 1 }}>
                                 {isImageFile(val) ? (
-                                  <img src={`http://localhost:3000/uploads/${val}`} alt={`Opsi ${opt}`} style={{ maxHeight: '40px', borderRadius: '4px' }} />
+                                  <img src={`${BASE_URL}/uploads/${val}`} alt={`Opsi ${opt}`} style={{ maxHeight: '40px', borderRadius: '4px' }} />
                                 ) : (
                                   val
                                 )}

@@ -41,20 +41,43 @@
   background: #ffffff; /* Elegant white background */
   border: 1px solid #e2e8f0;
   color: #1e293b;
-  padding: 8px 10px;
+  padding: 10px;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 8px 10px rgba(0, 0, 0, 0.06); /* Highly visible premium shadow */
-  z-index: 999;
-  width: max-content;
-  max-width: 280px;
+  z-index: 999999 !important;
+  width: max-content !important;
+  max-width: none !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: none;
+  pointer-events: auto; /* Allow cursor pointer entry and scrolling */
   font-size: 0.8rem;
   font-weight: 500;
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* Scrollable constraints ONLY when item count > 10 */
+.class-tooltip-bubble.scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+  scrollbar-width: thin;
+}
+
+/* Beautiful custom Webkit scrollbar for bubble tooltips */
+.class-tooltip-bubble.scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+.class-tooltip-bubble.scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+.class-tooltip-bubble.scrollable::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+.class-tooltip-bubble.scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }
 
 /* Arrow indicator */
@@ -69,8 +92,67 @@
   border-color: #ffffff transparent transparent transparent;
 }
 
-.class-tooltip-container:hover .class-tooltip-bubble {
+.class-tooltip-container:hover .class-tooltip-bubble,
+.class-tooltip-container:active .class-tooltip-bubble,
+.class-tooltip-container:focus .class-tooltip-bubble,
+.class-tooltip-container:focus-within .class-tooltip-bubble {
   visibility: visible;
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+  z-index: 999999 !important;
+}
+
+/* Elevate table row stacking context when hovered or containing active tooltip */
+.paket-ujian-table tr:hover,
+.paket-ujian-table tr:focus-within,
+.paket-ujian-table tr:active,
+.clickable-row:hover,
+.session-row-odd:hover,
+.session-row-even:hover {
+  position: relative;
+  z-index: 9999 !important;
+}
+
+/* Prevent table wrappers from clipping custom class tooltips */
+.paket-ujian-table-wrap {
+  overflow: visible !important;
+}
+
+.paket-ujian-table {
+  overflow: visible !important;
+}
+
+.jadwal-table-wrap {
+  overflow: visible !important;
+}
+
+.paket-ujian-table td {
+  position: relative;
+  border-bottom: 2px solid #cbd5e1 !important; /* distinct solid row borders */
+  padding: 12px 16px !important;
+}
+
+/* Text Alignment overrides */
+.paket-ujian-table th.text-center,
+.paket-ujian-table td.text-center {
+  text-align: center !important;
+}
+
+.paket-ujian-table th.text-left,
+.paket-ujian-table td.text-left {
+  text-align: left !important;
+}
+
+/* Session Table Odd/Even Row Styles */
+.session-row-odd td {
+  background-color: #ffffff !important;
+}
+
+.session-row-even td {
+  background-color: #dbeafe !important; /* highly visible beautiful soft sky blue */
+}
+
+.session-row-odd:hover td,
+.session-row-even:hover td {
+  background-color: #bfdbfe !important; /* highly visible hover highlight blue */
 }

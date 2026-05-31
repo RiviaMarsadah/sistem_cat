@@ -2,6 +2,17 @@ const prisma = require('../config/prisma');
 const sijuwanApi = require('../utils/sijuwanApi');
 const bcrypt = require('bcryptjs');
 
+function mapApiTingkatToLocal(tingkatRaw) {
+  if (!tingkatRaw) return null;
+  const raw = tingkatRaw.trim().toUpperCase();
+  if (raw === '10' || raw === 'X') return 'X';
+  if (raw === '11' || raw === 'XI') return 'XI';
+  if (raw === '12' || raw === 'XII') return 'XII';
+  if (raw === 'ALUMNI') return 'ALUMNI';
+  if (raw === 'KI') return 'KI';
+  return null;
+}
+
 // ---- SSE Progress Emitter & Polling Snapshot ----
 const progressEmitters = new Map();   // userId -> SSE response
 const progressSnapshots = new Map();  // userId -> { processed, total, batch, module }
@@ -122,10 +133,10 @@ exports.analyze = async (req, res) => {
 
       apiList.forEach(apiItem => {
         // More robust matching: try to find by parsed components
-        const parts = (apiItem.nama_kelas || '').split(' ');
+        const parts = (apiItem.nama_kelas || '').trim().split(' ');
         const tingkatRaw = parts[0];
         const inisial = parts[parts.length - 1] || '1';
-        const tingkat = tingkatRaw === 'Alumni' ? 'ALUMNI' : (tingkatRaw === 'KI' ? 'KI' : tingkatRaw);
+        const tingkat = mapApiTingkatToLocal(tingkatRaw);
 
         const localItem = localList.find(l => 
           l.tingkat === tingkat && 
@@ -445,21 +456,17 @@ exports.execute = async (req, res) => {
               continue;
             }
 
-            // Parse nama_kelas (e.g., "X TKRO 1", "Alumni TKRO", "KI 24")
-            const parts = item.nama_kelas.split(' ');
+            // Parse nama_kelas (e.g., "10 KM-4 X", "Alumni TKRO", "KI 24")
+            const parts = (item.nama_kelas || '').trim().split(' ');
             const tingkatRaw = parts[0];
+            const tingkat = mapApiTingkatToLocal(tingkatRaw);
 
             // Skip if tingkat is not in Enum
-            if (!validTingkat.includes(tingkatRaw)) {
+            if (!tingkat) {
               console.warn(`Skipping kelas ${item.nama_kelas} - invalid tingkat: ${tingkatRaw}`);
               result.skipped++;
               continue;
             }
-
-            let tingkat;
-            if (tingkatRaw === 'Alumni') tingkat = 'ALUMNI';
-            else if (tingkatRaw === 'KI') tingkat = 'KI';
-            else tingkat = tingkatRaw;
 
             const inisial = parts[parts.length - 1] || '1';
 
@@ -563,7 +570,6 @@ exports.execute = async (req, res) => {
       const angkatanList = await prisma.angkatan.findMany();
       const jurusanList = await prisma.jurusan.findMany();
 
-      const localKelasByNama = new Map(kelasList.map(k => [k.namaKelas, k]));
       const localKelasByNorm  = new Map(kelasList.map(k => [`${k.tingkat}_${k.jurusanId}_${k.inisial}`, k]));
       const localAngkatanByTahun = new Map(angkatanList.map(a => [a.tahunAngkatan, a]));
       const localJurusanByKode   = new Map(jurusanList.map(j => [j.kodeProdi, j]));
@@ -573,8 +579,15 @@ exports.execute = async (req, res) => {
       try {
         const apiKelasRes = await sijuwanApi.getKelas({ per_page: 1000 });
         (apiKelasRes.data.data || apiKelasRes.data || []).forEach(k => {
+          const parts = (k.nama_kelas || '').trim().split(' ');
+          const tingkatRaw = parts[0];
+          const inisial = parts[parts.length - 1] || '1';
+          const tingkat = mapApiTingkatToLocal(tingkatRaw);
+
           apiKelasList.push({
             ...k,
+            tingkat,
+            inisial,
             localJurusanId: localJurusanByKode.get(k.kode_prodi)?.id
           });
         });
@@ -618,10 +631,32 @@ exports.execute = async (req, res) => {
           try {
             if (item.id) {
               const siswa = await prisma.siswa.findUnique({ where: { id: item.id }, include: { user: true } });
+              
+              let siswaUpdateData = {};
+              if (item.changes?.linkKelas) {
+                const apiK = apiKelasById.get(item.changes.linkKelas);
+                const localK = apiK
+                  ? localKelasByNorm.get(`${apiK.tingkat}_${apiK.localJurusanId}_${apiK.inisial}`)
+                  : null;
+                if (localK) {
+                  siswaUpdateData.kelasId = localK.id;
+                }
+              }
+              if (item.changes?.nis?.new) {
+                siswaUpdateData.nis = item.changes.nis.new;
+              }
+
               await prisma.user.update({
                 where: { id: siswa.userId },
                 data: { namaLengkap: item.changes.nama?.new || siswa.user.namaLengkap }
               });
+
+              if (Object.keys(siswaUpdateData).length > 0) {
+                await prisma.siswa.update({
+                  where: { id: item.id },
+                  data: siswaUpdateData
+                });
+              }
               result.updated++;
             } else {
               // O(1) lookup using pre-built maps
@@ -629,8 +664,7 @@ exports.execute = async (req, res) => {
               const apiA = apiAngkatanById.get(item.id_angkatan);
 
               let localK = apiK
-                ? (localKelasByNama.get(apiK.nama_kelas?.trim()) ||
-                   localKelasByNorm.get(`${apiK.tingkat}_${apiK.localJurusanId}_${apiK.inisial}`))
+                ? localKelasByNorm.get(`${apiK.tingkat}_${apiK.localJurusanId}_${apiK.inisial}`)
                 : null;
               const localA = localAngkatanByTahun.get(Number(apiA?.tahun_angkatan));
 

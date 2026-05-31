@@ -17,6 +17,7 @@ const adminAngkatanController = require('../controllers/adminAngkatanController'
 const adminSyncController = require('../controllers/adminSyncController');
 const adminStatsController = require('../controllers/adminStatsController');
 const adminUjianSiswaController = require('../controllers/adminUjianSiswaController');
+const adminGuruDataController = require('../controllers/adminGuruDataController');
 
 // All admin routes are protected
 router.use(authenticate);
@@ -85,6 +86,7 @@ router.delete('/angkatan/:id', adminAngkatanController.remove);
 // Jadwal Ujian
 router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official only
 router.post('/jadwal-ujian/bulk-generate', adminJadwalController.bulkGenerate);
+router.put('/jadwal-ujian/:id', adminJadwalController.update);
 router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
 
 // Stats
@@ -97,6 +99,17 @@ router.post('/sync/execute', adminSyncController.execute);
 router.get('/sync/progress', adminSyncController.progress);       // JSON polling
 // SSE stream — authenticate via query param ?token=xxx since EventSource can't send headers
 router.get('/sync/progress-stream', authenticate, requireRole('admin'), adminSyncController.progressStream);
+
+// Data Menu Guru (View-Only Monitoring)
+router.get('/guru-data/jadwal', adminGuruDataController.listAllJadwal);
+router.get('/guru-data/bank-soal', adminGuruDataController.listAllBankSoal);
+router.get('/guru-data/bank-soal/:id', adminGuruDataController.getBankSoalDetail);
+router.get('/guru-data/paket-ujian', adminGuruDataController.listAllPaket);
+router.get('/guru-data/rekap/jadwal', adminGuruDataController.listAllRekapJadwal);
+router.get('/guru-data/rekap/results', adminGuruDataController.listAllResults);
+router.get('/guru-data/rekap/detail/:id', adminGuruDataController.getExamDetail);
+router.get('/guru-data/analisis/paket', adminGuruDataController.listAllAnalisisPaket);
+router.get('/guru-data/analisis/paket/:id', adminGuruDataController.getQuestionAnalysis);
 
 module.exports = router;
 

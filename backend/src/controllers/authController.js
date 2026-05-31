@@ -215,6 +215,9 @@ exports.mobileGoogleLogin = async (req, res) => {
             id: updatedUser.siswa.id,
             nis: updatedUser.siswa.nis,
             nisn: updatedUser.siswa.nisn,
+            jk: updatedUser.siswa.jk,
+            agama: updatedUser.siswa.agama,
+            alamat: updatedUser.siswa.alamat,
             kelas: updatedUser.siswa.kelas
               ? {
                   id: updatedUser.siswa.kelas.id,

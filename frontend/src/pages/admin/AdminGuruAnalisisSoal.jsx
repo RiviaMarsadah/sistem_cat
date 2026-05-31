@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom';
 import { FiBook, FiInfo, FiPieChart, FiAlertTriangle, FiCheck, FiX, FiEye } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
-import './GuruTheme.css';
-import './AnalisisSoal.css';
+import '../guru/GuruTheme.css';
+import '../guru/AnalisisSoal.css';
 
 const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
 
@@ -13,7 +13,9 @@ const isImageFile = (str) => {
   return /\.(apng|avif|gif|jpg|jpeg|jfif|pjpeg|pjpg|png|svg|webp)$/i.test(str);
 };
 
-export default function AnalisisSoal() {
+const ITEMS_PER_PAGE = 10;
+
+export default function AdminGuruAnalisisSoal() {
   const { showToast } = useToast();
   const [loading, setLoading]       = useState(false);
   const [analyzing, setAnalyzing]   = useState(false);
@@ -23,7 +25,6 @@ export default function AnalisisSoal() {
   const [previewSoal, setPreviewSoal]     = useState(null);
 
   // Pagination
-  const ITEMS_PER_PAGE = 10;
   const [currentPage, setCurrentPage] = useState(1);
 
   const rawData = analysisData?.analysis || [];
@@ -45,19 +46,26 @@ export default function AnalisisSoal() {
     return result;
   }
 
-  useEffect(() => { if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) setCurrentPage(totalPages); }, [totalPages, currentPage]);
-  useEffect(() => { setCurrentPage(1); }, [selectedPaket]);
+  useEffect(() => {
+    if (currentPage !== 9999 && currentPage > totalPages && totalPages >= 1) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedPaket]);
 
   const fetchPackages = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/guru/analisis/paket');
+      const res = await api.get('/admin/guru-data/analisis/paket');
       const list = res.data?.data || [];
       setPackages(list);
       if (list.length > 0) setSelectedPaket(list[0].id);
     } catch (e) {
       console.error('Fetch packages error:', e);
-      showToast('Gagal memuat daftar paket ujian', 'error');
+      showToast('Gagal memuat daftar paket ujian guru', 'error');
     } finally {
       setLoading(false);
     }
@@ -67,7 +75,7 @@ export default function AnalisisSoal() {
     if (!selectedPaket) return;
     setAnalyzing(true);
     try {
-      const res = await api.get(`/guru/analisis/paket/${selectedPaket}`);
+      const res = await api.get(`/admin/guru-data/analisis/paket/${selectedPaket}`);
       setAnalysisData(res.data?.data);
     } catch (e) {
       console.error('Run analysis error:', e);
@@ -77,14 +85,19 @@ export default function AnalisisSoal() {
     }
   };
 
-  useEffect(() => { fetchPackages(); }, []);
-  useEffect(() => { if (selectedPaket) runAnalysis(); }, [selectedPaket]);
+  useEffect(() => {
+    fetchPackages();
+  }, []);
+
+  useEffect(() => {
+    if (selectedPaket) runAnalysis();
+  }, [selectedPaket]);
 
   const getDifficultyBadge = (difficulty) => {
     switch (difficulty) {
-      case 'Mudah': return <span className="diff-badge mudah"><FiCheck /> Mudah</span>;
-      case 'Sedang': return <span className="diff-badge sedang"><FiInfo /> Sedang</span>;
-      case 'Sulit':  return <span className="diff-badge sulit"><FiAlertTriangle /> Sulit</span>;
+      case 'Mudah': return <span className="diff-badge mudah" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#d1fae5', color: '#065f46', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem' }}><FiCheck /> Mudah</span>;
+      case 'Sedang': return <span className="diff-badge sedang" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#fef3c7', color: '#92400e', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem' }}><FiInfo /> Sedang</span>;
+      case 'Sulit':  return <span className="diff-badge sulit" style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', background: '#fee2e2', color: '#991b1b', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem' }}><FiAlertTriangle /> Sulit</span>;
       default:       return <span className="diff-badge">N/A</span>;
     }
   };
@@ -102,21 +115,22 @@ export default function AnalisisSoal() {
     }
   };
 
-  const mudahCount  = analysisData?.analysis?.filter(a => a.difficulty === 'Mudah').length  || 0;
-  const sedangCount = analysisData?.analysis?.filter(a => a.difficulty === 'Sedang').length || 0;
-  const sulitCount  = analysisData?.analysis?.filter(a => a.difficulty === 'Sulit').length  || 0;
+  const mudahCount  = rawData.filter(a => a.difficulty === 'Mudah').length  || 0;
+  const sedangCount = rawData.filter(a => a.difficulty === 'Sedang').length || 0;
+  const sulitCount  = rawData.filter(a => a.difficulty === 'Sulit').length  || 0;
+
+  const currentPaketDetails = packages.find(p => String(p.id) === String(selectedPaket));
 
   return (
-    <div className="guru-page analisis-page">
-
-      {/* ── Header ── */}
-      <div className="guru-header guru-header-card">
+    <div className="guru-page analisis-page" style={{ padding: '0 20px 20px 20px' }}>
+      {/* Header */}
+      <div className="guru-header guru-header-card" style={{ marginTop: '20px' }}>
         <div>
           <h1 className="guru-title">
-            <span className="guru-title-text">Analisis Butir</span>
-            <span className="guru-title-badge">Soal</span>
+            <span className="guru-title-text">Analisis Soal Guru</span>
+            <span className="guru-title-badge">Monitoring</span>
           </h1>
-          <p className="guru-subtitle">Analisis butir soal, indeks kesukaran, dan validitas soal hasil ujian.</p>
+          <p className="guru-subtitle">Pemantauan analisis butir soal, indeks kesulitan, dan validitas soal hasil ujian guru.</p>
         </div>
         <div className="guru-meta">
           <div className="guru-meta-card">
@@ -130,14 +144,14 @@ export default function AnalisisSoal() {
         </div>
       </div>
 
-      {/* ── Pilih Paket ── */}
+      {/* Pilih Paket */}
       <div className="guru-card analisis-filter-card">
         <div className="guru-card-header">
-          <h2 className="guru-card-title">Pilih Paket Analisis</h2>
+          <h2 className="guru-card-title" style={{ margin: 0 }}>Pilih Paket Analisis</h2>
         </div>
         <div>
           <label className="guru-form-label">
-            <FiBook /> Paket Ujian yang Telah Digunakan
+            <FiBook /> Paket Ujian Guru yang Telah Dikerjakan Siswa
           </label>
           <select
             className="guru-select"
@@ -149,16 +163,28 @@ export default function AnalisisSoal() {
               ? <option value="">Belum ada paket yang dikerjakan siswa</option>
               : packages.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.nama} — {p.mataPelajaran?.namaMapel} ({p.mataPelajaran?.kodeMapel || '-'}) ({p._count?.soalPaket} Soal)
+                    {p.nama} — {p.mataPelajaran?.namaMapel} ({p.guru?.user?.namaLengkap || 'Guru'}) ({p._count?.soalPaket} Soal)
                   </option>
                 ))
             }
           </select>
         </div>
+
+        {currentPaketDetails && (
+          <div style={{ marginTop: '1rem', padding: '10px 14px', background: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6', fontSize: '0.85rem', color: '#1e40af', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+            <span style={{ fontWeight: '700' }}>
+              Pembuat Paket: {currentPaketDetails.guru?.user?.namaLengkap || '-'}
+            </span>
+            <span>|</span>
+            <span style={{ fontWeight: '600' }}>
+              Mata Pelajaran: {currentPaketDetails.mataPelajaran?.namaMapel || '-'}
+            </span>
+          </div>
+        )}
       </div>
 
-      {/* ── Ringkasan Kesulitan ── */}
-      {analysisData && analysisData.analysis.length > 0 && (
+      {/* Ringkasan Kesulitan */}
+      {analysisData && rawData.length > 0 && (
         <div className="analisis-summary-grid">
           <div className="summary-box mudah">
             <span className="s-val">{mudahCount}</span>
@@ -179,129 +205,129 @@ export default function AnalisisSoal() {
         </div>
       )}
 
-      {/* ── Tabel Analisis ── */}
+      {/* Tabel Analisis */}
       <div className="guru-card">
         <div className="guru-card-header">
-          <h2 className="guru-card-title">Statistik Per Soal</h2>
+          <h2 className="guru-card-title" style={{ margin: 0 }}>Statistik Per Butir Soal</h2>
         </div>
 
         {analyzing ? (
-          <div className="analisis-state">
-            Menganalisis performa soal...
+          <div style={{ textAlign: 'center', padding: '3rem' }} className="analisis-state">
+            <div className="loading-spinner" style={{ margin: '0 auto 1rem auto' }}></div>
+            <p style={{ color: '#64748b' }}>Menganalisis performa soal...</p>
           </div>
-        ) : !analysisData || analysisData.analysis.length === 0 ? (
-          <div className="analisis-empty">
-            <FiPieChart size={48} className="analisis-empty-icon" />
+        ) : !analysisData || rawData.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }} className="analisis-empty">
+            <FiPieChart size={48} style={{ opacity: 0.5, marginBottom: '0.5rem' }} />
             <p>{packages.length === 0
               ? 'Belum ada paket ujian yang dikerjakan siswa.'
               : 'Pilih paket ujian untuk melihat analisis butir soal.'
             }</p>
           </div>
         ) : (
-          <div className="analisis-table">
-            {/* Head */}
-            <div className="analisis-row analisis-head">
-              <div>No</div>
-              <div>Pertanyaan</div>
-              <div>Kategori</div>
-              <div>Penjawab</div>
-              <div>Benar</div>
-              <div>% Benar</div>
-              <div>Evaluasi</div>
-              <div>Aksi</div>
-            </div>
+          <div className="analisis-table-wrapper" style={{ overflowX: 'auto' }}>
+            <div className="analisis-table" style={{ minWidth: '900px' }}>
+              {/* Head */}
+              <div className="analisis-row analisis-head">
+                <div>No</div>
+                <div>Pertanyaan</div>
+                <div>Kategori</div>
+                <div>Penjawab</div>
+                <div>Benar</div>
+                <div>% Akurasi Jawaban</div>
+                <div>Evaluasi</div>
+                <div>Aksi</div>
+              </div>
 
-            {/* Rows */}
-            {paginatedItems.map((item, index) => (
-              <div key={item.bankSoalId} className="analisis-row">
-                <div className="soal-num">#{startIndex + index + 1}</div>
-                <div 
-                  className="soal-text-cell" 
-                  dangerouslySetInnerHTML={{ __html: item.soal }} 
-                  onClick={() => setPreviewSoal(item)}
-                  style={{ cursor: 'pointer', transition: 'color 0.15s' }}
-                  title="Klik untuk pratinjau soal lengkap"
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
-                />
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  {getKategoriLabel(item.kategori)}
-                </div>
-                <div className="stat-cell">
-                  <span className="stat-val">{item.respondents}</span>
-                  <span className="stat-lbl">siswa</span>
-                </div>
-                <div className="stat-cell">
-                  <span className="stat-val green">{item.correctAnswers}</span>
-                  <span className="stat-lbl">siswa</span>
-                </div>
-                <div className="stat-cell">
-                  <span className={`stat-val ratio-text ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`}>
-                    {item.ratio}%
-                  </span>
-                  <div className="ratio-bar">
-                    <div className={`ratio-fill ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`} style={{ width: `${item.ratio}%` }} />
-                  </div>
-                </div>
-                <div className="eval-cell">
-                  {getDifficultyBadge(item.difficulty)}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  <button
-                    type="button"
+              {/* Rows */}
+              {paginatedItems.map((item, index) => (
+                <div key={item.bankSoalId} className="analisis-row table-row-hover">
+                  <div className="soal-num" style={{ fontWeight: '800', color: '#64748b' }}>#{startIndex + index + 1}</div>
+                  <div 
+                    className="soal-text-cell" 
+                    dangerouslySetInnerHTML={{ __html: item.soal }} 
                     onClick={() => setPreviewSoal(item)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '6px 12px',
-                      background: '#3b82f6',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s',
-                      boxShadow: '0 2px 4px rgba(59, 130, 246, 0.15)'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
-                  >
-                    <FiEye /> Pratinjau
-                  </button>
-                </div>
-              </div>
-            ))}
-
-            {/* Pagination */}
-            {!analyzing && totalItems > 0 && (
-              <div className="table-pagination">
-                <span className="table-pagination-info">
-                  {isShowAll 
-                    ? `Menampilkan 1 – ${totalItems} dari ${totalItems} soal` 
-                    : `Menampilkan ${startIndex + 1} – ${Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari ${totalItems} soal`
-                  }
-                </span>
-                <div className="table-pagination-controls">
-                  <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
-                  <div className="table-pagination-pages">
-                    {isShowAll ? (
-                      <button type="button" className="table-pagination-page active" onClick={() => setCurrentPage(1)}>Tampilkan Per Halaman</button>
-                    ) : (
-                      getPaginationPages(totalPages, displayPage).map((pg) =>
-                        pg.type === 'ellipsis' ? <span key={`ellipsis-${pg.key}`} className="table-pagination-ellipsis">…</span> :
-                        <button key={pg.value} type="button" className={`table-pagination-page ${pg.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(pg.value)}>{pg.value}</button>
-                      )
-                    )}
+                    style={{ cursor: 'pointer', transition: 'color 0.15s', fontWeight: '500', color: '#1e293b', fontSize: '0.85rem' }}
+                    title="Klik untuk pratinjau soal lengkap"
+                    onMouseEnter={(e) => e.currentTarget.style.color = '#3b82f6'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = ''}
+                  />
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {getKategoriLabel(item.kategori)}
                   </div>
-                  <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
-                  {!isShowAll && (
-                    <button type="button" className="table-pagination-btn show-all" onClick={() => setCurrentPage(9999)}>Tampilkan Semua</button>
-                  )}
+                  <div className="stat-cell" style={{ textAlign: 'center' }}>
+                    <span className="stat-val" style={{ fontWeight: '700', color: '#475569' }}>{item.respondents}</span>
+                    <span className="stat-lbl" style={{ fontSize: '0.72rem', color: '#94a3b8' }}>siswa</span>
+                  </div>
+                  <div className="stat-cell" style={{ textAlign: 'center' }}>
+                    <span className="stat-val green" style={{ fontWeight: '700', color: '#10b981' }}>{item.correctAnswers}</span>
+                    <span className="stat-lbl" style={{ fontSize: '0.72rem', color: '#94a3b8' }}>siswa</span>
+                  </div>
+                  <div className="stat-cell">
+                    <span className={`stat-val ratio-text ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`} style={{ fontWeight: '800' }}>
+                      {item.ratio}%
+                    </span>
+                    <div className="ratio-bar" style={{ height: '6px', background: '#f1f5f9', borderRadius: '3px', marginTop: '4px', overflow: 'hidden' }}>
+                      <div className={`ratio-fill ${item.ratio >= 70 ? 'ratio-high' : item.ratio >= 30 ? 'ratio-mid' : 'ratio-low'}`} style={{ width: `${item.ratio}%`, height: '100%' }} />
+                    </div>
+                  </div>
+                  <div className="eval-cell" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {getDifficultyBadge(item.difficulty)}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewSoal(item)}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        background: '#3b82f6',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontSize: '0.78rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s',
+                        boxShadow: '0 2px 4px rgba(59, 130, 246, 0.15)'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                    >
+                      <FiEye /> Pratinjau
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
+
+              {/* Pagination */}
+              {!analyzing && totalItems > 0 && (
+                <div className="table-pagination">
+                  <span className="table-pagination-info">
+                    {isShowAll 
+                      ? `Menampilkan 1 – ${totalItems} dari ${totalItems} soal` 
+                      : `Menampilkan ${startIndex + 1} – ${Math.min(startIndex + ITEMS_PER_PAGE, totalItems)} dari ${totalItems} soal`
+                    }
+                  </span>
+                  <div className="table-pagination-controls">
+                    <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage <= 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Sebelumnya</button>
+                    <div className="table-pagination-pages">
+                      {isShowAll ? (
+                        <button type="button" className="table-pagination-page active" onClick={() => setCurrentPage(1)}>Tampilkan Per Halaman</button>
+                      ) : (
+                        getPaginationPages(totalPages, displayPage).map((pg, idx) =>
+                          pg.type === 'ellipsis' ? <span key={`ellipsis-${pg.key}`} className="table-pagination-ellipsis">…</span> :
+                          <button key={pg.value} type="button" className={`table-pagination-page ${pg.value === displayPage ? 'active' : ''}`} onClick={() => setCurrentPage(pg.value)}>{pg.value}</button>
+                        )
+                      )}
+                    </div>
+                    <button type="button" className="table-pagination-btn" disabled={isShowAll || displayPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Berikutnya</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

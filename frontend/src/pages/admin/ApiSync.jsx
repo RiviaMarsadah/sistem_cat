@@ -333,15 +333,13 @@ const ApiSync = () => {
       {executing && (
         <div className="sync-overlay">
           <div className="sync-loader">
-            <div className="loader-circles">
-              <div></div><div></div><div></div>
-            </div>
+            <div className="loader-spinner"></div>
             <h3>
               {executingModule
                 ? `Menyelaraskan ${MODULES.find(m => m.id === executingModule)?.label}...`
                 : 'Sedang Menyelaraskan Database...'}
             </h3>
-            <p style={{ marginTop: '1.2rem', color: '#94a3b8', fontSize: '0.85rem' }}>Mohon jangan tutup halaman ini agar integritas data tetap terjaga.</p>
+            <p>Mohon jangan tutup halaman ini agar integritas data tetap terjaga.</p>
           </div>
         </div>
       )}
