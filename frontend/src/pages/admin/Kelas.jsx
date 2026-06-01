@@ -151,14 +151,22 @@ const AdminKelas = () => {
   };
 
   const filteredSiswa = useMemo(() => {
-    if (!siswaSearch.trim()) return siswaList;
-    const query = siswaSearch.toLowerCase();
-    return siswaList.filter(s => 
-      s.user.namaLengkap.toLowerCase().includes(query) ||
-      s.user.email.toLowerCase().includes(query) ||
-      (s.nis && s.nis.toLowerCase().includes(query)) ||
-      (s.nisn && s.nisn.toLowerCase().includes(query))
-    );
+    let result = siswaList;
+    if (siswaSearch.trim()) {
+      const query = siswaSearch.toLowerCase();
+      result = siswaList.filter(s => 
+        s.user.namaLengkap.toLowerCase().includes(query) ||
+        s.user.email.toLowerCase().includes(query) ||
+        (s.nis && s.nis.toLowerCase().includes(query)) ||
+        (s.nisn && s.nisn.toLowerCase().includes(query))
+      );
+    }
+    // Urutkan per abjad (A-Z) berdasarkan namaLengkap
+    return [...result].sort((a, b) => {
+      const nameA = (a.user?.namaLengkap || '').toLowerCase();
+      const nameB = (b.user?.namaLengkap || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
   }, [siswaList, siswaSearch]);
 
   const handleOpenAddModal = () => {

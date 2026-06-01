@@ -1,0 +1,1006 @@
+/* ==========================================================================
+   DESIGN SYSTEM FOR CEK SISWA (ULTRA-CLEAN, COMPACT LIGHT THEME)
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+.cek-page-container {
+  font-family: 'Outfit', sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  background-color: #f8fafc;
+  color: #1e293b;
+  padding: 30px 20px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.cek-content-wrapper {
+  width: 100%;
+  max-width: 1050px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ==========================================================================
+   COMPACT HEADER ROW
+   ========================================================================== */
+
+.cek-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 16px;
+  gap: 15px;
+}
+
+.cek-brand-minimal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.brand-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.brand-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+  font-weight: 400;
+}
+
+
+
+/* ==========================================================================
+   UNIFIED MAIN CARD & SEARCH
+   ========================================================================== */
+
+.cek-main-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cek-search-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+
+.glass-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.search-box-icon {
+  position: absolute;
+  left: 14px;
+  color: #6366f1;
+  font-size: 18px;
+  pointer-events: none;
+}
+
+.search-box-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 11px 40px 11px 40px;
+  color: #0f172a;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-box-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.search-box-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-input-spinner {
+  position: absolute;
+  right: 14px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(99, 102, 241, 0.1);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.search-helper-text {
+  font-size: 12px;
+  color: #64748b;
+  margin: 8px 0 0 0;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   RESULTS PANEL & TIGHT TABLE
+   ========================================================================== */
+
+.cek-results-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header-minimal {
+  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.results-count-badge {
+  color: #4f46e5;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.custom-premium-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.custom-premium-table th {
+  padding: 10px 16px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.custom-premium-table td {
+  padding: 10px 16px;
+  font-size: 13.5px;
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.custom-premium-table tr:hover {
+  background: #f8fafc;
+}
+
+.custom-premium-table .bold-text {
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+.custom-premium-table .code-text {
+  font-family: inherit;
+  color: #475569;
+}
+
+.kelas-badge {
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4f46e5;
+  display: inline-block;
+}
+
+/* Inline Table Editing Inputs */
+.table-inline-input {
+  width: 100%;
+  max-width: 120px;
+  padding: 5px 8px;
+  font-size: 13px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+.table-inline-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2.5px rgba(99, 102, 241, 0.08);
+}
+
+/* Action Group and Buttons */
+.table-action-group {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.edit-action-btn {
+  background: linear-gradient(135deg, #ef4444, #e11d48);
+  border: none;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2), 0 2px 4px -1px rgba(239, 68, 68, 0.1);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-action-btn:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 12px -2px rgba(239, 68, 68, 0.35), 0 3px 6px -2px rgba(239, 68, 68, 0.2);
+  filter: brightness(1.06);
+}
+
+.edit-action-btn:active {
+  transform: translateY(0);
+}
+
+.save-action-btn {
+  background: #10b981;
+  border: 1px solid #10b981;
+  color: #ffffff;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-action-btn:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.cancel-action-btn {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-action-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* Empty Table State */
+.empty-table-placeholder {
+  padding: 30px 16px !important;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.table-loading-spinner-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.loading-spinner-cek {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(99, 102, 241, 0.1);
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.empty-info-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #64748b;
+}
+
+.empty-icon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   ANIMATIONS & RESPONSIVENESS
+   ========================================================================== */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Table Row Enter Animations */
+.table-row-animate {
+  animation: fadeIn 0.3s ease forwards;
+}
+
+/* ==========================================================================
+   CUSTOM CONFIRMATION MODAL DIALOG
+   ========================================================================== */
+
+.cek-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: overlayFadeIn 0.2s ease forwards;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cek-confirm-box {
+  background: #ffffff;
+  width: 90%;
+  max-width: 440px;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.animate-scale-up {
+  animation: scaleUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.cek-confirm-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cek-confirm-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+}
+
+.cek-confirm-icon-wrapper.type-info {
+  background-color: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
+}
+
+.cek-confirm-icon-wrapper.type-success {
+  background-color: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+}
+
+.cek-confirm-icon-wrapper.type-danger {
+  background-color: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+}
+
+.cek-confirm-icon-wrapper .icon-main {
+  width: 20px;
+  height: 20px;
+}
+
+.cek-confirm-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cek-confirm-body {
+  margin-bottom: 24px;
+}
+
+.cek-confirm-message {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0;
+}
+
+.cek-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.confirm-btn-cancel {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn-cancel:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+.confirm-btn-ok {
+  border: none;
+  color: #ffffff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn-ok.bg-info {
+  background: #4f46e5;
+}
+
+.confirm-btn-ok.bg-info:hover {
+  background: #4338ca;
+}
+
+.confirm-btn-ok.bg-success {
+  background: #10b981;
+}
+
+.confirm-btn-ok.bg-success:hover {
+  background: #059669;
+}
+
+/* ==========================================================================
+   POP-UP FORM MODAL STYLING
+   ========================================================================== */
+
+.cek-form-modal-box {
+  background: #ffffff;
+  width: 90%;
+  max-width: 480px;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.cek-form-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc;
+}
+
+.cek-form-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.cek-form-modal-close-btn {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.cek-form-modal-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.cek-form-modal-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.cek-form-siswa-info-card {
+  background: rgba(99, 102, 241, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.08);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.info-card-icon {
+  font-size: 20px;
+  color: #4f46e5;
+  flex-shrink: 0;
+}
+
+.info-card-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+
+.info-card-class {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.cek-form-group {
+  margin-bottom: 18px;
+}
+
+.cek-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.cek-form-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.cek-form-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.cek-form-input-icon {
+  position: absolute;
+  left: 12px;
+  color: #94a3b8;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.cek-form-input-field {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px 10px 36px;
+  font-size: 13.5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.cek-form-input-field:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.cek-form-helper {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+  display: block;
+}
+
+.cek-form-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: #f8fafc;
+}
+
+.cek-form-submit-btn {
+  border: none;
+  background: #4f46e5;
+  color: #ffffff;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cek-form-submit-btn:hover {
+  background: #4338ca;
+}
+
+.cek-form-submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Highlight Student Name in Modals */
+.highlight-student-name {
+  color: #4f46e5;
+  background-color: rgba(99, 102, 241, 0.07);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-weight: 700;
+  display: inline-block;
+  margin: 0 2px;
+}
+
+/* Search Invitation Prompt */
+.search-invitation-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 10px;
+}
+
+.invitation-icon {
+  font-size: 44px;
+  color: #94a3b8;
+  opacity: 0.65;
+  margin-bottom: 8px;
+  animation: pulseIcon 2s infinite ease-in-out;
+}
+
+@keyframes pulseIcon {
+  0% { transform: scale(1); opacity: 0.65; }
+  50% { transform: scale(1.06); opacity: 0.85; color: #6366f1; }
+  100% { transform: scale(1); opacity: 0.65; }
+}
+
+.invitation-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #334155;
+  letter-spacing: 0.2px;
+}
+
+.invitation-desc {
+  font-size: 12.5px;
+  color: #64748b;
+  max-width: 440px;
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Make layout wider on Large screens (>= 1024px) & Extra Large screens (>= 1400px) */
+@media (min-width: 1024px) {
+  .cek-content-wrapper {
+    max-width: 1200px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .cek-content-wrapper {
+    max-width: 1300px;
+  }
+}
+
+/* Desktop and Mobile Views Containers */
+.desktop-view-container {
+  display: block;
+}
+
+.mobile-view-container {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-view-container {
+    display: none;
+  }
+
+  .mobile-view-container {
+    display: block;
+  }
+
+  .cek-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding-bottom: 12px;
+  }
+
+  .brand-title {
+    font-size: 18px;
+  }
+
+  .brand-subtitle {
+    font-size: 12px;
+  }
+
+  /* Mobile Student Card Styles */
+  .mobile-cards-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mobile-student-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #ffffff;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+  }
+
+  /* Card Header: Student Name and Edit Button Horizontally Aligned */
+  .card-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px dashed #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+
+  .card-student-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #4f46e5;
+    margin: 0;
+    word-break: break-word;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  /* Small Action Button for Mobile card header */
+  .mobile-edit-btn {
+    font-size: 11px !important;
+    padding: 5px 11px !important;
+    border-radius: 6px !important;
+    flex-shrink: 0;
+  }
+
+  /* Card Body Details */
+  .card-body-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .card-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f8fafc;
+    padding-bottom: 6px;
+    min-height: 24px;
+  }
+
+  .card-detail-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .detail-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #64748b;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  .detail-value {
+    font-size: 13.5px;
+    color: #1e293b;
+    text-align: right;
+    word-break: break-all;
+  }
+
+  .detail-value.text-muted {
+    color: #475569;
+  }
+
+  .detail-value.text-code {
+    font-family: var(--font-mono, monospace);
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .kelas-badge {
+    font-size: 11px;
+    padding: 1px 7px;
+  }
+}
+
+/* ==========================================================================
+   CUSTOM TOAST NOTIFICATION (TOP-RIGHT GLASSMORPHISM)
+   ========================================================================== */
+.cek-toast-notification {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 11000;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 350px;
+  max-width: 90vw;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+/* Accent Left Borders based on Type */
+.cek-toast-notification.type-success {
+  border-left: 4.5px solid #10b981;
+}
+
+.cek-toast-notification.type-error {
+  border-left: 4.5px solid #ef4444;
+}
+
+.cek-toast-notification.type-info {
+  border-left: 4.5px solid #3b82f6;
+}
+
+/* Toast Icon Wrapper styling */
+.toast-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  margin-top: 1.5px;
+  flex-shrink: 0;
+}
+
+.cek-toast-notification.type-success .toast-icon-wrapper {
+  color: #10b981;
+}
+
+.cek-toast-notification.type-error .toast-icon-wrapper {
+  color: #ef4444;
+}
+
+.cek-toast-notification.type-info .toast-icon-wrapper {
+  color: #3b82f6;
+}
+
+/* Content Area styling */
+.toast-content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
+
+.toast-title {
+  font-size: 14px;
+  font-weight: 750;
+  color: #0f172a;
+  letter-spacing: 0.1px;
+}
+
+.toast-desc {
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Close Button styling */
+.toast-close-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-top: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-close-btn:hover {
+  color: #475569;
+  background: #f1f5f9;
+}
+
+/* Slide-in Right Keyframe */
+@keyframes slideInRight {
+  0% {
+    transform: translateX(125%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

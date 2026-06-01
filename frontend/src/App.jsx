@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import Login from './pages/Login';
-import RegisSiswa from './pages/RegisSiswa';
+import CekSiswa from './pages/CekSiswa';
 import DashboardLayout from './layout/DashboardLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminJurusan from './pages/admin/Jurusan';
@@ -46,7 +46,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth/callback" element={<Login />} />
-          <Route path="/regis-siswa" element={<RegisSiswa />} />
+          <Route path="/cek-siswa" element={<CekSiswa />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<DashboardLayout role="admin" />}>
@@ -58,7 +58,7 @@ function App() {
             <Route path="siswa" element={<AdminSiswa />} />
             <Route path="guru" element={<AdminGuru />} />
             <Route path="angkatan" element={<AdminAngkatan />} />
-            <Route path="api-sync" element={<AdminApiSync />} />
+            <Route path="api-sync" element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="ujian-siswa" element={<AdminUjianSiswa />} />
             <Route path="jadwal-ujian" element={<AdminJadwalUjian />} />
             <Route path="jadwal-ujian/wizard" element={<AdminJadwalWizard />} />

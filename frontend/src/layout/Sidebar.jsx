@@ -48,7 +48,7 @@ const Sidebar = ({ role, user, isOpen, onClose, isCollapsed, onToggleCollapse })
       category: 'UTAMA',
       items: [
         { path: '/admin/dashboard', label: 'Dashboard', icon: FiHome, disabled: false },
-        { path: '/admin/api-sync', label: 'Sinkronisasi API', icon: FiRefreshCw, disabled: false },
+        { path: '/admin/api-sync', label: 'Sinkronisasi API', icon: FiRefreshCw, disabled: true },
       ]
     },
     {

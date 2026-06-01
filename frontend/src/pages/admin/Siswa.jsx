@@ -15,6 +15,7 @@ const AdminSiswa = () => {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const fileInputRef = useRef(null);
+  const [selectedKelasFilter, setSelectedKelasFilter] = useState('');
 
   // Helper paginasi ala Guru
   function getPaginationPages(tp, cp) {
@@ -69,14 +70,21 @@ const AdminSiswa = () => {
   const [confirmData, setConfirmData] = useState(null);
 
   const filteredItems = useMemo(() => {
-    return items.filter(s => 
-      s.user.namaLengkap.toLowerCase().includes(search.toLowerCase()) || 
-      s.user.email.toLowerCase().includes(search.toLowerCase()) ||
-      (s.nis && s.nis.toLowerCase().includes(search.toLowerCase())) ||
-      (s.nisn && s.nisn.toLowerCase().includes(search.toLowerCase())) ||
-      (s.kelas?.namaKelas && s.kelas.namaKelas.toLowerCase().includes(search.toLowerCase()))
-    );
-  }, [items, search]);
+    return items.filter(s => {
+      // Filter kata kunci pencarian
+      const matchesSearch = 
+        s.user.namaLengkap.toLowerCase().includes(search.toLowerCase()) || 
+        s.user.email.toLowerCase().includes(search.toLowerCase()) ||
+        (s.nis && s.nis.toLowerCase().includes(search.toLowerCase())) ||
+        (s.nisn && s.nisn.toLowerCase().includes(search.toLowerCase())) ||
+        (s.kelas?.namaKelas && s.kelas.namaKelas.toLowerCase().includes(search.toLowerCase()));
+
+      // Filter berdasarkan kelas
+      const matchesKelas = !selectedKelasFilter || s.kelasId === parseInt(selectedKelasFilter);
+
+      return matchesSearch && matchesKelas;
+    });
+  }, [items, search, selectedKelasFilter]);
 
   const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
   
@@ -94,7 +102,7 @@ const AdminSiswa = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedKelasFilter]);
 
   const count = useMemo(() => items.length, [items.length]);
 
@@ -323,10 +331,9 @@ const AdminSiswa = () => {
       </div>
 
 
-
       <div className="user-card">
         <div className="user-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
             <h2 className="user-card-title">Daftar Siswa</h2>
             <div className="search-box">
               <input 
@@ -336,6 +343,41 @@ const AdminSiswa = () => {
                 onChange={(e) => setSearch(e.target.value)}
                 className="search-input"
               />
+            </div>
+            
+            {/* Filter Kelas Dropdown */}
+            <div className="filter-box" style={{ minWidth: '160px' }}>
+              <select
+                value={selectedKelasFilter}
+                onChange={(e) => setSelectedKelasFilter(e.target.value)}
+                className="search-input"
+                style={{ 
+                  width: '100%', 
+                  padding: '0.45rem 1rem', 
+                  borderRadius: '6px', 
+                  border: '1px solid #e2e8f0', 
+                  outline: 'none',
+                  fontSize: '0.85rem',
+                  fontWeight: '600',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  backgroundColor: '#ffffff'
+                }}
+              >
+                <option value="">Semua Kelas</option>
+                {kelasList
+                  .filter(k => k.tingkat !== 'KI')
+                  .map(k => {
+                    const tingkatLabel = k.tingkat;
+                    const showInisial = k.inisial && 
+                      k.inisial.toLowerCase() !== k.tingkat.toLowerCase() &&
+                      !['x', 'xi', 'xii'].includes(k.inisial.toLowerCase());
+                    const kName = `${tingkatLabel} ${k.jurusan?.namaProdi || ''} ${showInisial ? k.inisial : ''}`.replace(/\s+/g, ' ').trim();
+                    return (
+                      <option key={k.id} value={k.id}>{kName}</option>
+                    );
+                  })}
+              </select>
             </div>
           </div>
           <div className="action-buttons">
@@ -569,13 +611,18 @@ const AdminSiswa = () => {
                       <label className="label">Kelas *</label>
                       <select className="input" value={kelasId} onChange={(e) => setKelasId(e.target.value)} required disabled={saving}>
                         <option value="">Pilih Kelas</option>
-                        {kelasList.map(k => {
-                          const tingkatLabel = { X: '10', XI: '11', XII: '12', ALUMNI: 'ALUMNI', KI: 'KI' }[k.tingkat] || k.tingkat;
-                          const kName = `${tingkatLabel} ${k.jurusan?.kodeProdi || ''} ${k.inisial || ''}`.replace(/\s+$/, '');
-                          return (
-                            <option key={k.id} value={k.id}>{kName}</option>
-                          );
-                        })}
+                        {kelasList
+                          .filter(k => k.tingkat !== 'KI')
+                          .map(k => {
+                            const tingkatLabel = k.tingkat;
+                            const showInisial = k.inisial && 
+                              k.inisial.toLowerCase() !== k.tingkat.toLowerCase() &&
+                              !['x', 'xi', 'xii'].includes(k.inisial.toLowerCase());
+                            const kName = `${tingkatLabel} ${k.jurusan?.namaProdi || ''} ${showInisial ? k.inisial : ''}`.replace(/\s+/g, ' ').trim();
+                            return (
+                              <option key={k.id} value={k.id}>{kName}</option>
+                            );
+                          })}
                       </select>
                     </div>
                     <div className="field-wrapper">
