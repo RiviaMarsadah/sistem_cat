@@ -95,6 +95,7 @@ router.put('/jadwal-ujian/custom/:id', guruJadwalController.updateCustom);
 router.delete('/jadwal-ujian/custom/:id', guruJadwalController.removeCustom);
 
 // Rekap Ujian
+router.get('/rekap/export', guruRekapController.exportResults);
 router.get('/rekap/jadwal', guruRekapController.getExams);
 router.get('/rekap/results', guruRekapController.getResults);
 router.get('/rekap/detail/:id', guruRekapController.getDetail);
@@ -102,6 +103,7 @@ router.delete('/rekap/results/:id', guruRekapController.removeResult);
 
 
 // Analisis Soal
+router.get('/analisis/export/:id', guruAnalisisController.exportQuestionAnalysis);
 router.get('/analisis/paket', guruAnalisisController.getAnalyzablePackages);
 router.get('/analisis/paket/:id', guruAnalisisController.getQuestionAnalysis);
 

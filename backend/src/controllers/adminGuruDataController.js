@@ -105,7 +105,13 @@ exports.listAllRekapJadwal = async (req, res) => {
     const exams = await prisma.jadwalUjian.findMany({
       include: {
         mataPelajaran: true,
-        paketUjian: true,
+        paketUjian: {
+          include: {
+            guru: {
+              include: { user: true }
+            }
+          }
+        },
         guru: { include: { user: true } },
         kelasJadwal: {
           include: {

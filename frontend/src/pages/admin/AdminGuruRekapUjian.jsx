@@ -126,6 +126,18 @@ export default function AdminGuruRekapUjian() {
     fetchResults();
   }, [selectedExam, selectedKelas]);
 
+  const getCreatorLabel = (e) => {
+    if (!e) return '';
+    const isOfficial = e.kategori === 'terjadwal' || !e.guruId;
+    if (isOfficial) {
+      if (e.paketUjian?.guru?.user?.namaLengkap) {
+        return `Admin - ${e.paketUjian.guru.user.namaLengkap}`;
+      }
+      return 'Admin';
+    }
+    return e.guru?.user?.namaLengkap || 'Guru';
+  };
+
   const handleReview = (id) => {
     navigate(`/admin/guru/rekap-ujian/review/${id}`);
   };
@@ -276,7 +288,7 @@ export default function AdminGuruRekapUjian() {
                 ) : (
                   <span style={{ flex: 1, fontSize: '0.875rem', color: selectedExam ? '#1e293b' : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {selectedExamDetails
-                      ? `${selectedExamDetails.nama} — ${selectedExamDetails.mataPelajaran?.namaMapel || ''} (${selectedExamDetails.guru?.user?.namaLengkap || (selectedExamDetails.kategori === 'terjadwal' || !selectedExamDetails.guruId ? 'Admin' : 'Guru')})`
+                      ? `${selectedExamDetails.nama} — ${selectedExamDetails.mataPelajaran?.namaMapel || ''} (${getCreatorLabel(selectedExamDetails)})`
                       : 'Pilih jadwal ujian...'}
                   </span>
                 )}
@@ -306,7 +318,7 @@ export default function AdminGuruRekapUjian() {
                       Tidak ada ujian yang cocok
                     </div>
                   ) : filteredExams.map(e => {
-                    const creatorLabel = e.guru?.user?.namaLengkap || (e.kategori === 'terjadwal' || !e.guruId ? 'Admin' : 'Guru');
+                    const creatorLabel = getCreatorLabel(e);
                     const isSelected = String(e.id) === String(selectedExam);
                     return (
                       <div
@@ -363,7 +375,7 @@ export default function AdminGuruRekapUjian() {
         {selectedExamDetails && (
           <div style={{ marginTop: '1rem', padding: '10px 14px', background: '#eff6ff', borderRadius: '8px', borderLeft: '4px solid #3b82f6', fontSize: '0.85rem', color: '#1e40af', display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
             <span style={{ fontWeight: '700' }}>
-              Pembuat Ujian: {selectedExamDetails.guru?.user?.namaLengkap || (selectedExamDetails.kategori === 'terjadwal' || !selectedExamDetails.guruId ? 'Admin' : 'Guru')}
+              Pembuat Ujian: {getCreatorLabel(selectedExamDetails)}
             </span>
             <span>|</span>
             <span style={{ fontWeight: '600' }}>

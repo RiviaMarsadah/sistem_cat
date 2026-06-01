@@ -1653,3 +1653,276 @@ input:checked + .toggle-slider:before {
 .search-input::placeholder {
   color: #94a3b8;
 }
+
+/* ==========================================================================
+   Premium Responsive Media Queries for Admin/Guru Pages (<= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Page wrapper & padding */
+  .admin-user-page, .admin-siswa-page, .admin-guru-page {
+    padding: 0 !important;
+  }
+
+  /* Header Section */
+  .user-header, .admin-header-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1.25rem !important;
+    padding: 1.25rem !important;
+  }
+  
+  .user-title, .admin-title {
+    font-size: 1.65rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  
+  .user-title .title-badge, .admin-badge {
+    padding: 0.25rem 0.75rem !important;
+    font-size: 0.7rem !important;
+  }
+  
+  .user-subtitle, .admin-subtitle {
+    font-size: 0.875rem !important;
+  }
+
+  /* Meta / Count stats in header */
+  .user-meta, .admin-meta {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  
+  .meta-card, .admin-meta-card {
+    min-width: unset !important;
+    padding: 0.75rem 1rem !important;
+    text-align: left !important;
+  }
+
+  /* Card container */
+  .user-card, .admin-card {
+    padding: 1rem !important;
+    border-radius: 12px !important;
+    margin-top: 1rem !important;
+  }
+
+  /* Card Header Layout */
+  .user-card-header, .admin-card-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1.25rem !important;
+  }
+
+  /* Target nested layouts inside header card */
+  .user-card-header > div,
+  .admin-card-header > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.85rem !important;
+    width: 100% !important;
+  }
+  
+  /* Search Box */
+  .search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .search-input {
+    width: 100% !important;
+    min-width: unset !important; /* Overwrite styles like min-width: 320px */
+    box-sizing: border-box !important;
+    padding-left: 2.25rem !important; /* Ensure space for search icon if present */
+  }
+
+  /* Buttons */
+  .action-buttons {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  
+  .action-buttons .btn,
+  .action-buttons .btn-add-user,
+  .action-buttons button {
+    width: 100% !important;
+    min-width: unset !important;
+    justify-content: center !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Forms & Form Grids */
+  .form-row, .admin-form-row {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+  
+  .field-wrapper, .admin-field-wrapper {
+    gap: 0.5rem !important;
+  }
+  
+  .label, .admin-label {
+    font-size: 0.875rem !important;
+  }
+  
+  .input, .admin-input {
+    padding: 0.8rem 1rem !important;
+    font-size: 0.9375rem !important;
+  }
+  
+  select.input, select.admin-input {
+    background-position: right 0.75rem center !important;
+  }
+
+  /* Modals Layout & Scroll */
+  .modal-overlay, .modal-overlay-admin {
+    padding: 0.5rem !important;
+    align-items: flex-end !important; /* Slide up from bottom on mobile, looks extremely premium! */
+  }
+  
+  .modal-container, .modal-container-admin {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important; /* Rounded top corners only */
+    max-height: 85vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: slideUpModalMobile 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+  
+  @keyframes slideUpModalMobile {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  
+  .modal-container form,
+  .modal-container-admin form {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    max-height: 100% !important;
+    margin: 0 !important;
+  }
+  
+  .modal-header, .modal-header-admin {
+    padding: 1.25rem 1.25rem 1rem !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .modal-body, .modal-body-admin {
+    padding: 1.25rem !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .modal-footer, .modal-footer-admin {
+    padding: 1rem 1.25rem !important;
+    flex-shrink: 0 !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #e2e8f0 !important;
+    display: flex !important;
+    gap: 0.75rem !important;
+    justify-content: flex-end !important;
+  }
+  
+  .modal-btn, .modal-confirm-footer .btn {
+    flex: 1 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 0.9rem !important;
+    height: unset !important;
+  }
+
+  .modal-confirm-header {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.75rem !important;
+  }
+
+  .modal-confirm-icon-box {
+    width: 60px !important;
+    height: 60px !important;
+    margin-bottom: 0.5rem !important;
+  }
+  
+  .modal-confirm-title {
+    font-size: 1.35rem !important;
+  }
+  
+  .modal-confirm-body {
+    text-align: center !important;
+    margin-bottom: 1.5rem !important;
+  }
+  
+  .modal-confirm-warning {
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 0.75rem !important;
+  }
+  
+  .modal-confirm-footer {
+    grid-template-columns: 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Table and data grids */
+  .user-table-wrap, .siswa-table-wrap, .guru-table-wrap, .admin-table-wrap {
+    margin: 0 -1rem !important; /* Bleed to card edges for neat horizontal scrolling */
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+  
+  .user-table th, .user-table td,
+  .siswa-table th, .siswa-table td,
+  .guru-table th, .guru-table td,
+  .admin-table th, .admin-table td {
+    padding: 0.65rem 0.85rem !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Pagination */
+  .table-pagination, .pagination-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+    border-radius: 12px !important;
+  }
+  
+  .table-pagination-info, .pagination-info {
+    text-align: center !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .table-pagination-controls, .pagination-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+  
+  .table-pagination-pages, .pagination-controls > div {
+    justify-content: center !important;
+  }
+  
+  .table-pagination-btn, .btn-pagination {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.6rem !important;
+  }
+  
+  .table-pagination-btn.show-all, .pagination-show-all {
+    margin-left: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+}

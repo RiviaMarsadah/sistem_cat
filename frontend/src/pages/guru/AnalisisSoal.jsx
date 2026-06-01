@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
-import { FiBook, FiInfo, FiPieChart, FiAlertTriangle, FiCheck, FiX, FiEye } from 'react-icons/fi';
+import { FiBook, FiInfo, FiPieChart, FiAlertTriangle, FiCheck, FiX, FiEye, FiDownload } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import './GuruTheme.css';
@@ -74,6 +74,33 @@ export default function AnalisisSoal() {
       showToast('Gagal menganalisis butir soal paket ini', 'error');
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!analysisData || !selectedPaket) return;
+
+    try {
+      showToast('Sedang menyiapkan file Excel...', 'info');
+      const currentPkg = packages.find(p => String(p.id) === String(selectedPaket));
+      const pkgName = currentPkg ? currentPkg.nama : 'analisis';
+      const cleanPkgName = pkgName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+      const response = await api.get(`/guru/analisis/export/${selectedPaket}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `analisis_soal_${cleanPkgName}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      showToast('File Excel berhasil diunduh!', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Gagal mengekspor analisis soal', 'error');
     }
   };
 
@@ -181,8 +208,32 @@ export default function AnalisisSoal() {
 
       {/* ── Tabel Analisis ── */}
       <div className="guru-card">
-        <div className="guru-card-header">
+        <div className="guru-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h2 className="guru-card-title">Statistik Per Soal</h2>
+          {analysisData && analysisData.analysis.length > 0 && (
+            <button 
+              className="btn-export-rekap" 
+              onClick={handleExportExcel}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.6rem 1.2rem',
+                background: '#10B981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#059669'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = '#10B981'; }}
+            >
+              <FiDownload /> Ekspor Excel
+            </button>
+          )}
         </div>
 
         {analyzing ? (

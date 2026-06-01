@@ -15,12 +15,14 @@ import {
   FiBell,
   FiSettings,
   FiChevronDown,
-  FiRefreshCw
+  FiRefreshCw,
+  FiX,
+  FiChevronsLeft
 } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-const Sidebar = ({ role, user }) => {
+const Sidebar = ({ role, user, isOpen, onClose, isCollapsed, onToggleCollapse }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
@@ -142,9 +144,22 @@ const Sidebar = ({ role, user }) => {
   const userRole = role === 'admin' ? 'Administrator' : 'Guru';
 
   return (
-    <aside className={`sidebar ${role === 'admin' ? 'sidebar-admin' : 'sidebar-guru'}`}>
+    <aside className={`sidebar ${role === 'admin' ? 'sidebar-admin' : 'sidebar-guru'} ${isOpen ? 'active' : ''}`}>
       {/* ── Brand Header ── */}
       <div className="sidebar-header">
+        {/* Toggle/Close button on mobile */}
+        <button className="sidebar-close-btn" onClick={onClose} aria-label="Close sidebar">
+          <FiX />
+        </button>
+        {/* Collapse button on desktop */}
+        <button 
+          className="sidebar-collapse-btn" 
+          onClick={onToggleCollapse} 
+          aria-label="Collapse sidebar" 
+          title="Sembunyikan Sidebar"
+        >
+          <FiChevronsLeft />
+        </button>
         {/* Logo besar di tengah */}
         <div className="sidebar-logo-wrapper">
           <img src="/gambar/logo.png" alt="RIVIA" onError={(e) => { e.target.style.display='none'; }} />
@@ -210,6 +225,7 @@ const Sidebar = ({ role, user }) => {
                     <NavLink
                       key={item.path}
                       to={item.path}
+                      onClick={onClose}
                       className={({ isActive }) =>
                         `sidebar-item ${isActive ? 'active' : ''}`
                       }

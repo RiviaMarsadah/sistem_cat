@@ -59,6 +59,7 @@ router.delete('/siswa/:id', adminSiswaController.remove);
 router.post('/siswa/import', upload.single('file'), adminSiswaController.importSiswa);
 
 // Ujian Siswa Management
+router.get('/ujian-siswa/export', adminUjianSiswaController.exportExcel);
 router.get('/ujian-siswa', adminUjianSiswaController.list);
 router.delete('/ujian-siswa/:id', adminUjianSiswaController.remove);
 router.put('/ujian-siswa/:id/status', adminUjianSiswaController.updateStatus);

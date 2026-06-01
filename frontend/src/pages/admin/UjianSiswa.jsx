@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FiSearch, FiTrash2, FiAlertCircle, FiCheckCircle, FiX, 
-  FiClock, FiBookOpen, FiUser, FiInfo, FiChevronLeft, FiChevronRight 
+  FiClock, FiBookOpen, FiUser, FiInfo, FiChevronLeft, FiChevronRight,
+  FiDownload
 } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -14,6 +15,27 @@ const UjianSiswa = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const handleExportExcel = async () => {
+    try {
+      showToast('Sedang menyiapkan file Excel...', 'info');
+      const response = await api.get(`/admin/ujian-siswa/export?search=${encodeURIComponent(search)}`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Rekap_Ujian_Siswa_Admin.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      showToast('File Excel berhasil diunduh!', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Gagal mengekspor data ujian siswa', 'error');
+    }
+  };
 
   // Pagination states
   const ITEMS_PER_PAGE = 20;
@@ -179,21 +201,33 @@ const UjianSiswa = () => {
 
       <div className="user-card">
         <div className="user-card-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <h2 className="user-card-title">Daftar Progres Ujian</h2>
-              <div className="search-box">
-                <input 
-                  type="text" 
-                  placeholder="Cari nama, NIS, kelas, atau ujian..." 
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="search-input"
-                  style={{ minWidth: '320px' }}
-                />
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <h2 className="user-card-title">Daftar Progres Ujian</h2>
+            <div className="search-box">
+              <input 
+                type="text" 
+                placeholder="Cari nama, NIS, kelas, atau ujian..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="search-input"
+                style={{ minWidth: '320px' }}
+              />
             </div>
           </div>
+          <button 
+            onClick={handleExportExcel} 
+            className="btn-add-user" 
+            style={{ 
+              background: '#10B981', 
+              borderColor: '#10B981',
+              color: '#ffffff',
+              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.borderColor = '#059669'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.borderColor = '#10B981'; }}
+          >
+            <FiDownload /> Export Excel
+          </button>
         </div>
 
         {loading && items.length === 0 ? (

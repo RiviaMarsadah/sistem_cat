@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const XLSX = require('xlsx');
 
 exports.list = async (req, res) => {
   try {
@@ -77,6 +78,89 @@ exports.list = async (req, res) => {
   } catch (err) {
     console.error('Error listing UjianSiswa:', err);
     return res.status(500).json({ success: false, message: 'Gagal memuat data ujian siswa' });
+  }
+};
+
+exports.exportExcel = async (req, res) => {
+  try {
+    const { search } = req.query;
+
+    let where = {};
+    if (search && String(search).trim().length > 0) {
+      const s = String(search).trim();
+      where = {
+        OR: [
+          { siswa: { user: { namaLengkap: { contains: s } } } },
+          { siswa: { nis: { contains: s } } },
+          { jadwalUjian: { nama: { contains: s } } },
+          { siswa: { kelas: { namaKelas: { contains: s } } } }
+        ]
+      };
+    }
+
+    const items = await prisma.ujianSiswa.findMany({
+      where,
+      include: {
+        siswa: {
+          include: {
+            user: {
+              select: {
+                email: true,
+                namaLengkap: true
+              }
+            },
+            kelas: true
+          }
+        },
+        jadwalUjian: true
+      },
+      orderBy: {
+        id: 'desc'
+      }
+    });
+
+    const formattedData = items.map((item, idx) => ({
+      'No': idx + 1,
+      'Nama Siswa': item.siswa?.user?.namaLengkap || '-',
+      'NIS': item.siswa?.nis || '-',
+      'NISN': item.siswa?.nisn || '-',
+      'Email': item.siswa?.user?.email || '-',
+      'Kelas': item.siswa?.kelas?.namaKelas || '-',
+      'Nama Ujian': item.jadwalUjian?.nama || '-',
+      'Status': item.status,
+      'Benar': item.benar,
+      'Salah': item.salah,
+      'Kosong': item.kosong,
+      'Ragu-ragu': item.raguRagu,
+      'Nilai Akhir': Number(item.nilaiAkhir) || 0,
+      'Mulai': item.mulaiPada ? new Date(item.mulaiPada).toLocaleString('id-ID') : '-',
+      'Selesai': item.selesaiPada ? new Date(item.selesaiPada).toLocaleString('id-ID') : '-'
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(formattedData);
+
+    // Auto-fit columns
+    const max_len = {};
+    formattedData.forEach((row) => {
+      Object.keys(row).forEach((key) => {
+        const val = row[key] ? row[key].toString() : '';
+        max_len[key] = Math.max(max_len[key] || 10, val.length);
+      });
+    });
+    const cols = Object.keys(max_len).map((key) => ({ wch: max_len[key] + 3 }));
+    ws['!cols'] = cols;
+
+    XLSX.utils.book_append_sheet(wb, ws, "Ujian Siswa");
+
+    const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+    res.setHeader('Content-Disposition', 'attachment; filename="Rekap_Ujian_Siswa_Admin.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    return res.send(buf);
+  } catch (err) {
+    console.error('Error exporting UjianSiswa:', err);
+    return res.status(500).json({ success: false, message: 'Gagal mengekspor data ujian siswa' });
   }
 };
 

@@ -136,46 +136,31 @@ export default function RekapUjianGuru() {
     setShowConfirmModal(true);
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = async () => {
     if (results.length === 0) return;
 
-    const currentExam = exams.find(e => String(e.id) === String(selectedExam));
-    const examName = currentExam ? currentExam.nama : 'ujian';
-    const cleanExamName = examName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    try {
+      showToast('Sedang menyiapkan file Excel...', 'info');
+      const currentExam = exams.find(e => String(e.id) === String(selectedExam));
+      const examName = currentExam ? currentExam.nama : 'ujian';
+      const cleanExamName = examName.toLowerCase().replace(/[^a-z0-9]/g, '_');
 
-    // Headers (separated by semicolon to automatically split into columns in Indonesian Excel)
-    const headers = ['No', 'Nama Siswa', 'Email', 'Kelas', 'Jawaban Benar', 'Nilai Akhir'];
+      const response = await api.get(`/guru/rekap/export?jadwalId=${selectedExam}&kelasId=${selectedKelas}`, {
+        responseType: 'blob'
+      });
 
-    // Rows
-    const rows = results.map((r, idx) => {
-      const nama = r.siswa?.user?.namaLengkap || '-';
-      const email = r.siswa?.user?.email || '-';
-      const kelas = r.siswa?.kelas ? `${r.siswa.kelas.tingkat} ${r.siswa.kelas.jurusan?.namaProdi || ''} ${r.siswa.kelas.inisial || ''}` : '-';
-      const jawabanBenar = `${r.benar} dari ${r.totalSoal}`;
-      const nilai = r.status === 'selesai' ? Number(r.nilaiAkhir).toFixed(1) : '-';
-
-      return [
-        idx + 1,
-        nama,
-        email,
-        kelas,
-        jawabanBenar,
-        nilai
-      ];
-    });
-
-    const csvContent = "\uFEFF" + [headers.join(';'), ...rows.map(row => row.join(';'))].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `rekap_nilai_${cleanExamName}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Rekapitulasi berhasil diekspor', 'success');
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `rekap_nilai_${cleanExamName}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      showToast('File Excel berhasil diunduh!', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Gagal mengekspor rekap hasil', 'error');
+    }
   };
 
   const availableClasses = results.reduce((acc, current) => {
@@ -275,8 +260,8 @@ export default function RekapUjianGuru() {
         <div className="guru-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <h2 className="guru-card-title">Daftar Hasil Peserta</h2>
           {results.length > 0 && (
-            <button className="btn-export-rekap" onClick={handleExportCSV}>
-              <FiDownload /> Ekspor CSV
+            <button className="btn-export-rekap" onClick={handleExportExcel}>
+              <FiDownload /> Ekspor Excel
             </button>
           )}
         </div>
