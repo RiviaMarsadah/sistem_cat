@@ -147,16 +147,33 @@ exports.getJadwalByToken = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Soal untuk ujian ini belum disiapkan oleh guru.'});
     }
 
-    // 3. Cek Rentang Waktu
+    // 3. Cek Rentang Waktu (Waktu Indonesia — server sudah TZ=Asia/Jakarta)
     const now = new Date();
-    let isWaiting = false;
 
-    if (now < jadwal.mulai) {
-      isWaiting = true;
-    }
-    
+    // Ujian sudah berakhir
     if (now > jadwal.selesai) {
-       return res.status(400).json({ success: false, message: 'Ujian telah berakhir.' });
+      return res.status(400).json({ success: false, message: 'Ujian telah berakhir.' });
+    }
+
+    // Ujian belum dimulai — kembalikan 425 Too Early beserta info waktu
+    if (now < jadwal.mulai) {
+      const mulaiWIB = jadwal.mulai.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      return res.status(425).json({
+        success: false,
+        code: 'EXAM_NOT_STARTED',
+        message: `Ujian belum dimulai. Ujian akan dimulai pada ${mulaiWIB} WIB.`,
+        mulai: jadwal.mulai.toISOString(),
+        selesai: jadwal.selesai.toISOString()
+      });
     }
 
     return res.json({
@@ -171,7 +188,7 @@ exports.getJadwalByToken = async (req, res) => {
           mataPelajaran: jadwal.mataPelajaran.namaMapel,
           paketUjian: jadwal.paketUjian.nama,
           tipeUjian: jadwal.paketUjian.tipeUjian,
-          isWaiting
+          isWaiting: false
        }
     });
 
@@ -275,6 +292,34 @@ exports.mulaiUjian = async (req, res) => {
     if (!jadwal || !jadwal.paketUjianId) {
        return res.status(404).json({ success: false, message: 'Jadwal/Paket ujian tidak valid.' });
     }
+
+    // ── Validasi waktu ujian (WIB) ────────────────────────────────────────
+    const nowCheck = new Date();
+
+    if (nowCheck > jadwal.selesai) {
+      return res.status(400).json({ success: false, message: 'Waktu ujian telah berakhir.' });
+    }
+
+    if (nowCheck < jadwal.mulai) {
+      const mulaiWIB = jadwal.mulai.toLocaleString('id-ID', {
+        timeZone: 'Asia/Jakarta',
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      return res.status(425).json({
+        success: false,
+        code: 'EXAM_NOT_STARTED',
+        message: `Ujian belum dapat dimulai. Silakan tunggu hingga ${mulaiWIB} WIB.`,
+        mulai: jadwal.mulai.toISOString(),
+        selesai: jadwal.selesai.toISOString()
+      });
+    }
+    // ── End validasi waktu ────────────────────────────────────────────────
 
     const existing = await prisma.ujianSiswa.findUnique({
       where: { siswaId_jadwalUjianId: { siswaId, jadwalUjianId: jadwal.id } },

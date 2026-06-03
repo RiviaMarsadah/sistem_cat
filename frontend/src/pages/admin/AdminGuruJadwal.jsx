@@ -1,10 +1,26 @@
-import { useEffect, useState, useMemo } from 'react';
-import { FiBook, FiCalendar, FiClock, FiShield, FiUser, FiCopy } from 'react-icons/fi';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { FiBook, FiCalendar, FiClock, FiShield, FiUser, FiCopy, FiRefreshCw } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import '../guru/GuruTheme.css';
 import '../guru/JadwalUjian.css';
 import '../guru/PaketUjian.css';
+
+// ── Helper: format mm:ss dari milliseconds ──────────────────────────────────
+function formatCountdown(ms) {
+  if (ms <= 0) return '00:00';
+  const totalSec = Math.ceil(ms / 1000);
+  const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+  const s = (totalSec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function isToday(jadwal) {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  return new Date(jadwal.mulai) <= endOfDay && new Date(jadwal.selesai) >= startOfDay;
+}
 
 const getTingkatLabel = (tingkat) => {
   const map = { X: '10', XI: '11', XII: '12', ALUMNI: 'Alumni', KI: 'KI' };
@@ -24,16 +40,20 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminGuruJadwal() {
   const { showToast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading]     = useState(true);
   const [schedules, setSchedules] = useState([]);
-  const [searchCustom, setSearchCustom] = useState('');
+  const [searchCustom, setSearchCustom]           = useState('');
   const [currentPageCustom, setCurrentPageCustom] = useState(1);
+  // Token countdown state
+  const [tokenMap, setTokenMap]         = useState({});
+  const [msUntilRegen, setMsUntilRegen] = useState(0);
+  const countdownRef = useRef(null);
+  const pollRef      = useRef(null);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await api.get('/admin/guru-data/jadwal');
-      // Only display custom exams scheduled by teachers (marked as custom or has a non-null creator)
       const allSchedules = res.data?.data || [];
       const customOnly = allSchedules.filter(j => j.kategori === 'custom' || j.guruId !== null);
       setSchedules(customOnly);
@@ -44,9 +64,39 @@ export default function AdminGuruJadwal() {
     }
   };
 
+  const fetchTodayTokens = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/jadwal-ujian/today-tokens');
+      if (res.data?.success) {
+        setTokenMap(res.data.data.tokens || {});
+        const ms = res.data.data.msUntilNextRegen || 0;
+        setMsUntilRegen(ms);
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        countdownRef.current = setInterval(() => {
+          setMsUntilRegen(prev => {
+            if (prev <= 1000) {
+              clearInterval(countdownRef.current);
+              fetchData();
+              fetchTodayTokens();
+              return 0;
+            }
+            return prev - 1000;
+          });
+        }, 1000);
+      }
+    } catch (_) {}
+  }, []);
+
   useEffect(() => {
     fetchData();
-  }, []);
+    fetchTodayTokens();
+    pollRef.current = setInterval(fetchTodayTokens, 30_000);
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      if (pollRef.current)      clearInterval(pollRef.current);
+    };
+  }, [fetchTodayTokens]);
+
 
   const filteredCustomJadwal = useMemo(() => {
     if (!searchCustom.trim()) return schedules;
@@ -164,6 +214,11 @@ export default function AdminGuruJadwal() {
                   const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
                   const isEven = idx % 2 === 1;
                   const rowClass = isEven ? 'session-row-even' : 'session-row-odd';
+                  // Token live dari tokenMap (ujian hari ini), fallback ke DB
+                  const todayTok        = tokenMap[j.id];
+                  const displayToken    = todayTok?.token        ?? j.token;
+                  const displayTokenOut = todayTok?.tokenCheckOut ?? j.tokenCheckOut;
+                  const jadwalHariIni   = isToday(j);
 
                   return (
                     <tr key={j.id} className={rowClass}>
@@ -219,10 +274,10 @@ export default function AdminGuruJadwal() {
                         </div>
                       </td>
                       <td className="text-center">
-                        <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                        <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
                           <button 
                             type="button"
-                            onClick={() => handleCopyToken(j.token, 'Check-In')}
+                            onClick={() => handleCopyToken(displayToken, 'Check-In')}
                             title="Klik untuk menyalin Token Check-In"
                             style={{ 
                               display: 'inline-flex', 
@@ -239,15 +294,15 @@ export default function AdminGuruJadwal() {
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                              width: '105px'
+                              width: '112px'
                             }}
                           >
                             <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#065f46', marginRight: '2px' }}>IN:</span>
-                            <span>{j.token || '-'}</span>
+                            <span>{displayToken || '-'}</span>
                           </button>
                           <button 
                             type="button"
-                            onClick={() => handleCopyToken(j.tokenCheckOut, 'Check-Out')}
+                            onClick={() => handleCopyToken(displayTokenOut, 'Check-Out')}
                             title="Klik untuk menyalin Token Check-Out"
                             style={{ 
                               display: 'inline-flex', 
@@ -264,12 +319,26 @@ export default function AdminGuruJadwal() {
                               cursor: 'pointer',
                               transition: 'all 0.2s',
                               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                              width: '105px'
+                              width: '112px'
                             }}
                           >
                             <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#991b1b', marginRight: '2px' }}>OUT:</span>
-                            <span>{j.tokenCheckOut || '-'}</span>
+                            <span>{displayTokenOut || '-'}</span>
                           </button>
+                          {jadwalHariIni && (
+                            <div style={{ 
+                              display: 'flex', alignItems: 'center', gap: '4px',
+                              marginTop: '2px',
+                              background: msUntilRegen < 60000 ? '#fff7ed' : '#f0f9ff',
+                              border: `1px solid ${msUntilRegen < 60000 ? '#fed7aa' : '#bae6fd'}`,
+                              borderRadius: '6px', padding: '3px 8px',
+                              fontSize: '0.7rem', fontWeight: '600',
+                              color: msUntilRegen < 60000 ? '#c2410c' : '#0369a1'
+                            }}>
+                              <FiRefreshCw size={10} />
+                              <span>Regen: {formatCountdown(msUntilRegen)}</span>
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="text-left">
@@ -336,6 +405,7 @@ export default function AdminGuruJadwal() {
           </div>
         )}
       </div>
+    <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

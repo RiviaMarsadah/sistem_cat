@@ -85,8 +85,11 @@ router.put('/angkatan/:id', adminAngkatanController.update);
 router.delete('/angkatan/:id', adminAngkatanController.remove);
 
 // Jadwal Ujian
-router.get('/jadwal-ujian/admin', adminJadwalController.list); // List official only
+router.get('/jadwal-ujian/admin', adminJadwalController.list);             // List official only
+router.get('/jadwal-ujian/today-tokens', adminJadwalController.getTodayTokensInfo); // Token + countdown
 router.post('/jadwal-ujian/bulk-generate', adminJadwalController.bulkGenerate);
+router.get('/jadwal-ujian/:id/available-pakets', adminJadwalController.getAvailablePakets); // Admin pilih paket
+router.put('/jadwal-ujian/:id/set-paket', adminJadwalController.adminSetPaket);           // Admin set paket
 router.put('/jadwal-ujian/:id', adminJadwalController.update);
 router.delete('/jadwal-ujian/:id', adminJadwalController.remove);
 

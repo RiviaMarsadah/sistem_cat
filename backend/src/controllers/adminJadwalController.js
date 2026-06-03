@@ -66,7 +66,6 @@ exports.bulkGenerate = async (req, res) => {
     
     await prisma.$transaction(async (tx) => {
       for (const slot of slots) {
-        // slot: { jurusanId, kelasIds: [], mapelId, ruangan, mulai, selesai, durasi, opsiKeamanan }
         const tokenIn = await generateToken();
         const tokenOut = await generateToken();
 
@@ -83,7 +82,7 @@ exports.bulkGenerate = async (req, res) => {
             durasi: Number(slot.durasi),
             token: tokenIn,
             tokenCheckOut: tokenOut,
-            guruId: null, // Always true for admin scheduled exams
+            guruId: null,
             opsiKeamanan: Boolean(slot.opsiKeamanan)
           }
         });
@@ -122,7 +121,6 @@ exports.remove = async (req, res) => {
   }
 };
 
-// API tambahan untuk melihat daftar jadwal berdasarkan mapel agar Admin tahu progress
 exports.listAll = async (req, res) => {
    try {
     const jadwal = await prisma.jadwalUjian.findMany({
@@ -131,7 +129,7 @@ exports.listAll = async (req, res) => {
         paketUjian: {
            include: { guru: { include: { user: true } } }
         },
-        guru: { include: { user: true } }, // Kalo ujian custom
+        guru: { include: { user: true } },
         kelasJadwal: {
           include: { kelas: true }
         }
@@ -173,3 +171,178 @@ exports.update = async (req, res) => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FITUR BARU 1: Ambil paket soal yang tersedia berdasarkan mapel jadwal
+// GET /admin/jadwal-ujian/:id/available-pakets
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getAvailablePakets = async (req, res) => {
+  const jadwalId = Number(req.params.id);
+  if (!jadwalId) {
+    return res.status(400).json({ success: false, message: 'ID jadwal tidak valid' });
+  }
+
+  try {
+    const jadwal = await prisma.jadwalUjian.findUnique({
+      where: { id: jadwalId },
+      select: { mataPelajaranId: true, guruId: true }
+    });
+
+    if (!jadwal) {
+      return res.status(404).json({ success: false, message: 'Jadwal ujian tidak ditemukan' });
+    }
+
+    if (jadwal.guruId !== null) {
+      return res.status(400).json({ success: false, message: 'Endpoint ini hanya untuk jadwal resmi admin' });
+    }
+
+    const pakets = await prisma.paketUjian.findMany({
+      where: {
+        mataPelajaranId: jadwal.mataPelajaranId
+      },
+      include: {
+        guru: { include: { user: { select: { namaLengkap: true } } } },
+        mataPelajaran: { select: { namaMapel: true } },
+        _count: { select: { soalPaket: true } }
+      },
+      orderBy: [
+        { guru: { user: { namaLengkap: 'asc' } } },
+        { nama: 'asc' }
+      ]
+    });
+
+    return res.json({ success: true, data: pakets });
+  } catch (error) {
+    console.error('getAvailablePakets error:', error);
+    return res.status(500).json({ success: false, message: 'Gagal memuat paket soal yang tersedia' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FITUR BARU 2: Admin set / ganti / lepas paket soal di jadwal resmi
+// PUT /admin/jadwal-ujian/:id/set-paket
+// Body: { paketUjianId: number | null }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.adminSetPaket = async (req, res) => {
+  const jadwalId = Number(req.params.id);
+  const { paketUjianId } = req.body;
+
+  if (!jadwalId) {
+    return res.status(400).json({ success: false, message: 'ID jadwal tidak valid' });
+  }
+
+  try {
+    const jadwal = await prisma.jadwalUjian.findUnique({
+      where: { id: jadwalId },
+      select: { id: true, guruId: true, mataPelajaranId: true, paketUjianId: true }
+    });
+
+    if (!jadwal) {
+      return res.status(404).json({ success: false, message: 'Jadwal ujian tidak ditemukan' });
+    }
+
+    if (jadwal.guruId !== null) {
+      return res.status(400).json({ success: false, message: 'Endpoint ini hanya untuk jadwal resmi admin' });
+    }
+
+    // Lepas paket jika null dikirim
+    if (paketUjianId === null || paketUjianId === undefined || paketUjianId === '') {
+      await prisma.jadwalUjian.update({
+        where: { id: jadwalId },
+        data: { paketUjianId: null }
+      });
+      return res.json({ success: true, message: 'Paket soal berhasil dilepas dari jadwal' });
+    }
+
+    const paketId = Number(paketUjianId);
+
+    const paket = await prisma.paketUjian.findUnique({
+      where: { id: paketId },
+      include: { guru: { include: { user: { select: { namaLengkap: true } } } } }
+    });
+
+    if (!paket) {
+      return res.status(404).json({ success: false, message: 'Paket soal tidak ditemukan' });
+    }
+
+    if (paket.mataPelajaranId !== jadwal.mataPelajaranId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Paket soal tidak sesuai dengan mata pelajaran jadwal ini'
+      });
+    }
+
+    const activeExams = await prisma.ujianSiswa.count({ where: { jadwalUjianId: jadwalId } });
+    if (activeExams > 0 && jadwal.paketUjianId !== null && jadwal.paketUjianId !== paketId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Ujian sudah/sedang berlangsung. Paket soal tidak dapat diganti.'
+      });
+    }
+
+    const updated = await prisma.jadwalUjian.update({
+      where: { id: jadwalId },
+      data: { paketUjianId: paketId },
+      include: {
+        paketUjian: {
+          include: { guru: { include: { user: true } } }
+        }
+      }
+    });
+
+    return res.json({
+      success: true,
+      message: `Paket soal "${paket.nama}" oleh ${paket.guru?.user?.namaLengkap || 'Guru'} berhasil dipasang`,
+      data: updated
+    });
+  } catch (error) {
+    console.error('adminSetPaket error:', error);
+    return res.status(500).json({ success: false, message: 'Gagal mengatur paket soal' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FITUR BARU 3: Info token hari ini + sisa waktu regen untuk frontend countdown
+// GET /admin/jadwal-ujian/today-tokens
+// ─────────────────────────────────────────────────────────────────────────────
+exports.getTodayTokensInfo = async (req, res) => {
+  const REGEN_INTERVAL_MS = 10 * 60 * 1000;
+
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const jadwalHariIni = await prisma.jadwalUjian.findMany({
+      where: {
+        mulai:   { lte: endOfDay },
+        selesai: { gte: startOfDay }
+      },
+      select: {
+        id: true,
+        token: true,
+        tokenCheckOut: true
+      }
+    });
+
+    const currentSlot = Math.floor(now.getTime() / REGEN_INTERVAL_MS);
+    const nextSlotMs  = (currentSlot + 1) * REGEN_INTERVAL_MS;
+    const msUntilNext = nextSlotMs - now.getTime();
+
+    const tokenMap = {};
+    for (const j of jadwalHariIni) {
+      tokenMap[j.id] = { token: j.token, tokenCheckOut: j.tokenCheckOut };
+    }
+
+    return res.json({
+      success: true,
+      data: {
+        tokens: tokenMap,
+        msUntilNextRegen: msUntilNext,
+        nextRegenAt: new Date(nextSlotMs).toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('getTodayTokensInfo error:', error);
+    return res.status(500).json({ success: false, message: 'Gagal memuat info token' });
+  }
+};

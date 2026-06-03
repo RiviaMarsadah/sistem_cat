@@ -3,6 +3,7 @@ require('dotenv').config();
 const app = require('./src/app');
 const http = require('http');
 const { Server } = require('socket.io');
+const { startTokenScheduler } = require('./src/utils/tokenScheduler');
 
 const PORT = process.env.PORT || 3000;
 
@@ -33,5 +34,8 @@ server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+
+  // Mulai token scheduler — regenerasi token ujian hari ini setiap 10 menit
+  startTokenScheduler();
 });
 

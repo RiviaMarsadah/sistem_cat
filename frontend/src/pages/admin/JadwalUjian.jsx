@@ -1,11 +1,30 @@
-import { useEffect, useState, useMemo } from 'react';
-import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2, FiAlertCircle, FiChevronLeft } from 'react-icons/fi';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { FiPlus, FiTrash2, FiClock, FiCalendar, FiBook, FiCheckCircle, FiXCircle, FiX, FiShield, FiChevronRight, FiArrowLeft, FiEdit2, FiAlertCircle, FiChevronLeft, FiRefreshCw, FiPackage } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
 import '../guru/PaketUjian.css';
 import './JadwalUjian.css';
 import './User.css';
+
+// ── Helper: format mm:ss dari milliseconds ──────────────────────────────────
+function formatCountdown(ms) {
+  if (ms <= 0) return '00:00';
+  const totalSec = Math.ceil(ms / 1000);
+  const m = Math.floor(totalSec / 60).toString().padStart(2, '0');
+  const s = (totalSec % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+// ── Helper: apakah suatu jadwal jatuh hari ini? ─────────────────────────────
+function isToday(jadwal) {
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  const endOfDay   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const mulai   = new Date(jadwal.mulai);
+  const selesai = new Date(jadwal.selesai);
+  return mulai <= endOfDay && selesai >= startOfDay;
+}
 
 const getTingkatLabel = (tingkat) => {
   const map = {
@@ -68,6 +87,22 @@ export default function JadwalUjianAdmin() {
     mataPelajaranId: ''
   });
 
+  // ── Token countdown state ─────────────────────────────────────────────────
+  // tokenMap: { [jadwalId]: { token, tokenCheckOut } }
+  const [tokenMap, setTokenMap]         = useState({});
+  const [msUntilRegen, setMsUntilRegen] = useState(0);
+  const countdownRef                     = useRef(null); // setInterval handle
+  const pollRef                          = useRef(null); // polling handle
+
+  // ── Pilih Paket Soal Modal ────────────────────────────────────────────────
+  const [showPaketModal, setShowPaketModal]       = useState(false);
+  const [paketModalJadwal, setPaketModalJadwal]   = useState(null);  // jadwal yang sedang dipilih
+  const [availablePakets, setAvailablePakets]     = useState([]);
+  const [loadingPakets, setLoadingPakets]         = useState(false);
+  const [selectedPaketId, setSelectedPaketId]     = useState('');
+  const [savingPaket, setSavingPaket]             = useState(false);
+  const [paketSearch, setPaketSearch]             = useState('');
+
   const filteredPeriodes = useMemo(() => {
     return periodes.filter(p => 
       p.nama.toLowerCase().includes(search.toLowerCase()) || 
@@ -107,15 +142,52 @@ export default function JadwalUjianAdmin() {
     }
   };
 
-  useEffect(() => {
-    loadData();
+  // ── Token polling: ambil token terbaru + start countdown ──────────────────
+  const fetchTodayTokens = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/jadwal-ujian/today-tokens');
+      if (res.data?.success) {
+        setTokenMap(res.data.data.tokens || {});
+        const ms = res.data.data.msUntilNextRegen || 0;
+        setMsUntilRegen(ms);
+
+        // Reset countdown ticker
+        if (countdownRef.current) clearInterval(countdownRef.current);
+        countdownRef.current = setInterval(() => {
+          setMsUntilRegen(prev => {
+            if (prev <= 1000) {
+              // Token sudah habis masa slot-nya — refresh data jadwal + token
+              clearInterval(countdownRef.current);
+              loadData();
+              fetchTodayTokens();
+              return 0;
+            }
+            return prev - 1000;
+          });
+        }, 1000);
+      }
+    } catch (_) {
+      // Diam-diam, tidak ganggu UX
+    }
   }, []);
 
+  useEffect(() => {
+    loadData();
+    fetchTodayTokens();
 
+    // Polling setiap 30 detik untuk sinkronisasi jika tab lama / jaringan lambat
+    pollRef.current = setInterval(fetchTodayTokens, 30_000);
+
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      if (pollRef.current)      clearInterval(pollRef.current);
+    };
+  }, [fetchTodayTokens]);
 
   const handleBuatWizard = () => {
      navigate('/admin/jadwal-ujian/wizard');
   };
+
 
   const confirmDelete = (item) => {
     setConfirmData(item);
@@ -242,8 +314,51 @@ export default function JadwalUjianAdmin() {
     }
   };
 
+  // ── Paket Soal Modal Handlers ─────────────────────────────────────────────
+  const openPaketModal = async (jadwal, e) => {
+    e.stopPropagation();
+    setPaketModalJadwal(jadwal);
+    setSelectedPaketId(jadwal.paketUjianId ? String(jadwal.paketUjianId) : '');
+    setPaketSearch('');
+    setShowPaketModal(true);
+    setLoadingPakets(true);
+    try {
+      const res = await api.get(`/admin/jadwal-ujian/${jadwal.id}/available-pakets`);
+      setAvailablePakets(res.data?.data || []);
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal memuat daftar paket soal', 'error');
+      setShowPaketModal(false);
+    } finally {
+      setLoadingPakets(false);
+    }
+  };
+
+  const closePaketModal = () => {
+    setShowPaketModal(false);
+    setPaketModalJadwal(null);
+    setAvailablePakets([]);
+    setPaketSearch('');
+  };
+
+  const submitSetPaket = async () => {
+    if (!paketModalJadwal) return;
+    setSavingPaket(true);
+    try {
+      const payload = selectedPaketId ? { paketUjianId: Number(selectedPaketId) } : { paketUjianId: null };
+      const res = await api.put(`/admin/jadwal-ujian/${paketModalJadwal.id}/set-paket`, payload);
+      showToast(res.data.message || 'Paket soal berhasil disimpan', 'success');
+      closePaketModal();
+      await loadData();
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Gagal menyimpan paket soal', 'error');
+    } finally {
+      setSavingPaket(false);
+    }
+  };
+
   const renderListPeriode = () => {
     if (loading && periodes.length === 0) return <div className="paket-ujian-loading">Memuat periode...</div>;
+
     
     return (
       <div className="user-card" style={{ marginTop: '1.5rem' }}>
@@ -456,7 +571,12 @@ export default function JadwalUjianAdmin() {
                  const waktuSelesai = new Date(j.selesai).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
                  const isEven = idx % 2 === 1;
                  const rowClass = isEven ? 'session-row-even' : 'session-row-odd';
- 
+                 // Token live: dari tokenMap jika ujian hari ini, fallback ke data DB
+                 const todayTok        = tokenMap[j.id];
+                 const displayToken    = todayTok?.token        ?? j.token;
+                 const displayTokenOut = todayTok?.tokenCheckOut ?? j.tokenCheckOut;
+                 const jadwalHariIni   = isToday(j);
+
                  return (
                  <tr key={j.id} className={rowClass}>
                    <td className="text-left">
@@ -516,12 +636,13 @@ export default function JadwalUjianAdmin() {
                      </span>
                    </td>
                    <td className="text-center">
-                     <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+                     <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                       {/* Token IN */}
                        <button 
                          type="button"
                          onClick={() => {
-                           navigator.clipboard.writeText(j.token);
-                           showToast('Token Check-In disalin: ' + j.token, 'success');
+                           navigator.clipboard.writeText(displayToken);
+                           showToast('Token Check-In disalin: ' + displayToken, 'success');
                          }}
                          title="Klik untuk menyalin Token Check-In"
                          style={{ 
@@ -539,19 +660,20 @@ export default function JadwalUjianAdmin() {
                            cursor: 'pointer',
                            transition: 'all 0.2s',
                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                           width: '105px'
+                           width: '112px'
                          }}
                          onMouseEnter={(e) => { e.currentTarget.style.background = '#d1fae5'; }}
                          onMouseLeave={(e) => { e.currentTarget.style.background = '#ecfdf5'; }}
                        >
                          <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#065f46', marginRight: '2px' }}>IN:</span>
-                         <span>{j.token || '-'}</span>
+                         <span>{displayToken || '-'}</span>
                        </button>
+                       {/* Token OUT */}
                        <button 
                          type="button"
                          onClick={() => {
-                           navigator.clipboard.writeText(j.tokenCheckOut);
-                           showToast('Token Check-Out disalin: ' + j.tokenCheckOut, 'success');
+                           navigator.clipboard.writeText(displayTokenOut);
+                           showToast('Token Check-Out disalin: ' + displayTokenOut, 'success');
                          }}
                          title="Klik untuk menyalin Token Check-Out"
                          style={{ 
@@ -569,14 +691,29 @@ export default function JadwalUjianAdmin() {
                            cursor: 'pointer',
                            transition: 'all 0.2s',
                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                           width: '105px'
+                           width: '112px'
                          }}
                          onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
                          onMouseLeave={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
                        >
                          <span style={{ fontSize: '0.75rem', fontWeight: '500', color: '#991b1b', marginRight: '2px' }}>OUT:</span>
-                         <span>{j.tokenCheckOut || '-'}</span>
+                         <span>{displayTokenOut || '-'}</span>
                        </button>
+                       {/* Countdown timer — hanya untuk ujian hari ini */}
+                       {jadwalHariIni && (
+                         <div style={{ 
+                           display: 'flex', alignItems: 'center', gap: '4px',
+                           marginTop: '2px',
+                           background: msUntilRegen < 60000 ? '#fff7ed' : '#f0f9ff',
+                           border: `1px solid ${msUntilRegen < 60000 ? '#fed7aa' : '#bae6fd'}`,
+                           borderRadius: '6px', padding: '3px 8px',
+                           fontSize: '0.7rem', fontWeight: '600',
+                           color: msUntilRegen < 60000 ? '#c2410c' : '#0369a1'
+                         }}>
+                           <FiRefreshCw size={10} />
+                           <span>Regen: {formatCountdown(msUntilRegen)}</span>
+                         </div>
+                       )}
                      </div>
                    </td>
                    <td className="text-left">
@@ -597,11 +734,27 @@ export default function JadwalUjianAdmin() {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', whiteSpace: 'nowrap' }}>
                             Oleh: {j.paketUjian?.guru?.user?.namaLengkap || 'Admin'}
                           </div>
+                          <button
+                            type="button"
+                            onClick={(e) => openPaketModal(j, e)}
+                            style={{ fontSize: '0.7rem', color: '#6366f1', background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', fontWeight: '600', marginTop: '2px' }}
+                          >
+                            Ganti Paket
+                          </button>
                         </div>
                       ) : (
-                        <span className="user-status-badge status-nonaktif" style={{whiteSpace: 'nowrap'}}>
-                          <FiXCircle /> Belum Diisi Paket
-                        </span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                          <span className="user-status-badge status-nonaktif" style={{whiteSpace: 'nowrap'}}>
+                            <FiXCircle /> Belum Diisi Paket
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => openPaketModal(j, e)}
+                            style={{ fontSize: '0.75rem', color: '#fff', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', border: 'none', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <FiPackage size={12} /> Pilih Paket Soal
+                          </button>
+                        </div>
                       )}
                     </td>
                    <td className="text-center">
@@ -852,6 +1005,145 @@ export default function JadwalUjianAdmin() {
           </div>
         </div>
       )}
+
+      {/* ── Modal Pilih / Ganti Paket Soal ────────────────────────────────── */}
+      {showPaketModal && (
+        <div className="modal-overlay" onClick={closePaketModal}>
+          <div
+            className="modal-container"
+            style={{ maxWidth: '600px', maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div>
+                <h3 className="modal-title" style={{ margin: 0 }}>
+                  <FiPackage style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+                  Pilih Paket Soal
+                </h3>
+                {paketModalJadwal && (
+                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                    Jadwal: <strong>{paketModalJadwal.mataPelajaran?.namaMapel}</strong>
+                  </p>
+                )}
+              </div>
+              <button className="modal-close" onClick={closePaketModal}><FiX /></button>
+            </div>
+
+            {/* Search */}
+            <div style={{ padding: '0.75rem 1.5rem', borderBottom: '1px solid #e2e8f0' }}>
+              <input
+                type="text"
+                placeholder="Cari paket soal atau nama guru..."
+                value={paketSearch}
+                onChange={(e) => setPaketSearch(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box' }}
+                autoFocus
+              />
+            </div>
+
+            {/* List paket */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 1.5rem' }}>
+              {loadingPakets ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>Memuat paket soal...</div>
+              ) : availablePakets.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                  Belum ada paket soal untuk mata pelajaran ini.
+                </div>
+              ) : (
+                <>
+                  {/* Opsi lepas paket */}
+                  <label style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '10px 12px', borderRadius: '10px', cursor: 'pointer',
+                    background: selectedPaketId === '' ? '#fef2f2' : 'transparent',
+                    border: selectedPaketId === '' ? '1px solid #fecaca' : '1px solid transparent',
+                    marginBottom: '8px', transition: 'all 0.15s'
+                  }}>
+                    <input
+                      type="radio"
+                      name="paketSelect"
+                      value=""
+                      checked={selectedPaketId === ''}
+                      onChange={() => setSelectedPaketId('')}
+                      style={{ accentColor: '#ef4444' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: '600', color: '#b91c1c', fontSize: '0.85rem' }}>Lepas Paket Soal</div>
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Jadwal akan kembali ke status "Belum Diisi Paket"</div>
+                    </div>
+                  </label>
+
+                  {availablePakets
+                    .filter(p => {
+                      if (!paketSearch.trim()) return true;
+                      const q = paketSearch.toLowerCase();
+                      return (
+                        p.nama?.toLowerCase().includes(q) ||
+                        p.guru?.user?.namaLengkap?.toLowerCase().includes(q) ||
+                        p.tipeUjian?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((p) => {
+                      const isSelected = selectedPaketId === String(p.id);
+                      return (
+                        <label key={p.id} style={{
+                          display: 'flex', alignItems: 'flex-start', gap: '12px',
+                          padding: '12px', borderRadius: '10px', cursor: 'pointer',
+                          background: isSelected ? '#eff6ff' : '#fafafa',
+                          border: isSelected ? '1px solid #93c5fd' : '1px solid #e2e8f0',
+                          marginBottom: '8px', transition: 'all 0.15s'
+                        }}>
+                          <input
+                            type="radio"
+                            name="paketSelect"
+                            value={String(p.id)}
+                            checked={isSelected}
+                            onChange={() => setSelectedPaketId(String(p.id))}
+                            style={{ marginTop: '2px', accentColor: '#3b82f6' }}
+                          />
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: '700', color: '#1e293b', fontSize: '0.9rem', marginBottom: '2px' }}>{p.nama}</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                              <span style={{ fontSize: '0.72rem', background: '#dbeafe', color: '#1d4ed8', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                                👨‍🏫 {p.guru?.user?.namaLengkap || 'Guru'}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', background: '#f0fdf4', color: '#166534', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                                📝 {p._count?.soalPaket || 0} Soal
+                              </span>
+                              <span style={{ fontSize: '0.72rem', background: '#fef9c3', color: '#854d0e', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                                {p.tipeUjian}
+                              </span>
+                              <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '20px', fontWeight: '600' }}>
+                                Tingkat {p.tingkat}
+                              </span>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })
+                  }
+                </>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="modal-btn modal-btn-cancel" onClick={closePaketModal}>Batal</button>
+              <button
+                type="button"
+                className="modal-btn modal-btn-primary"
+                onClick={submitSetPaket}
+                disabled={savingPaket || loadingPakets}
+              >
+                {savingPaket ? 'Menyimpan...' : (selectedPaketId ? 'Pasang Paket Soal' : 'Lepas Paket')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CSS spin keyframe untuk ikon countdown */}
+      <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
+
