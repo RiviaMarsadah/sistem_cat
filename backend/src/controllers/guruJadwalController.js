@@ -22,7 +22,10 @@ const generateToken = async () => {
 exports.listOfficial = async (req, res) => {
   try {
     const jadwal = await prisma.jadwalUjian.findMany({
-      where: { guruId: null },
+      where: { 
+        guruId: null,
+        periodeId: { not: null }
+      },
       include: {
         mataPelajaran: true,
         paketUjian: {

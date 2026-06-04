@@ -237,7 +237,7 @@ export default function AdminGuruJadwal() {
                       <td className="text-center">
                         <div style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
                           {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
-                            <div className="class-tooltip-container">
+                            j.kelasJadwal.length === 1 ? (
                               <span 
                                 className="mapel-badge" 
                                 style={{ 
@@ -245,29 +245,50 @@ export default function AdminGuruJadwal() {
                                   color: '#1e40af', 
                                   border: '1px solid #bfdbfe', 
                                   fontWeight: '700', 
-                                  padding: '4px 12px', 
-                                  borderRadius: '20px', 
+                                  padding: '6px 12px', 
+                                  borderRadius: '12px', 
                                   fontSize: '0.85rem',
-                                  cursor: 'pointer'
+                                  display: 'inline-block',
+                                  whiteSpace: 'nowrap',
+                                  textAlign: 'center',
+                                  lineHeight: '1.2'
                                 }}
                               >
-                                {j.kelasJadwal.length} Kelas
+                                {getNamaKelasDisplay(j.kelasJadwal[0].kelas)}
                               </span>
-                              <div className={`class-tooltip-bubble ${j.kelasJadwal.length > 10 ? 'scrollable' : ''}`}>
-                                <div style={{ 
-                                  display: 'grid', 
-                                  gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
-                                  gap: '8px', 
-                                  width: 'max-content'
-                                }}>
-                                  {j.kelasJadwal.map((kj, idx2) => (
-                                    <span key={idx2} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: '1.3' }}>
-                                      {getNamaKelasDisplay(kj.kelas)}
-                                    </span>
-                                  ))}
+                            ) : (
+                              <div className="class-tooltip-container">
+                                <span 
+                                  className="mapel-badge" 
+                                  style={{ 
+                                    background: '#eff6ff', 
+                                    color: '#1e40af', 
+                                    border: '1px solid #bfdbfe', 
+                                    fontWeight: '700', 
+                                    padding: '4px 12px', 
+                                    borderRadius: '20px', 
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  {j.kelasJadwal.length} Kelas
+                                </span>
+                                <div className={`class-tooltip-bubble ${j.kelasJadwal.length > 10 ? 'scrollable' : ''}`}>
+                                  <div style={{ 
+                                    display: 'grid', 
+                                    gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
+                                    gap: '8px', 
+                                    width: 'max-content'
+                                  }}>
+                                    {j.kelasJadwal.map((kj, idx2) => (
+                                      <span key={idx2} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: '1.3' }}>
+                                        {getNamaKelasDisplay(kj.kelas)}
+                                      </span>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )
                           ) : (
                             <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>
                           )}
@@ -365,7 +386,7 @@ export default function AdminGuruJadwal() {
                       </td>
                       <td className="text-center">
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: '#334155', fontWeight: '700', padding: '5px 10px', background: '#f1f5f9', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
-                          <FiUser size={12} style={{ color: '#2563eb' }} /> {j.guru?.user?.namaLengkap || 'Admin'}
+                          {j.guru?.user?.namaLengkap || 'Admin'}
                         </span>
                       </td>
                     </tr>

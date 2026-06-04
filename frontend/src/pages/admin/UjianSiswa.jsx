@@ -9,6 +9,29 @@ import { useToast } from '../../context/ToastContext';
 import './Siswa.css';
 import './User.css'; // Re-use common premium layouts
 
+const getTingkatLabel = (tingkat) => {
+  const map = {
+    'tingkat_10': '10',
+    'tingkat_11': '11',
+    'tingkat_12': '12',
+    'X': '10',
+    'XI': '11',
+    'XII': '12',
+    'ALUMNI': 'Alumni',
+    'KI': 'KI'
+  };
+  return map[tingkat] || tingkat;
+};
+
+const getNamaKelasDisplay = (kelas) => {
+  if (!kelas) return '-';
+  const tingkatLabel = getTingkatLabel(kelas.tingkat);
+  const prodiLabel = kelas.jurusan?.namaProdi || '';
+  const romanTingkat = kelas.tingkat || '';
+  const kodeProdi = kelas.jurusan?.kodeProdi || '';
+  return `${tingkatLabel} ${prodiLabel} (${romanTingkat} ${kodeProdi})`;
+};
+
 const UjianSiswa = () => {
   const { showToast } = useToast();
   const [items, setItems] = useState([]);
@@ -16,10 +39,86 @@ const UjianSiswa = () => {
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Filter States
+  const [filterJadwalList, setFilterJadwalList] = useState([]);
+  const [filterMapelList, setFilterMapelList] = useState([]);
+  const [filterKelasList, setFilterKelasList] = useState([]);
+
+  const [selectedJadwal, setSelectedJadwal] = useState('all');
+  const [selectedMapel, setSelectedMapel] = useState('all');
+  const [selectedKelas, setSelectedKelas] = useState('all');
+
+  const filteredMapels = useMemo(() => {
+    if (selectedJadwal === 'all') return filterMapelList;
+    const selectedOpt = filterJadwalList.find(o => o.id === selectedJadwal);
+    if (!selectedOpt) return filterMapelList;
+    const activeMapelIds = new Set(selectedOpt.schedules.map(s => s.mataPelajaranId).filter(Boolean));
+    return filterMapelList.filter(m => activeMapelIds.has(m.id));
+  }, [selectedJadwal, filterJadwalList, filterMapelList]);
+
+  const filteredKelas = useMemo(() => {
+    if (selectedJadwal === 'all') return filterKelasList;
+    const selectedOpt = filterJadwalList.find(o => o.id === selectedJadwal);
+    if (!selectedOpt) return filterKelasList;
+    const activeKelasIds = new Set(
+      selectedOpt.schedules.flatMap(s => s.kelasJadwal || []).map(kj => kj.kelas?.id || kj.kelasId).filter(Boolean)
+    );
+    return filterKelasList.filter(k => activeKelasIds.has(k.id));
+  }, [selectedJadwal, filterJadwalList, filterKelasList]);
+
+  useEffect(() => {
+    if (selectedJadwal !== 'all') {
+      const mapelIds = new Set(filteredMapels.map(m => String(m.id)));
+      if (selectedMapel !== 'all' && !mapelIds.has(String(selectedMapel))) {
+        setSelectedMapel('all');
+      }
+      const kelasIds = new Set(filteredKelas.map(k => String(k.id)));
+      if (selectedKelas !== 'all' && !kelasIds.has(String(selectedKelas))) {
+        setSelectedKelas('all');
+      }
+    }
+  }, [selectedJadwal, filteredMapels, filteredKelas, selectedMapel, selectedKelas]);
+
+  // Belum Mengerjakan States
+  const [showBelumMengerjakanModal, setShowBelumMengerjakanModal] = useState(false);
+  const [belumMengerjakanList, setBelumMengerjakanList] = useState([]);
+  const [loadingBelumMengerjakan, setLoadingBelumMengerjakan] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const isBelumMengerjakanDisabled = selectedJadwal === 'all' || selectedMapel === 'all' || selectedKelas === 'all';
+
+  const handleOpenBelumMengerjakan = async () => {
+    setShowBelumMengerjakanModal(true);
+    setLoadingBelumMengerjakan(true);
+    try {
+      const queryParams = new URLSearchParams({
+        jadwalUjianId: selectedJadwal,
+        mapelId: selectedMapel,
+        kelasId: selectedKelas
+      }).toString();
+      const res = await api.get(`/admin/ujian-siswa/belum-mengerjakan?${queryParams}`);
+      if (res.data.success) {
+        setBelumMengerjakanList(res.data.data || []);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal memuat data siswa belum mengerjakan', 'error');
+    } finally {
+      setLoadingBelumMengerjakan(false);
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       showToast('Sedang menyiapkan file Excel...', 'info');
-      const response = await api.get(`/admin/ujian-siswa/export?search=${encodeURIComponent(search)}`, {
+      const queryParams = new URLSearchParams({
+        search,
+        jadwalUjianId: selectedJadwal,
+        mapelId: selectedMapel,
+        kelasId: selectedKelas
+      }).toString();
+
+      const response = await api.get(`/admin/ujian-siswa/export?${queryParams}`, {
         responseType: 'blob'
       });
       
@@ -62,14 +161,80 @@ const UjianSiswa = () => {
   const [statusItem, setStatusItem] = useState(null);
   const [newStatus, setNewStatus] = useState('');
 
+  const fetchFilterOptions = async () => {
+    try {
+      const [resJadwal, resMapel, resKelas] = await Promise.all([
+        api.get('/admin/guru-data/jadwal'),
+        api.get('/admin/mata-pelajaran'),
+        api.get('/admin/kelas')
+      ]);
+
+      if (resJadwal.data.success) {
+        const jadwals = resJadwal.data.data || [];
+        const uniquePeriods = {};
+        const customJadwals = [];
+
+        jadwals.forEach(j => {
+          if (j.periodeId !== null) {
+            const pId = j.periodeId;
+            if (!uniquePeriods[pId]) {
+              uniquePeriods[pId] = {
+                id: `periode-${pId}`,
+                nama: j.periode?.nama || j.nama,
+                isPeriode: true,
+                periodeId: pId,
+                schedules: []
+              };
+            }
+            uniquePeriods[pId].schedules.push(j);
+          } else {
+            customJadwals.push({
+              id: String(j.id),
+              nama: j.nama,
+              isPeriode: false,
+              schedules: [j]
+            });
+          }
+        });
+
+        const groupedJadwals = [
+          ...Object.values(uniquePeriods),
+          ...customJadwals
+        ];
+
+        groupedJadwals.sort((a, b) => a.nama.localeCompare(b.nama));
+        setFilterJadwalList(groupedJadwals);
+      }
+      if (resMapel.data.success) {
+        const mapels = resMapel.data.data || [];
+        mapels.sort((a, b) => a.namaMapel.localeCompare(b.namaMapel));
+        setFilterMapelList(mapels);
+      }
+      if (resKelas.data.success) {
+        const kelasList = resKelas.data.data || [];
+        kelasList.sort((a, b) => getNamaKelasDisplay(a).localeCompare(getNamaKelasDisplay(b)));
+        setFilterKelasList(kelasList);
+      }
+    } catch (err) {
+      console.error('Error fetching filter options:', err);
+    }
+  };
+
   useEffect(() => {
-    loadData();
-  }, [search]); // Re-fetch on search update
+    fetchFilterOptions();
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/admin/ujian-siswa?search=${encodeURIComponent(search)}`);
+      const queryParams = new URLSearchParams({
+        search,
+        jadwalUjianId: selectedJadwal,
+        mapelId: selectedMapel,
+        kelasId: selectedKelas
+      }).toString();
+
+      const res = await api.get(`/admin/ujian-siswa?${queryParams}`);
       if (res.data.success) {
         setItems(res.data.data || []);
       }
@@ -79,6 +244,10 @@ const UjianSiswa = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [search, selectedJadwal, selectedMapel, selectedKelas]);
 
 
 
@@ -177,7 +346,7 @@ const UjianSiswa = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedJadwal, selectedMapel, selectedKelas]);
 
   return (
     <div className="admin-siswa-page">
@@ -230,6 +399,166 @@ const UjianSiswa = () => {
           </button>
         </div>
 
+        {/* Row for filters */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '1fr 1fr 1fr auto', 
+          gap: '1rem', 
+          padding: '0 1.25rem 1.25rem 1.25rem', 
+          borderBottom: '1px solid #f1f5f9',
+          marginBottom: '1rem',
+          alignItems: 'end'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Jadwal Ujian</label>
+            <select
+              value={selectedJadwal}
+              onChange={(e) => setSelectedJadwal(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '0.875rem',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              <option value="all">Semua Ujian</option>
+              {filterJadwalList.map((j) => (
+                <option key={j.id} value={j.id}>{j.nama}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Mata Pelajaran</label>
+            <select
+              value={selectedMapel}
+              onChange={(e) => setSelectedMapel(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '0.875rem',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              <option value="all">Semua Mata Pelajaran</option>
+              {filteredMapels.map((m) => (
+                <option key={m.id} value={m.id}>{m.namaMapel}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Kelas</label>
+            <select
+              value={selectedKelas}
+              onChange={(e) => setSelectedKelas(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '0.875rem',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              <option value="all">Semua Kelas</option>
+              {filteredKelas.map((k) => (
+                <option key={k.id} value={k.id}>{getNamaKelasDisplay(k)}</option>
+              ))}
+            </select>
+          </div>
+
+           <div 
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '4px',
+              position: 'relative'
+            }}
+            onMouseEnter={() => {
+              if (isBelumMengerjakanDisabled) {
+                setShowTooltip(true);
+              }
+            }}
+            onMouseLeave={() => {
+              setShowTooltip(false);
+            }}
+          >
+            <button
+              type="button"
+              disabled={isBelumMengerjakanDisabled}
+              onClick={handleOpenBelumMengerjakan}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: isBelumMengerjakanDisabled ? 'not-allowed' : 'pointer',
+                background: isBelumMengerjakanDisabled ? '#cbd5e1' : 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                border: '1px solid',
+                borderColor: isBelumMengerjakanDisabled ? '#cbd5e1' : '#1d4ed8',
+                color: isBelumMengerjakanDisabled ? '#94a3b8' : '#ffffff',
+                boxShadow: isBelumMengerjakanDisabled ? 'none' : '0 2px 4px rgba(29, 78, 216, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                height: '38px',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+                pointerEvents: isBelumMengerjakanDisabled ? 'none' : 'auto'
+              }}
+            >
+              <FiUser /> Siswa Belum Mengerjakan
+            </button>
+
+            {showTooltip && (
+              <div style={{
+                position: 'absolute',
+                bottom: '100%',
+                right: '0',
+                marginBottom: '8px',
+                background: '#1e293b',
+                color: '#ffffff',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                fontSize: '0.75rem',
+                fontWeight: '500',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                zIndex: 10,
+                pointerEvents: 'none',
+                opacity: 1,
+                transition: 'opacity 0.15s ease'
+              }}>
+                Pilih Ujian, Mapel, dan Kelas Untuk di Cek
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  right: '24px',
+                  width: '8px',
+                  height: '8px',
+                  background: '#1e293b',
+                  transform: 'rotate(45deg) translateY(-4px)',
+                  pointerEvents: 'none'
+                }} />
+              </div>
+            )}
+          </div>
+        </div>
+
         {loading && items.length === 0 ? (
           <div className="user-empty">Memuat data...</div>
         ) : items.length === 0 ? (
@@ -239,15 +568,16 @@ const UjianSiswa = () => {
             <table className="siswa-table">
               <thead>
                 <tr>
+                  <th style={{ minWidth: '200px' }}>Nama Ujian</th>
+                  <th style={{ minWidth: '150px' }}>Mapel</th>
                   <th style={{ minWidth: '180px' }}>Siswa</th>
                   <th>Kelas</th>
-                  <th style={{ minWidth: '200px' }}>Nama Ujian</th>
+                  <th className="text-center">Status</th>
                   <th>Nilai</th>
                   <th className="text-center">Benar</th>
                   <th className="text-center">Salah</th>
                   <th className="text-center">Kosong</th>
                   <th className="text-center">Ragu-Ragu</th>
-                  <th className="text-center">Status</th>
                   <th>Mulai</th>
                   <th>Selesai</th>
                   <th className="text-center" style={{ width: '80px' }}>Aksi</th>
@@ -256,6 +586,14 @@ const UjianSiswa = () => {
               <tbody>
                 {paginatedItems.map((item) => (
                   <tr key={item.id}>
+                    <td>
+                      <div style={{ fontWeight: '600' }}>{item.jadwalUjian?.nama || 'Ujian Terhapus'}</div>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: '500', color: '#475569' }}>
+                        {item.jadwalUjian?.mataPelajaran?.namaMapel || '-'}
+                      </div>
+                    </td>
                     <td>
                       <div>
                         <div style={{ fontWeight: '700', color: '#1E40AF' }}>
@@ -267,20 +605,10 @@ const UjianSiswa = () => {
                       </div>
                     </td>
                     <td>
-                      <div className="kelas-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700' }}>
-                        {item.siswa?.kelas?.tingkat} {item.siswa?.kelas?.jurusan?.namaProdi || ''} {item.siswa?.kelas?.inisial || ''}
+                      <div className="kelas-badge" style={{ background: '#e0f2fe', color: '#0369a1', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '700', whiteSpace: 'nowrap' }}>
+                        {getNamaKelasDisplay(item.siswa?.kelas)}
                       </div>
                     </td>
-                    <td>
-                      <div style={{ fontWeight: '600' }}>{item.jadwalUjian?.nama || 'Ujian Terhapus'}</div>
-                    </td>
-                    <td style={{ fontWeight: '800', fontSize: '1rem', color: Number(item.nilaiAkhir) >= 75 ? '#16A34A' : '#DC2626' }}>
-                      {Number(item.nilaiAkhir).toFixed(1)}
-                    </td>
-                    <td className="text-center" style={{ fontWeight: '600', color: '#16A34A' }}>{item.benar}</td>
-                    <td className="text-center" style={{ fontWeight: '600', color: '#DC2626' }}>{item.salah}</td>
-                    <td className="text-center" style={{ color: '#64748b' }}>{item.kosong}</td>
-                    <td className="text-center" style={{ fontWeight: '600', color: '#D97706' }}>{item.raguRagu}</td>
                     <td className="text-center">
                       {item.status === 'berlangsung' ? (
                         <select
@@ -307,6 +635,13 @@ const UjianSiswa = () => {
                         getStatusBadge(item.status)
                       )}
                     </td>
+                    <td style={{ fontWeight: '800', fontSize: '1rem', color: Number(item.nilaiAkhir) >= 75 ? '#16A34A' : '#DC2626' }}>
+                      {Number(item.nilaiAkhir).toFixed(1)}
+                    </td>
+                    <td className="text-center" style={{ fontWeight: '600', color: '#16A34A' }}>{item.benar}</td>
+                    <td className="text-center" style={{ fontWeight: '600', color: '#DC2626' }}>{item.salah}</td>
+                    <td className="text-center" style={{ color: '#64748b' }}>{item.kosong}</td>
+                    <td className="text-center" style={{ fontWeight: '600', color: '#D97706' }}>{item.raguRagu}</td>
                     <td style={{ fontSize: '0.8rem' }}>{formatDate(item.mulaiPada)}</td>
                     <td style={{ fontSize: '0.8rem' }}>{formatDate(item.selesaiPada)}</td>
                     <td>
@@ -462,6 +797,126 @@ const UjianSiswa = () => {
                 </button>
                 <button className="btn btn-primary" style={{ background: '#1E40AF', color: 'white' }} onClick={handleUpdateStatus} disabled={saving}>
                   {saving ? 'Memproses...' : <><FiCheckCircle /> Konfirmasi</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pop-up Modal Siswa Belum Mengerjakan */}
+      {showBelumMengerjakanModal && (
+        <div className="modal-overlay" onClick={() => setShowBelumMengerjakanModal(false)}>
+          <div className="modal-container" style={{ maxWidth: '850px', width: '95%' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', width: '100%', background: '#ffffff', borderRadius: '16px', textAlign: 'left' }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                width: '100%', 
+                marginBottom: '20px', 
+                borderBottom: '1px solid #f1f5f9', 
+                paddingBottom: '12px' 
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ background: '#EFF6FF', color: '#1D4ED8', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FiUser size={20} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>Siswa Belum Mengerjakan</h3>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setShowBelumMengerjakanModal(false)}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    color: '#64748b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px',
+                    borderRadius: '50%',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              
+              <div className="modal-confirm-body" style={{ maxHeight: '400px', overflowY: 'auto', width: '100%', textAlign: 'left' }}>
+                {loadingBelumMengerjakan ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>Memuat data...</div>
+                ) : belumMengerjakanList.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#16A34A', fontWeight: '600' }}>
+                    Semua siswa yang terdaftar telah mengikuti sesi ujian ini!
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ 
+                      background: '#eff6ff', 
+                      border: '1px solid #bfdbfe', 
+                      borderRadius: '10px', 
+                      padding: '16px 20px', 
+                      fontSize: '0.9rem',
+                      color: '#1e293b',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      boxShadow: '0 1px 3px rgba(37, 99, 235, 0.05)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700', color: '#1e40af', width: '130px', display: 'inline-block' }}>Ujian / Periode:</span>
+                        <span style={{ fontWeight: '600', color: '#0f172a' }}>{filterJadwalList.find(o => o.id === selectedJadwal)?.nama || '-'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700', color: '#1e40af', width: '130px', display: 'inline-block' }}>Mata Pelajaran:</span>
+                        <span style={{ fontWeight: '600', color: '#0f172a' }}>{filterMapelList.find(o => String(o.id) === String(selectedMapel))?.namaMapel || '-'}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '700', color: '#1e40af', width: '130px', display: 'inline-block' }}>Kelas:</span>
+                        <span style={{ fontWeight: '600', color: '#0f172a' }}>{getNamaKelasDisplay(filterKelasList.find(o => String(o.id) === String(selectedKelas)))}</span>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '0.9rem', color: '#475569', marginBottom: '4px', marginTop: '4px' }}>
+                      Ditemukan <strong>{belumMengerjakanList.length}</strong> siswa yang belum memiliki catatan pengerjaan:
+                    </p>
+                    <div>
+                      <table className="siswa-table" style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+                        <thead>
+                          <tr>
+                            <th style={{ padding: '8px 12px', fontSize: '0.8rem', textAlign: 'left', width: '35%' }}>Nama</th>
+                            <th style={{ padding: '8px 12px', fontSize: '0.8rem', textAlign: 'left', width: '45%' }}>Email</th>
+                            <th style={{ padding: '8px 12px', fontSize: '0.8rem', textAlign: 'left', width: '20%' }}>NISN</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {belumMengerjakanList.map((item) => (
+                            <tr key={`${item.siswa.id}-${item.jadwalUjian.id}`} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                              <td style={{ padding: '8px 12px', fontSize: '0.85rem', fontWeight: '700', color: '#1E40AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.siswa.user.namaLengkap}>
+                                {item.siswa.user.namaLengkap}
+                              </td>
+                              <td style={{ padding: '8px 12px', fontSize: '0.85rem', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.siswa.user.email || '-'}>
+                                {item.siswa.user.email || '-'}
+                              </td>
+                              <td style={{ padding: '8px 12px', fontSize: '0.85rem', fontFamily: 'monospace', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={item.siswa.nis || '-'}>
+                                {item.siswa.nis || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="modal-confirm-footer" style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="btn btn-secondary" onClick={() => setShowBelumMengerjakanModal(false)}>
+                  Tutup
                 </button>
               </div>
             </div>

@@ -786,31 +786,32 @@
   z-index: 999999 !important;
 }
 
-/* Elevate table row stacking context when hovered or containing active tooltip */
-.paket-ujian-table tr:hover,
-.paket-ujian-table tr:focus-within,
-.paket-ujian-table tr:active,
-.table-row-hover:hover,
-.jadwal-row:hover {
-  position: relative;
-  z-index: 9999 !important;
+/* Elevate stacking context of the tooltip container on hover instead of the entire table row (which breaks table layouts and borders in modern browsers) */
+.class-tooltip-container:hover,
+.class-tooltip-container:focus-within {
+  z-index: 9999;
 }
 
 /* Prevent table wrappers and custom tables from clipping custom class tooltips */
 .jadwal-table {
-  overflow: visible !important;
+  overflow-x: auto !important;
 }
 
 .paket-ujian-table-wrap {
-  overflow: visible !important;
+  overflow-x: auto !important;
 }
 
 .paket-ujian-table {
   overflow: visible !important;
+  min-width: 950px;
 }
 
 .jadwal-table-wrap {
-  overflow: visible !important;
+  overflow-x: auto !important;
+}
+
+.jadwal-row {
+  min-width: 950px;
 }
 
 

@@ -3,12 +3,14 @@ const XLSX = require('xlsx');
 
 exports.list = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, jadwalUjianId, mapelId, kelasId } = req.query;
 
     let where = {};
+    const andConditions = [];
+
     if (search && String(search).trim().length > 0) {
       const s = String(search).trim();
-      where = {
+      andConditions.push({
         OR: [
           {
             siswa: {
@@ -35,7 +37,42 @@ exports.list = async (req, res) => {
             }
           }
         ]
-      };
+      });
+    }
+
+    if (jadwalUjianId && jadwalUjianId !== 'all') {
+      if (String(jadwalUjianId).startsWith('periode-')) {
+        const pId = Number(String(jadwalUjianId).replace('periode-', ''));
+        andConditions.push({
+          jadwalUjian: {
+            periodeId: pId
+          }
+        });
+      } else {
+        andConditions.push({
+          jadwalUjianId: Number(jadwalUjianId)
+        });
+      }
+    }
+
+    if (mapelId && mapelId !== 'all') {
+      andConditions.push({
+        jadwalUjian: {
+          mataPelajaranId: Number(mapelId)
+        }
+      });
+    }
+
+    if (kelasId && kelasId !== 'all') {
+      andConditions.push({
+        siswa: {
+          kelasId: Number(kelasId)
+        }
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where = { AND: andConditions };
     }
 
     const items = await prisma.ujianSiswa.findMany({
@@ -57,12 +94,8 @@ exports.list = async (req, res) => {
           }
         },
         jadwalUjian: {
-          select: {
-            id: true,
-            nama: true,
-            mulai: true,
-            selesai: true,
-            durasi: true
+          include: {
+            mataPelajaran: true
           }
         }
       },
@@ -83,19 +116,56 @@ exports.list = async (req, res) => {
 
 exports.exportExcel = async (req, res) => {
   try {
-    const { search } = req.query;
+    const { search, jadwalUjianId, mapelId, kelasId } = req.query;
 
     let where = {};
+    const andConditions = [];
+
     if (search && String(search).trim().length > 0) {
       const s = String(search).trim();
-      where = {
+      andConditions.push({
         OR: [
           { siswa: { user: { namaLengkap: { contains: s } } } },
           { siswa: { nis: { contains: s } } },
           { jadwalUjian: { nama: { contains: s } } },
           { siswa: { kelas: { namaKelas: { contains: s } } } }
         ]
-      };
+      });
+    }
+
+    if (jadwalUjianId && jadwalUjianId !== 'all') {
+      if (String(jadwalUjianId).startsWith('periode-')) {
+        const pId = Number(String(jadwalUjianId).replace('periode-', ''));
+        andConditions.push({
+          jadwalUjian: {
+            periodeId: pId
+          }
+        });
+      } else {
+        andConditions.push({
+          jadwalUjianId: Number(jadwalUjianId)
+        });
+      }
+    }
+
+    if (mapelId && mapelId !== 'all') {
+      andConditions.push({
+        jadwalUjian: {
+          mataPelajaranId: Number(mapelId)
+        }
+      });
+    }
+
+    if (kelasId && kelasId !== 'all') {
+      andConditions.push({
+        siswa: {
+          kelasId: Number(kelasId)
+        }
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where = { AND: andConditions };
     }
 
     const items = await prisma.ujianSiswa.findMany({
@@ -112,7 +182,11 @@ exports.exportExcel = async (req, res) => {
             kelas: true
           }
         },
-        jadwalUjian: true
+        jadwalUjian: {
+          include: {
+            mataPelajaran: true
+          }
+        }
       },
       orderBy: {
         id: 'desc'
@@ -355,4 +429,131 @@ exports.updateStatus = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Gagal merubah status ujian siswa' });
   }
 };
+
+exports.getBelumMengerjakan = async (req, res) => {
+  try {
+    const { jadwalUjianId, mapelId, kelasId } = req.query;
+
+    // 1. Cari JadwalUjian yang sesuai dengan filter
+    let jadwalWhere = {};
+    const andJadwal = [];
+
+    if (jadwalUjianId && jadwalUjianId !== 'all') {
+      if (String(jadwalUjianId).startsWith('periode-')) {
+        const pId = Number(String(jadwalUjianId).replace('periode-', ''));
+        andJadwal.push({ periodeId: pId });
+      } else {
+        andJadwal.push({ id: Number(jadwalUjianId) });
+      }
+    }
+    if (mapelId && mapelId !== 'all') {
+      andJadwal.push({ mataPelajaranId: Number(mapelId) });
+    }
+    if (kelasId && kelasId !== 'all') {
+      andJadwal.push({
+        kelasJadwal: {
+          some: { kelasId: Number(kelasId) }
+        }
+      });
+    }
+
+    if (andJadwal.length > 0) {
+      jadwalWhere = { AND: andJadwal };
+    } else {
+      return res.json({ success: true, data: [] });
+    }
+
+    const matchingJadwals = await prisma.jadwalUjian.findMany({
+      where: jadwalWhere,
+      include: {
+        mataPelajaran: true,
+        kelasJadwal: {
+          include: {
+            kelas: {
+              include: { jurusan: true }
+            }
+          }
+        }
+      }
+    });
+
+    const results = [];
+
+    // 2. Untuk setiap JadwalUjian, cari siswa di kelas-kelas target yang belum ada di UjianSiswa
+    for (const jadwal of matchingJadwals) {
+      let targetKelasIds = jadwal.kelasJadwal.map(kj => kj.kelasId);
+
+      if (kelasId && kelasId !== 'all') {
+        const kId = Number(kelasId);
+        if (targetKelasIds.includes(kId)) {
+          targetKelasIds = [kId];
+        } else {
+          continue;
+        }
+      }
+
+      if (targetKelasIds.length === 0) continue;
+
+      const siswaList = await prisma.siswa.findMany({
+        where: {
+          kelasId: { in: targetKelasIds },
+          user: { status: 'aktif' }
+        },
+        include: {
+          user: {
+            select: { id: true, namaLengkap: true, email: true }
+          },
+          kelas: {
+            include: { jurusan: true }
+          }
+        }
+      });
+
+      const ujianSiswaList = await prisma.ujianSiswa.findMany({
+        where: {
+          jadwalUjianId: jadwal.id
+        },
+        select: {
+          siswaId: true
+        }
+      });
+
+      const sudahMengerjakanSiswaIds = new Set(ujianSiswaList.map(us => us.siswaId));
+
+      for (const siswa of siswaList) {
+        if (!sudahMengerjakanSiswaIds.has(siswa.id)) {
+          results.push({
+            siswa: {
+              id: siswa.id,
+              nis: siswa.nis,
+              user: siswa.user,
+              kelas: siswa.kelas
+            },
+            jadwalUjian: {
+              id: jadwal.id,
+              nama: jadwal.nama,
+              mataPelajaran: jadwal.mataPelajaran
+            }
+          });
+        }
+      }
+    }
+
+    results.sort((a, b) => {
+      const nameCompare = (a.siswa?.user?.namaLengkap || '').localeCompare(b.siswa?.user?.namaLengkap || '');
+      if (nameCompare !== 0) return nameCompare;
+      return (a.siswa?.kelas?.namaKelas || '').localeCompare(b.siswa?.kelas?.namaKelas || '');
+    });
+
+    return res.json({
+      success: true,
+      data: results
+    });
+
+  } catch (err) {
+    console.error('Error in getBelumMengerjakan:', err);
+    return res.status(500).json({ success: false, message: 'Gagal memproses data siswa belum mengerjakan' });
+  }
+};
+
 

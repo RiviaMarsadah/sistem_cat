@@ -60,6 +60,7 @@ router.post('/siswa/import', upload.single('file'), adminSiswaController.importS
 
 // Ujian Siswa Management
 router.get('/ujian-siswa/export', adminUjianSiswaController.exportExcel);
+router.get('/ujian-siswa/belum-mengerjakan', adminUjianSiswaController.getBelumMengerjakan);
 router.get('/ujian-siswa', adminUjianSiswaController.list);
 router.delete('/ujian-siswa/:id', adminUjianSiswaController.remove);
 router.put('/ujian-siswa/:id/status', adminUjianSiswaController.updateStatus);

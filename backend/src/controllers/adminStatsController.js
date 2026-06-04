@@ -22,7 +22,10 @@ exports.getDashboardStats = async (req, res) => {
 
     // --- 3. 5 Jadwal Ujian Terbaru ---
     const jadwalTerbaru = await prisma.jadwalUjian.findMany({
-      where: { guruId: null },
+      where: { 
+        guruId: null,
+        periodeId: { not: null }
+      },
       include: {
         mataPelajaran: true,
         periode: true

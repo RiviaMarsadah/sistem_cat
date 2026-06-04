@@ -35,7 +35,7 @@ server.listen(PORT, () => {
   console.log(`📡 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
 
-  // Mulai token scheduler — regenerasi token ujian hari ini setiap 10 menit
+  // Mulai token scheduler — regenerasi token ujian hari ini setiap 15 menit
   startTokenScheduler();
 });
 

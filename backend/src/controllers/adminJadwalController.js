@@ -20,7 +20,8 @@ exports.list = async (req, res) => {
   try {
     const jadwal = await prisma.jadwalUjian.findMany({
       where: {
-        guruId: null // Hanya mengambil jadwal resmi yang dibuat oleh Admin
+        guruId: null, // Hanya mengambil jadwal resmi yang dibuat oleh Admin
+        periodeId: { not: null }
       },
       include: {
         mataPelajaran: true,
@@ -305,7 +306,7 @@ exports.adminSetPaket = async (req, res) => {
 // GET /admin/jadwal-ujian/today-tokens
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getTodayTokensInfo = async (req, res) => {
-  const REGEN_INTERVAL_MS = 10 * 60 * 1000;
+  const REGEN_INTERVAL_MS = 15 * 60 * 1000;
 
   try {
     const now = new Date();
@@ -324,8 +325,10 @@ exports.getTodayTokensInfo = async (req, res) => {
       }
     });
 
-    const currentSlot = Math.floor(now.getTime() / REGEN_INTERVAL_MS);
-    const nextSlotMs  = (currentSlot + 1) * REGEN_INTERVAL_MS;
+    const OFFSET_MS = 10 * 60 * 1000; // 10 minutes offset (menit ke 10, 25, 40, 55)
+    const shiftedTime = now.getTime() - OFFSET_MS;
+    const currentSlot = Math.floor(shiftedTime / REGEN_INTERVAL_MS);
+    const nextSlotMs  = (currentSlot + 1) * REGEN_INTERVAL_MS + OFFSET_MS;
     const msUntilNext = nextSlotMs - now.getTime();
 
     const tokenMap = {};

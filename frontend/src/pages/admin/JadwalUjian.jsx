@@ -103,6 +103,14 @@ export default function JadwalUjianAdmin() {
   const [savingPaket, setSavingPaket]             = useState(false);
   const [paketSearch, setPaketSearch]             = useState('');
 
+  const [detailKelasFilter, setDetailKelasFilter] = useState('all');
+  const [detailTanggalFilter, setDetailTanggalFilter] = useState('all');
+
+  useEffect(() => {
+    setDetailKelasFilter('all');
+    setDetailTanggalFilter('all');
+  }, [activePeriodeId]);
+
   const filteredPeriodes = useMemo(() => {
     return periodes.filter(p => 
       p.nama.toLowerCase().includes(search.toLowerCase()) || 
@@ -506,9 +514,72 @@ export default function JadwalUjianAdmin() {
   const renderDetailPeriode = () => {
     const periode = periodes.find(p => p.id === activePeriodeId);
     if (!periode) return null;
-    const filteredItems = items
-      .filter(j => String(j.periodeId) === String(activePeriodeId))
-      .sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
+
+    // Get all schedules under the active period to extract unique options
+    const periodSchedules = items.filter(j => String(j.periodeId) === String(activePeriodeId));
+
+    // Extract unique Kelas
+    const uniqueClasses = [];
+    const seenClasses = new Set();
+    periodSchedules.forEach(j => {
+      if (j.kelasJadwal) {
+        j.kelasJadwal.forEach(kj => {
+          if (kj.kelas) {
+            const kId = kj.kelas.id;
+            if (!seenClasses.has(kId)) {
+              seenClasses.add(kId);
+              uniqueClasses.push(kj.kelas);
+            }
+          }
+        });
+      }
+    });
+    uniqueClasses.sort((a, b) => getNamaKelasDisplay(a).localeCompare(getNamaKelasDisplay(b)));
+
+    // Extract unique Dates
+    const uniqueDates = [];
+    const seenDates = new Set();
+    periodSchedules.forEach(j => {
+      if (j.mulai) {
+        const dateObj = new Date(j.mulai);
+        const localYear = dateObj.getFullYear();
+        const localMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const localDay = String(dateObj.getDate()).padStart(2, '0');
+        const localDateStr = `${localYear}-${localMonth}-${localDay}`;
+
+        if (!seenDates.has(localDateStr)) {
+          seenDates.add(localDateStr);
+          const label = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          uniqueDates.push({
+            value: localDateStr,
+            label,
+            time: dateObj.getTime()
+          });
+        }
+      }
+    });
+    uniqueDates.sort((a, b) => a.time - b.time);
+
+    // Apply filtering to active period schedules
+    let filteredItems = [...periodSchedules].sort((a, b) => new Date(a.mulai) - new Date(b.mulai));
+    
+    if (detailKelasFilter !== 'all') {
+      filteredItems = filteredItems.filter(j => 
+        j.kelasJadwal && j.kelasJadwal.some(kj => String(kj.kelasId) === String(detailKelasFilter))
+      );
+    }
+
+    if (detailTanggalFilter !== 'all') {
+      filteredItems = filteredItems.filter(j => {
+        if (!j.mulai) return false;
+        const dateObj = new Date(j.mulai);
+        const localYear = dateObj.getFullYear();
+        const localMonth = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const localDay = String(dateObj.getDate()).padStart(2, '0');
+        const localDateStr = `${localYear}-${localMonth}-${localDay}`;
+        return localDateStr === detailTanggalFilter;
+      });
+    }
     
     // Check if Kiosk mode is active in any of the scheduled items
     const isKioskActive = filteredItems.some(j => j.opsiKeamanan === true);
@@ -519,7 +590,7 @@ export default function JadwalUjianAdmin() {
           <FiArrowLeft /> Kembali ke Daftar Periode
         </button>
 
-        <div style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem', marginBottom: '2rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', borderRadius: '16px', padding: '2rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1rem', flexWrap: 'wrap' }}>
               <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: '600', border: '1px solid #e2e8f0' }}>Tahun {periode?.tahunAjaran}</span>
@@ -538,6 +609,64 @@ export default function JadwalUjianAdmin() {
           
           {/* Decorative Background */}
           <FiCalendar style={{ position: 'absolute', right: '-20px', top: '-20px', fontSize: '180px', opacity: '0.03', transform: 'rotate(15deg)', color: '#3b82f6' }} />
+        </div>
+
+        {/* Row for filters */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '1rem', 
+          padding: '1.25rem', 
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          marginBottom: '1.5rem',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 200px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Filter Kelas</label>
+            <select
+              value={detailKelasFilter}
+              onChange={(e) => setDetailKelasFilter(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '0.875rem',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">Semua Kelas</option>
+              {uniqueClasses.map((k) => (
+                <option key={k.id} value={k.id}>{getNamaKelasDisplay(k)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1 1 250px' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Filter Hari / Tanggal</label>
+            <select
+              value={detailTanggalFilter}
+              onChange={(e) => setDetailTanggalFilter(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                background: '#ffffff',
+                fontSize: '0.875rem',
+                color: '#334155',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="all">Semua Tanggal</option>
+              {uniqueDates.map((d) => (
+                <option key={d.value} value={d.value}>{d.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="paket-ujian-table-wrap">
@@ -594,7 +723,7 @@ export default function JadwalUjianAdmin() {
                    <td className="text-center">
                      <div style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center' }}>
                        {j.kelasJadwal && j.kelasJadwal.length > 0 ? (
-                         <div className="class-tooltip-container">
+                         j.kelasJadwal.length === 1 ? (
                            <span 
                              className="mapel-badge" 
                              style={{ 
@@ -602,29 +731,50 @@ export default function JadwalUjianAdmin() {
                                color: '#1e40af', 
                                border: '1px solid #bfdbfe', 
                                fontWeight: '700', 
-                               padding: '4px 12px', 
-                               borderRadius: '20px', 
+                               padding: '6px 12px', 
+                               borderRadius: '12px', 
                                fontSize: '0.85rem',
-                               cursor: 'pointer'
+                               display: 'inline-block',
+                               whiteSpace: 'nowrap',
+                               textAlign: 'center',
+                               lineHeight: '1.2'
                              }}
                            >
-                             {j.kelasJadwal.length} Kelas
+                             {getNamaKelasDisplay(j.kelasJadwal[0].kelas)}
                            </span>
-                           <div className={`class-tooltip-bubble ${j.kelasJadwal.length > 10 ? 'scrollable' : ''}`}>
-                             <div style={{ 
-                               display: 'grid', 
-                               gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
-                               gap: '8px', 
-                               width: 'max-content'
-                             }}>
-                               {j.kelasJadwal.map((kj, idx2) => (
-                                 <span key={idx2} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: '1.3' }}>
-                                   {getNamaKelasDisplay(kj.kelas)}
-                                 </span>
-                               ))}
+                         ) : (
+                           <div className="class-tooltip-container">
+                             <span 
+                               className="mapel-badge" 
+                               style={{ 
+                                 background: '#eff6ff', 
+                                 color: '#1e40af', 
+                                 border: '1px solid #bfdbfe', 
+                                 fontWeight: '700', 
+                                 padding: '4px 12px', 
+                                 borderRadius: '20px', 
+                                 fontSize: '0.85rem',
+                                 cursor: 'pointer'
+                               }}
+                             >
+                               {j.kelasJadwal.length} Kelas
+                             </span>
+                             <div className={`class-tooltip-bubble ${j.kelasJadwal.length > 10 ? 'scrollable' : ''}`}>
+                               <div style={{ 
+                                 display: 'grid', 
+                                 gridTemplateColumns: j.kelasJadwal.length === 1 ? '1fr' : 'repeat(2, 1fr)', 
+                                 gap: '8px', 
+                                 width: 'max-content'
+                               }}>
+                                 {j.kelasJadwal.map((kj, idx2) => (
+                                   <span key={idx2} style={{ background: '#f1f5f9', color: '#334155', border: '1px solid #cbd5e1', padding: '4px 10px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: '600', whiteSpace: 'nowrap', textAlign: 'center', lineHeight: '1.3' }}>
+                                     {getNamaKelasDisplay(kj.kelas)}
+                                   </span>
+                                 ))}
+                               </div>
                              </div>
                            </div>
-                         </div>
+                         )
                        ) : (
                          <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>-</span>
                        )}

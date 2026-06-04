@@ -1,5 +1,5 @@
 /**
- * Token Scheduler — Auto-regenerasi token ujian setiap 10 menit
+ * Token Scheduler — Auto-regenerasi token ujian setiap 15 menit (menit ke 10, 25, 40, 55)
  * Hanya untuk ujian yang berlangsung HARI INI agar tidak berat.
  */
 
@@ -8,7 +8,7 @@ const prisma = require('../config/prisma');
 // ── Karakter token: 6 digit alfanumerik uppercase ──────────────────────────
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const TOKEN_LEN = 6;
-const REGEN_INTERVAL_MS = 10 * 60 * 1000; // 10 menit
+const REGEN_INTERVAL_MS = 15 * 60 * 1000; // 15 menit
 
 function generateRawToken() {
   let t = '';
@@ -91,18 +91,20 @@ async function regenerateTokensForToday() {
 }
 
 /**
- * Hitung waktu (ms) sampai slot 10 menit berikutnya.
- * Slot: menit ke-0, 10, 20, 30, 40, 50 setiap jam.
+ * Hitung waktu (ms) sampai slot 15 menit berikutnya.
+ * Slot: menit ke-10, 25, 40, dan 55 setiap jam.
  */
 function msUntilNextSlot() {
   const now = Date.now();
-  const currentSlot = Math.floor(now / REGEN_INTERVAL_MS);
-  const nextSlotMs  = (currentSlot + 1) * REGEN_INTERVAL_MS;
+  const OFFSET_MS = 10 * 60 * 1000; // 10 minutes offset
+  const shiftedTime = now - OFFSET_MS;
+  const currentSlot = Math.floor(shiftedTime / REGEN_INTERVAL_MS);
+  const nextSlotMs  = (currentSlot + 1) * REGEN_INTERVAL_MS + OFFSET_MS;
   return nextSlotMs - now;
 }
 
 /**
- * Start scheduler — sync ke slot 10 menit berikutnya, lalu setInterval.
+ * Start scheduler — sync ke slot 15 menit berikutnya, lalu setInterval.
  */
 function startTokenScheduler() {
   const delay = msUntilNextSlot();
@@ -112,7 +114,7 @@ function startTokenScheduler() {
   // Jalankan tepat di awal slot berikutnya
   setTimeout(() => {
     regenerateTokensForToday();
-    // Kemudian setiap 10 menit
+    // Kemudian setiap 15 menit
     setInterval(regenerateTokensForToday, REGEN_INTERVAL_MS);
   }, delay);
 }
