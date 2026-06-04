@@ -104,9 +104,12 @@ exports.list = async (req, res) => {
       }
     });
 
+    const totalCount = await prisma.ujianSiswa.count();
+
     return res.json({
       success: true,
-      data: items
+      data: items,
+      totalCount
     });
   } catch (err) {
     console.error('Error listing UjianSiswa:', err);

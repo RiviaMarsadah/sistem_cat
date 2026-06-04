@@ -65,11 +65,11 @@ const DashboardLayout = ({ role }) => {
         <div className="mobile-logo-section">
           <img 
             src="/gambar/logo.png" 
-            alt="Rivia Logo" 
+            alt="Logo" 
             className="mobile-logo-img" 
             onError={(e) => { e.target.style.display='none'; }} 
           />
-          <span className="mobile-logo-text">Rivia CAT</span>
+          <span className="mobile-logo-text">SISTEM CAT</span>
         </div>
         <div className="mobile-user-section">
           <span className={`mobile-role-badge badge-${role}`}>

@@ -162,7 +162,7 @@ const Sidebar = ({ role, user, isOpen, onClose, isCollapsed, onToggleCollapse })
         </button>
         {/* Logo besar di tengah */}
         <div className="sidebar-logo-wrapper">
-          <img src="/gambar/logo.png" alt="RIVIA" onError={(e) => { e.target.style.display='none'; }} />
+          <img src="/gambar/logo.png" alt="SISTEM CAT" onError={(e) => { e.target.style.display='none'; }} />
         </div>
         {/* Subtitle */}
         <span className="sidebar-logo-sub">Dashboard <br />computer Assisted test</span>

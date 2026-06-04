@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   FiSearch, FiTrash2, FiAlertCircle, FiCheckCircle, FiX, 
   FiClock, FiBookOpen, FiUser, FiInfo, FiChevronLeft, FiChevronRight,
-  FiDownload
+  FiDownload, FiChevronDown
 } from 'react-icons/fi';
 import api from '../../services/api';
 import { useToast } from '../../context/ToastContext';
@@ -35,6 +35,7 @@ const getNamaKelasDisplay = (kelas) => {
 const UjianSiswa = () => {
   const { showToast } = useToast();
   const [items, setItems] = useState([]);
+  const [totalAllCount, setTotalAllCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
@@ -48,6 +49,53 @@ const UjianSiswa = () => {
   const [selectedMapel, setSelectedMapel] = useState('all');
   const [selectedKelas, setSelectedKelas] = useState('all');
 
+  // Searchable Jadwal Dropdown States
+  const [jadwalSearch, setJadwalSearch] = useState('');
+  const [jadwalDropOpen, setJadwalDropOpen] = useState(false);
+  const jadwalDropRef = useRef(null);
+
+  // Searchable Mapel Dropdown States
+  const [mapelSearch, setMapelSearch] = useState('');
+  const [mapelDropOpen, setMapelDropOpen] = useState(false);
+  const mapelDropRef = useRef(null);
+
+  // Searchable Kelas Dropdown States
+  const [kelasSearch, setKelasSearch] = useState('');
+  const [kelasDropOpen, setKelasDropOpen] = useState(false);
+  const kelasDropRef = useRef(null);
+
+  // Filter schedules by search query
+  const filteredJadwals = useMemo(() => {
+    const query = jadwalSearch.toLowerCase().trim();
+    if (!query) return filterJadwalList;
+    return filterJadwalList.filter(j => 
+      (j.nama || '').toLowerCase().includes(query)
+    );
+  }, [filterJadwalList, jadwalSearch]);
+
+  // Selected schedule details for displaying in the select input box
+  const selectedJadwalDetails = useMemo(() => {
+    if (selectedJadwal === 'all') return null;
+    return filterJadwalList.find(j => String(j.id) === String(selectedJadwal));
+  }, [filterJadwalList, selectedJadwal]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (jadwalDropRef.current && !jadwalDropRef.current.contains(e.target)) {
+        setJadwalDropOpen(false);
+      }
+      if (mapelDropRef.current && !mapelDropRef.current.contains(e.target)) {
+        setMapelDropOpen(false);
+      }
+      if (kelasDropRef.current && !kelasDropRef.current.contains(e.target)) {
+        setKelasDropOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const filteredMapels = useMemo(() => {
     if (selectedJadwal === 'all') return filterMapelList;
     const selectedOpt = filterJadwalList.find(o => o.id === selectedJadwal);
@@ -55,6 +103,20 @@ const UjianSiswa = () => {
     const activeMapelIds = new Set(selectedOpt.schedules.map(s => s.mataPelajaranId).filter(Boolean));
     return filterMapelList.filter(m => activeMapelIds.has(m.id));
   }, [selectedJadwal, filterJadwalList, filterMapelList]);
+
+  // Search Mapel Options
+  const filteredMapelsSearch = useMemo(() => {
+    const query = mapelSearch.toLowerCase().trim();
+    if (!query) return filteredMapels;
+    return filteredMapels.filter(m => 
+      (m.namaMapel || '').toLowerCase().includes(query)
+    );
+  }, [filteredMapels, mapelSearch]);
+
+  const selectedMapelDetails = useMemo(() => {
+    if (selectedMapel === 'all') return null;
+    return filterMapelList.find(m => String(m.id) === String(selectedMapel));
+  }, [filterMapelList, selectedMapel]);
 
   const filteredKelas = useMemo(() => {
     if (selectedJadwal === 'all') return filterKelasList;
@@ -65,6 +127,20 @@ const UjianSiswa = () => {
     );
     return filterKelasList.filter(k => activeKelasIds.has(k.id));
   }, [selectedJadwal, filterJadwalList, filterKelasList]);
+
+  // Search Kelas Options
+  const filteredKelasSearch = useMemo(() => {
+    const query = kelasSearch.toLowerCase().trim();
+    if (!query) return filteredKelas;
+    return filteredKelas.filter(k => 
+      getNamaKelasDisplay(k).toLowerCase().includes(query)
+    );
+  }, [filteredKelas, kelasSearch]);
+
+  const selectedKelasDetails = useMemo(() => {
+    if (selectedKelas === 'all') return null;
+    return filterKelasList.find(k => String(k.id) === String(selectedKelas));
+  }, [filterKelasList, selectedKelas]);
 
   useEffect(() => {
     if (selectedJadwal !== 'all') {
@@ -183,6 +259,7 @@ const UjianSiswa = () => {
                 nama: j.periode?.nama || j.nama,
                 isPeriode: true,
                 periodeId: pId,
+                mulai: j.periode?.mulai || j.mulai,
                 schedules: []
               };
             }
@@ -192,6 +269,7 @@ const UjianSiswa = () => {
               id: String(j.id),
               nama: j.nama,
               isPeriode: false,
+              mulai: j.mulai,
               schedules: [j]
             });
           }
@@ -202,7 +280,12 @@ const UjianSiswa = () => {
           ...customJadwals
         ];
 
-        groupedJadwals.sort((a, b) => a.nama.localeCompare(b.nama));
+        // Sort by 'mulai' descending (newest first)
+        groupedJadwals.sort((a, b) => {
+          const dateA = a.mulai ? new Date(a.mulai) : new Date(0);
+          const dateB = b.mulai ? new Date(b.mulai) : new Date(0);
+          return dateB - dateA;
+        });
         setFilterJadwalList(groupedJadwals);
       }
       if (resMapel.data.success) {
@@ -237,6 +320,9 @@ const UjianSiswa = () => {
       const res = await api.get(`/admin/ujian-siswa?${queryParams}`);
       if (res.data.success) {
         setItems(res.data.data || []);
+        if (res.data.totalCount !== undefined) {
+          setTotalAllCount(res.data.totalCount);
+        }
       }
     } catch (err) {
       showToast(err?.response?.data?.message || 'Gagal memuat data ujian siswa', 'error');
@@ -361,7 +447,7 @@ const UjianSiswa = () => {
         <div className="user-meta">
           <div className="meta-card">
             <div className="meta-label">Total Ujian</div>
-            <div className="meta-value">{items.length}</div>
+            <div className="meta-value">{totalAllCount}</div>
           </div>
         </div>
       </div>
@@ -383,20 +469,39 @@ const UjianSiswa = () => {
               />
             </div>
           </div>
-          <button 
-            onClick={handleExportExcel} 
-            className="btn-add-user" 
-            style={{ 
-              background: '#10B981', 
-              borderColor: '#10B981',
-              color: '#ffffff',
-              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)'
-            }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.borderColor = '#059669'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.borderColor = '#10B981'; }}
-          >
-            <FiDownload /> Export Excel
-          </button>
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <span style={{ 
+              fontSize: '0.85rem', 
+              color: '#475569', 
+              fontWeight: '500',
+              background: '#f1f5f9',
+              padding: '0 12px',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '4px',
+              boxSizing: 'border-box'
+            }}>
+              Data: <strong style={{ color: '#0f172a' }}>{items.length}</strong>
+            </span>
+            <button 
+              onClick={handleExportExcel} 
+              className="btn-add-user" 
+              style={{ 
+                background: '#10B981', 
+                borderColor: '#10B981',
+                color: '#ffffff',
+                boxShadow: '0 2px 4px rgba(16, 185, 129, 0.2)',
+                margin: 0
+              }}
+              onMouseOver={(e) => { e.currentTarget.style.background = '#059669'; e.currentTarget.style.borderColor = '#059669'; }}
+              onMouseOut={(e) => { e.currentTarget.style.background = '#10B981'; e.currentTarget.style.borderColor = '#10B981'; }}
+            >
+              <FiDownload /> Export Excel
+            </button>
+          </div>
         </div>
 
         {/* Row for filters */}
@@ -409,76 +514,368 @@ const UjianSiswa = () => {
           marginBottom: '1rem',
           alignItems: 'end'
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }} ref={jadwalDropRef}>
             <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Jadwal Ujian</label>
-            <select
-              value={selectedJadwal}
-              onChange={(e) => setSelectedJadwal(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                fontSize: '0.875rem',
-                color: '#334155',
-                outline: 'none',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              <option value="all">Semua Ujian</option>
-              {filterJadwalList.map((j) => (
-                <option key={j.id} value={j.id}>{j.nama}</option>
-              ))}
-            </select>
+            <div style={{ position: 'relative', width: '100%' }}>
+              {/* Display Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: '#334155',
+                  gap: '8px',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}
+                onClick={() => { setJadwalDropOpen(o => !o); setJadwalSearch(''); }}
+              >
+                <FiSearch size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                {jadwalDropOpen ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={jadwalSearch}
+                    onChange={(e) => { e.stopPropagation(); setJadwalSearch(e.target.value); }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Cari Jadwal..."
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      flex: 1,
+                      fontSize: '0.875rem',
+                      color: '#334155',
+                      background: 'transparent',
+                      padding: 0
+                    }}
+                  />
+                ) : (
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedJadwal === 'all' ? 'Semua Ujian' : (selectedJadwalDetails?.nama || 'Pilih Jadwal Ujian...')}
+                  </span>
+                )}
+                {jadwalDropOpen && jadwalSearch ? (
+                  <FiX size={14} style={{ color: '#94a3b8', cursor: 'pointer', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); setJadwalSearch(''); }} />
+                ) : (
+                  <FiChevronDown size={14} style={{ color: '#94a3b8', flexShrink: 0, transform: jadwalDropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                )}
+              </div>
+
+              {/* Dropdown Options List */}
+              {jadwalDropOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                  zIndex: 99,
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  marginTop: '4px'
+                }}>
+                  {/* Option "Semua Ujian" */}
+                  <div
+                    onClick={() => { setSelectedJadwal('all'); setJadwalDropOpen(false); setJadwalSearch(''); }}
+                    style={{
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      background: selectedJadwal === 'all' ? '#f1f5f9' : 'transparent',
+                      fontWeight: selectedJadwal === 'all' ? '600' : 'normal',
+                      fontSize: '0.85rem',
+                      color: '#334155',
+                      transition: 'background 0.15s'
+                    }}
+                    onMouseEnter={(e) => { if (selectedJadwal !== 'all') e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseLeave={(e) => { if (selectedJadwal !== 'all') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    Semua Ujian
+                  </div>
+
+                  {filteredJadwals.length === 0 ? (
+                    <div style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+                      Tidak ada jadwal yang cocok
+                    </div>
+                  ) : (
+                    filteredJadwals.map((j) => {
+                      const isSelected = String(j.id) === String(selectedJadwal);
+                      return (
+                        <div
+                          key={j.id}
+                          onClick={() => { setSelectedJadwal(j.id); setJadwalDropOpen(false); setJadwalSearch(''); }}
+                          style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#f1f5f9' : 'transparent',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f8fafc'; }}
+                          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <div style={{ fontWeight: isSelected ? '600' : 'normal', fontSize: '0.85rem', color: '#334155' }}>
+                            {j.nama}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }} ref={mapelDropRef}>
             <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Mata Pelajaran</label>
-            <select
-              value={selectedMapel}
-              onChange={(e) => setSelectedMapel(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                fontSize: '0.875rem',
-                color: '#334155',
-                outline: 'none',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              <option value="all">Semua Mata Pelajaran</option>
-              {filteredMapels.map((m) => (
-                <option key={m.id} value={m.id}>{m.namaMapel}</option>
-              ))}
-            </select>
+            <div style={{ position: 'relative', width: '100%' }}>
+              {/* Display Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: '#334155',
+                  gap: '8px',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}
+                onClick={() => { setMapelDropOpen(o => !o); setMapelSearch(''); }}
+              >
+                <FiSearch size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                {mapelDropOpen ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={mapelSearch}
+                    onChange={(e) => { e.stopPropagation(); setMapelSearch(e.target.value); }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Cari Mapel..."
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      flex: 1,
+                      fontSize: '0.875rem',
+                      color: '#334155',
+                      background: 'transparent',
+                      padding: 0
+                    }}
+                  />
+                ) : (
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedMapel === 'all' ? 'Semua Mata Pelajaran' : (selectedMapelDetails?.namaMapel || 'Pilih Mata Pelajaran...')}
+                  </span>
+                )}
+                {mapelDropOpen && mapelSearch ? (
+                  <FiX size={14} style={{ color: '#94a3b8', cursor: 'pointer', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); setMapelSearch(''); }} />
+                ) : (
+                  <FiChevronDown size={14} style={{ color: '#94a3b8', flexShrink: 0, transform: mapelDropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                )}
+              </div>
+
+              {/* Dropdown Options List */}
+              {mapelDropOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                  zIndex: 99,
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  marginTop: '4px'
+                }}>
+                  {/* Option "Semua Mata Pelajaran" */}
+                  <div
+                    onClick={() => { setSelectedMapel('all'); setMapelDropOpen(false); setMapelSearch(''); }}
+                    style={{
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      background: selectedMapel === 'all' ? '#f1f5f9' : 'transparent',
+                      fontWeight: selectedMapel === 'all' ? '600' : 'normal',
+                      fontSize: '0.85rem',
+                      color: '#334155',
+                      transition: 'background 0.15s'
+                    }}
+                    onMouseEnter={(e) => { if (selectedMapel !== 'all') e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseLeave={(e) => { if (selectedMapel !== 'all') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    Semua Mata Pelajaran
+                  </div>
+
+                  {filteredMapelsSearch.length === 0 ? (
+                    <div style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>
+                      Tidak ada mapel yang cocok
+                    </div>
+                  ) : (
+                    filteredMapelsSearch.map((m) => {
+                      const isSelected = String(m.id) === String(selectedMapel);
+                      return (
+                        <div
+                          key={m.id}
+                          onClick={() => { setSelectedMapel(m.id); setMapelDropOpen(false); setMapelSearch(''); }}
+                          style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#f1f5f9' : 'transparent',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f8fafc'; }}
+                          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <div style={{ fontWeight: isSelected ? '600' : 'normal', fontSize: '0.85rem', color: '#334155' }}>
+                            {m.namaMapel}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative' }} ref={kelasDropRef}>
             <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>Kelas</label>
-            <select
-              value={selectedKelas}
-              onChange={(e) => setSelectedKelas(e.target.value)}
-              style={{
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                fontSize: '0.875rem',
-                color: '#334155',
-                outline: 'none',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              <option value="all">Semua Kelas</option>
-              {filteredKelas.map((k) => (
-                <option key={k.id} value={k.id}>{getNamaKelasDisplay(k)}</option>
-              ))}
-            </select>
+            <div style={{ position: 'relative', width: '100%' }}>
+              {/* Display Box */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  color: '#334155',
+                  gap: '8px',
+                  minHeight: '38px',
+                  boxSizing: 'border-box'
+                }}
+                onClick={() => { setKelasDropOpen(o => !o); setKelasSearch(''); }}
+              >
+                <FiSearch size={14} style={{ color: '#94a3b8', flexShrink: 0 }} />
+                {kelasDropOpen ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    value={kelasSearch}
+                    onChange={(e) => { e.stopPropagation(); setKelasSearch(e.target.value); }}
+                    onClick={(e) => e.stopPropagation()}
+                    placeholder="Cari Kelas..."
+                    style={{
+                      border: 'none',
+                      outline: 'none',
+                      flex: 1,
+                      fontSize: '0.875rem',
+                      color: '#334155',
+                      background: 'transparent',
+                      padding: 0
+                    }}
+                  />
+                ) : (
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {selectedKelas === 'all' ? 'Semua Kelas' : (getNamaKelasDisplay(selectedKelasDetails) || 'Pilih Kelas...')}
+                  </span>
+                )}
+                {kelasDropOpen && kelasSearch ? (
+                  <FiX size={14} style={{ color: '#94a3b8', cursor: 'pointer', flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); setKelasSearch(''); }} />
+                ) : (
+                  <FiChevronDown size={14} style={{ color: '#94a3b8', flexShrink: 0, transform: kelasDropOpen ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s' }} />
+                )}
+              </div>
+
+              {/* Dropdown Options List */}
+              {kelasDropOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
+                  zIndex: 99,
+                  maxHeight: '260px',
+                  overflowY: 'auto',
+                  marginTop: '4px'
+                }}>
+                  {/* Option "Semua Kelas" */}
+                  <div
+                    onClick={() => { setSelectedKelas('all'); setKelasDropOpen(false); setKelasSearch(''); }}
+                    style={{
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      background: selectedKelas === 'all' ? '#f1f5f9' : 'transparent',
+                      fontWeight: selectedKelas === 'all' ? '600' : 'normal',
+                      fontSize: '0.75rem',
+                      color: '#334155',
+                      transition: 'background 0.15s',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                    onMouseEnter={(e) => { if (selectedKelas !== 'all') e.currentTarget.style.background = '#f8fafc'; }}
+                    onMouseLeave={(e) => { if (selectedKelas !== 'all') e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    Semua Kelas
+                  </div>
+
+                  {filteredKelasSearch.length === 0 ? (
+                    <div style={{ padding: '8px 12px', color: '#94a3b8', fontSize: '0.75rem', textAlign: 'center' }}>
+                      Tidak ada kelas yang cocok
+                    </div>
+                  ) : (
+                    filteredKelasSearch.map((k) => {
+                      const isSelected = String(k.id) === String(selectedKelas);
+                      return (
+                        <div
+                          key={k.id}
+                          onClick={() => { setSelectedKelas(k.id); setKelasDropOpen(false); setKelasSearch(''); }}
+                          style={{
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            background: isSelected ? '#f1f5f9' : 'transparent',
+                            transition: 'background 0.15s'
+                          }}
+                          onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#f8fafc'; }}
+                          onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <div style={{ 
+                            fontWeight: isSelected ? '600' : 'normal', 
+                            fontSize: '0.75rem', 
+                            color: '#334155',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {getNamaKelasDisplay(k)}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
            <div 
