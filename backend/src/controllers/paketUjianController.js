@@ -26,31 +26,37 @@ exports.list = async (req, res) => {
     if (!guruId) return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
 
     const { mataPelajaranId } = req.query;
+    
+    // Find all mapels the teacher is associated with
+    const mapels = await prisma.mataPelajaran.findMany({
+      where: {
+        OR: [
+          { paketUjian: { some: { guruId } } },
+          { bankSoal: { some: { guruId } } },
+          { bankSoalKoleksis: { some: { guruId } } },
+          { jadwalUjians: { some: { guruId } } },
+        ]
+      },
+      select: { id: true }
+    });
+    const mapelIds = mapels.map(m => m.id);
+
     let whereClause = { guruId };
 
     if (mataPelajaranId) {
-      whereClause = { mataPelajaranId: Number(mataPelajaranId) };
-    } else {
-      const mapels = await prisma.mataPelajaran.findMany({
-        where: {
-          OR: [
-            { paketUjian: { some: { guruId } } },
-            { bankSoal: { some: { guruId } } },
-            { jadwalUjians: { some: { guruId } } },
-          ]
-        },
-        select: { id: true }
-      });
-      const mapelIds = mapels.map(m => m.id);
-      
-      if (mapelIds.length > 0) {
-        whereClause = {
-          OR: [
-            { guruId },
-            { mataPelajaranId: { in: mapelIds } }
-          ]
-        };
+      const targetMapelId = Number(mataPelajaranId);
+      if (mapelIds.includes(targetMapelId)) {
+        whereClause = { mataPelajaranId: targetMapelId };
+      } else {
+        whereClause = { mataPelajaranId: targetMapelId, guruId };
       }
+    } else {
+      whereClause = {
+        OR: [
+          { guruId },
+          { mataPelajaranId: { in: mapelIds } }
+        ]
+      };
     }
 
     const items = await prisma.paketUjian.findMany({
@@ -83,8 +89,27 @@ exports.getById = async (req, res) => {
   if (!guruId) return res.status(403).json({ success: false, message: 'Guru tidak ditemukan' });
 
   try {
+    const mapels = await prisma.mataPelajaran.findMany({
+      where: {
+        OR: [
+          { paketUjian: { some: { guruId } } },
+          { bankSoal: { some: { guruId } } },
+          { bankSoalKoleksis: { some: { guruId } } },
+          { jadwalUjians: { some: { guruId } } },
+        ]
+      },
+      select: { id: true }
+    });
+    const mapelIds = mapels.map(m => m.id);
+
     const item = await prisma.paketUjian.findFirst({
-      where: { id, guruId },
+      where: {
+        id,
+        OR: [
+          { guruId },
+          { mataPelajaranId: { in: mapelIds } }
+        ]
+      },
       include: {
         mataPelajaran: { select: { id: true, namaMapel: true, kodeMapel: true } },
         soalPaket: {

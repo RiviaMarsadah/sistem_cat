@@ -271,26 +271,46 @@ exports.mulaiUjian = async (req, res) => {
   const jadwalUjianId = req.body?.jadwalUjianId ? Number(req.body.jadwalUjianId) : undefined;
 
   try {
-    const whereClause = { token };
+    let jadwal = null;
     if (jadwalUjianId) {
-      whereClause.id = jadwalUjianId;
+      jadwal = await prisma.jadwalUjian.findUnique({
+        where: { id: jadwalUjianId },
+        include: {
+           paketUjian: {
+              include: {
+                 soalPaket: {
+                    include: { bankSoal: true }
+                 }
+              }
+           }
+        }
+      });
+      if (!jadwal) {
+        return res.status(404).json({ success: false, message: 'Jadwal ujian tidak ditemukan.' });
+      }
+      if (jadwal.token !== token) {
+        return res.status(400).json({ success: false, message: 'Token tidak valid.' });
+      }
+    } else {
+      jadwal = await prisma.jadwalUjian.findFirst({
+        where: { token },
+        include: {
+           paketUjian: {
+              include: {
+                 soalPaket: {
+                    include: { bankSoal: true }
+                 }
+              }
+           }
+        }
+      });
+      if (!jadwal) {
+        return res.status(404).json({ success: false, message: 'Token tidak valid.' });
+      }
     }
 
-    const jadwal = await prisma.jadwalUjian.findFirst({
-      where: whereClause,
-      include: {
-         paketUjian: {
-            include: {
-               soalPaket: {
-                  include: { bankSoal: true }
-               }
-            }
-         }
-      }
-    });
-
-    if (!jadwal || !jadwal.paketUjianId) {
-       return res.status(404).json({ success: false, message: 'Jadwal/Paket ujian tidak valid.' });
+    if (!jadwal.paketUjianId) {
+       return res.status(404).json({ success: false, message: 'Paket ujian tidak valid.' });
     }
 
     // ── Validasi waktu ujian (WIB) ────────────────────────────────────────

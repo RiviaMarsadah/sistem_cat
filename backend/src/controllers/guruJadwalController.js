@@ -61,8 +61,21 @@ exports.setPaket = async (req, res) => {
       where: { id: Number(paketUjianId) }
     });
     
-    if (!paket || paket.guruId !== guruId) {
-      return res.status(403).json({ success: false, message: 'Paket soal tidak valid atau bukan milik Anda' });
+    const mapels = await prisma.mataPelajaran.findMany({
+      where: {
+        OR: [
+          { paketUjian: { some: { guruId } } },
+          { bankSoal: { some: { guruId } } },
+          { bankSoalKoleksis: { some: { guruId } } },
+          { jadwalUjians: { some: { guruId } } },
+        ]
+      },
+      select: { id: true }
+    });
+    const mapelIds = mapels.map(m => m.id);
+
+    if (!paket || (paket.guruId !== guruId && !mapelIds.includes(paket.mataPelajaranId))) {
+      return res.status(403).json({ success: false, message: 'Paket soal tidak valid atau Anda tidak memiliki akses' });
     }
 
     const jadwal = await prisma.jadwalUjian.findUnique({ where: { id: jadwalId } });
@@ -99,8 +112,21 @@ exports.removePaket = async (req, res) => {
        include: { paketUjian: true }
     });
 
-    if (!jadwal || jadwal.paketUjian?.guruId !== guruId) {
-      return res.status(403).json({ success: false, message: 'Hanya bisa menghapus paket yang Anda pasang sendiri' });
+    const mapels = await prisma.mataPelajaran.findMany({
+      where: {
+        OR: [
+          { paketUjian: { some: { guruId } } },
+          { bankSoal: { some: { guruId } } },
+          { bankSoalKoleksis: { some: { guruId } } },
+          { jadwalUjians: { some: { guruId } } },
+        ]
+      },
+      select: { id: true }
+    });
+    const mapelIds = mapels.map(m => m.id);
+
+    if (!jadwal || (jadwal.paketUjian?.guruId !== guruId && !mapelIds.includes(jadwal.paketUjian?.mataPelajaranId))) {
+      return res.status(403).json({ success: false, message: 'Hanya bisa menghapus paket dari mata pelajaran Anda' });
     }
 
     const activeExams = await prisma.ujianSiswa.count({ where: { jadwalUjianId: jadwalId } });
